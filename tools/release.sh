@@ -179,7 +179,7 @@ MAKEMAP=0
 
 FILENAMEOUT=""
 
-while getopts "s:pmMchu?r:f:" c
+while getopts "r:ch?" c
 do
 	case "$c" in
 	\?)
@@ -220,14 +220,19 @@ do
 	esac
 done
 
-if [ ! "$ZIP" ]
-then	ZIP=bzip2
-fi
+echo "CVS tag: $OPTARG"
 
-if [ $PACKAGES -ne 0 ]
-then	mkdir -p $PACKAGEDIR/All || true
-	retrieve $PACKAGEDIR/All $PACKAGELIST packages/`uname -p`/`uname -r`
-fi
+ISO=${ISO}.iso
+ISOGZ=${ISO}.gz
+echo "Making $ISOGZ"
+
+USRMB=400
+
+USRBLOCKS="`expr $USRMB \* 1024 \* 1024 / $BS`"
+USRSECTS="`expr $USRMB \* 1024 \* 2`"
+ROOTKB=1400
+ROOTSECTS="`expr $ROOTKB \* 2`"
+ROOTBLOCKS="`expr $ROOTKB \* 1024 / $BS`"
 
 if [ "$COPY" -ne 1 ]
 then
