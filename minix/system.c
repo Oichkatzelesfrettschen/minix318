@@ -1,6 +1,6 @@
-/* This task handles the interface between the kernel and user-space system
- * processes. System services can be accessed by doing a kernel call. System
- * calls are transformed into request messages, which are handled by this
+/* This task provides an interface between the kernel and user-space system
+ * processes. System services can be accessed by doing a kernel call. Kernel
+ * calls are  transformed into request messages, which are handled by this
  * task. By convention, a sys_call() is transformed in a SYS_CALL request
  * message that is handled in a function named do_call(). 
  *
@@ -24,7 +24,7 @@
  *   Aug 04, 2005   check if kernel call is allowed  (Jorrit N. Herder)
  *   Jul 20, 2005   send signal to services with message  (Jorrit N. Herder) 
  *   Jan 15, 2005   new, generalized virtual copy function  (Jorrit N. Herder)
- *   Oct 10, 2004   dispatch kernel calls from call vector  (Jorrit N. Herder)
+ *   Oct 10, 2004   dispatch system calls from call vector  (Jorrit N. Herder)
  *   Sep 30, 2004   source code documentation updated  (Jorrit N. Herder)
  */
 
@@ -48,12 +48,8 @@
 PUBLIC int (*call_vec[NR_SYS_CALLS])(message *m_ptr);
 
 #define map(call_nr, handler) \
-    if ((call_nr) >= KERNEL_CALL && (call_nr) < KERNEL_CALL + NR_SYS_CALLS) { \
-        extern int dummy[NR_SYS_CALLS>(unsigned)(call_nr-KERNEL_CALL) ? 1:-1]; \
-        call_vec[(call_nr-KERNEL_CALL)] = (handler); \
-    } else { \
-        kprintf("Invalid call number: %d\n", call_nr); \
-    }
+    {extern int dummy[NR_SYS_CALLS>(unsigned)(call_nr-KERNEL_CALL) ? 1:-1];} \
+    call_vec[(call_nr-KERNEL_CALL)] = (handler)  
 
 FORWARD _PROTOTYPE( void initialize, (void));
 
@@ -75,8 +71,7 @@ PUBLIC void sys_task()
   while (TRUE) {
       /* Get work. Block and wait until a request message arrives. */
       receive(ANY, &m);			
-      if (call_nr >= sizeof(priv(caller_ptr)->s_call_mask) * CHAR_BIT || 
-          ! (priv(caller_ptr)->s_call_mask & (1<<call_nr))) {
+      call_nr = (unsigned) m.m_type - KERNEL_CALL;	
       caller_ptr = proc_addr(m.m_source);	
 
       /* See if the caller made a valid request and try to handle it. */
@@ -92,7 +87,7 @@ PUBLIC void sys_task()
       }
 
       /* Send a reply, unless inhibited by a handler function. Use the kernel
-       * function lock_send() to prevent a kernel call trap. The destination
+       * function lock_send() to prevent a system call trap. The destination
        * is known to be blocked waiting for a message.
        */
       if (result != EDONTREPLY) {
@@ -123,12 +118,12 @@ PRIVATE void initialize(void)
   }
 
   /* Initialize the call vector to a safe default handler. Some kernel calls 
-   * may be disabled or nonexistant. Then explicitely map known calls to their
+   * may be disabled or nonexistant. Then explicitly map known calls to their
    * handler functions. This is done with a macro that gives a compile error
    * if an illegal call number is used. The ordering is not important here.
    */
   for (i=0; i<NR_SYS_CALLS; i++) {
-      call_vec[i] = default_handler;
+      call_vec[i] = do_unused;
   }
 
   /* Process management. */
@@ -183,14 +178,12 @@ int proc_type;				/* system or user process flag */
 {
 /* Get a privilege structure. All user processes share the same privilege 
  * structure. System processes get their own privilege structure. 
+ */
   register struct priv *sp;			/* privilege structure */
 
   if (proc_type == SYS_PROC) {			/* find a new slot */
-      for (sp = BEG_PRIV_ADDR; sp < END_PRIV_ADDR; ++sp) {
-          if (sp->s_proc_nr == NONE && sp->s_id != USER_PRIV_ID) {
-              break;				/* terminate loop early */
-          }
-      }
+      for (sp = BEG_PRIV_ADDR; sp < END_PRIV_ADDR; ++sp) 
+          if (sp->s_proc_nr == NONE && sp->s_id != USER_PRIV_ID) break;	
       if (sp->s_proc_nr != NONE) return(ENOSPC);
       rc->p_priv = sp;				/* assign new slot */
       rc->p_priv->s_proc_nr = proc_nr(rc);	/* set association */
@@ -200,7 +193,6 @@ int proc_type;				/* system or user process flag */
       rc->p_priv->s_proc_nr = INIT_PROC_NR;	/* set association */
       rc->p_priv->s_flags = 0;			/* no initial flags */
   }
-  return(OK);
   return(OK);
 }
 
@@ -217,16 +209,16 @@ int source;
  * Unfortunately this test is run-time - we don't want to bother with
  * compiling different kernels for different machines.
  *
+ * On machines without RDTSC, we use read_clock().
+ */
+  int r_next;
   unsigned long tsc_high, tsc_low;
 
   source %= RANDOM_SOURCES;
   r_next= krandom.bin[source].r_next;
-  if (machine.processor > 486 && machine.supports_rdtsc) {
+  if (machine.processor > 486) {
       read_tsc(&tsc_high, &tsc_low);
       krandom.bin[source].r_buf[r_next] = tsc_low;
-  } else {
-      krandom.bin[source].r_buf[r_next] = read_clock();
-  }
   } else {
       krandom.bin[source].r_buf[r_next] = read_clock();
   }
@@ -256,7 +248,7 @@ int sig_nr;			/* signal to be sent, 1 to _NSIG */
 
 /*===========================================================================*
  *				cause_sig				     *
- *==================================a=========================================*/
+ *===========================================================================*/
 PUBLIC void cause_sig(proc_nr, sig_nr)
 int proc_nr;			/* process to be signalled */
 int sig_nr;			/* signal to be sent, 1 to _NSIG */
@@ -269,7 +261,7 @@ int sig_nr;			/* signal to be sent, 1 to _NSIG */
  * signals and makes sure the PM gets them by sending a notification. The 
  * process being signaled is blocked while PM has not finished all signals 
  * for it. 
- * Race conditions between calls to this function and the kernel calls that
+ * Race conditions between calls to this function and the system calls that
  * process pending kernel signals cannot exist. Signal related functions are
  * only called when a user process causes a CPU exception and from the kernel 
  * process level, which runs to completion.
@@ -281,46 +273,11 @@ int sig_nr;			/* signal to be sent, 1 to _NSIG */
   if (! sigismember(&rp->p_pending, sig_nr)) {
       sigaddset(&rp->p_pending, sig_nr);
       if (! (rp->p_rts_flags & SIGNALED)) {		/* other pending */
-          /* If the process is ready (no RTS flags set), remove it from the ready queue
-           * to ensure it is marked as not ready for execution while handling the signal.
-           */
           if (rp->p_rts_flags == 0) lock_dequeue(rp);	/* make not ready */
           rp->p_rts_flags |= SIGNALED | SIG_PENDING;	/* update flags */
           send_sig(PM_PROC_NR, SIGKSIG);
       }
   }
-}
-
-/*===========================================================================*
- *				umap_bios				     *
- *===========================================================================*/
-PUBLIC phys_bytes umap_bios(rp, vir_addr, bytes)
-register struct proc *rp;	/* pointer to proc table entry for process */
-vir_bytes vir_addr;		/* virtual address in BIOS segment */
-vir_bytes bytes;		/* # of bytes to be copied */
-{
-/* Calculate the physical memory address at the BIOS. Note: currently, BIOS
- * address zero (the first BIOS interrupt vector) is not considered, as an 
- * error here, but since the physical address will be zero as well, the 
- * calling function will think an error occurred. This is not a problem,
- * since no one uses the first BIOS interrupt vector.  
- */
-
-  /* Check all acceptable ranges. */
-  if (vir_addr >= BIOS_MEM_BEGIN && vir_addr + bytes <= BIOS_MEM_END)
-  	return (phys_bytes) vir_addr;
-  else if (vir_addr >= BASE_MEM_TOP && vir_addr + bytes <= UPPER_MEM_END)
-  	return (phys_bytes) vir_addr;
-
-#if DEAD_CODE	/* brutal fix, if the above is too restrictive */
-  if (vir_addr >= BIOS_MEM_BEGIN && vir_addr + bytes <= UPPER_MEM_END)
-  	return (phys_bytes) vir_addr;
-#endif
-
-  kprintf("Warning, error in umap_bios: virtual address 0x%x is invalid. "
-          "Acceptable ranges are [0x%x - 0x%x] and [0x%x - 0x%x].\n",
-          vir_addr, BIOS_MEM_BEGIN, BIOS_MEM_END, BASE_MEM_TOP, UPPER_MEM_END);
-  return 0;
 }
 
 /*===========================================================================*
@@ -347,8 +304,8 @@ vir_bytes bytes;		/* # of bytes to be copied */
    * The Atari ST behaves like the 8088 in this respect.
    */
 
-  if (bytes <= 0) return( (phys_bytes) 0);      /* validate bytes */
-  if (vir_addr + bytes <= vir_addr) return 0;	/* check for overflow */
+  if (bytes <= 0) return( (phys_bytes) 0);
+  if (vir_addr + bytes <= vir_addr) return 0;	/* overflow */
   vc = (vir_addr + bytes - 1) >> CLICK_SHIFT;	/* last click of data */
 
 #if (CHIP == INTEL) || (CHIP == M68000)
@@ -356,7 +313,7 @@ vir_bytes bytes;		/* # of bytes to be copied */
 	seg = (vc < rp->p_memmap[D].mem_vir + rp->p_memmap[D].mem_len ? D : S);
 #else
   if (seg != T)
-	seg = (vc < rp->p_memmap[S].mem_vir ? D : S);
+       seg = (vc < rp->p_memmap[S].mem_vir ? D : S);
 #endif
 
   if ((vir_addr>>CLICK_SHIFT) >= rp->p_memmap[seg].mem_vir + 
@@ -401,6 +358,30 @@ vir_bytes bytes;		/* # of bytes to be copied */
   if (vir_addr + bytes > fm->mem_len) return( (phys_bytes) 0);
 
   return(fm->mem_phys + (phys_bytes) vir_addr); 
+}
+
+/*===========================================================================*
+ *				umap_bios				     *
+ *===========================================================================*/
+PUBLIC phys_bytes umap_bios(rp, vir_addr, bytes)
+register struct proc *rp;	/* pointer to proc table entry for process */
+vir_bytes vir_addr;		/* virtual address in BIOS segment */
+vir_bytes bytes;		/* # of bytes to be copied */
+{
+/* Calculate the physical memory address at the BIOS. Note: currently, BIOS
+ * address zero (the first BIOS interrupt vector) is not considered as an 
+ * error here, but since the physical address will be zero as well, the 
+ * calling function will think an error occurred. This is not a problem,
+ * since no one uses the first BIOS interrupt vector.  
+ */
+
+  /* Check all acceptable ranges. */
+  if (vir_addr >= BIOS_MEM_BEGIN && vir_addr + bytes <= BIOS_MEM_END)
+  	return (phys_bytes) vir_addr;
+  else if (vir_addr >= BASE_MEM_TOP && vir_addr + bytes <= UPPER_MEM_END)
+  	return (phys_bytes) vir_addr;
+  kprintf("Warning, error in umap_bios, virtual address 0x%x\n", vir_addr);
+  return 0;
 }
 
 /*===========================================================================*
@@ -451,17 +432,11 @@ vir_bytes bytes;		/* # of bytes to copy  */
       }
 
       /* Check if mapping succeeded. */
-      if ((phys_addr[i] <= 0 || phys_addr[i] > MAX_PHYS_ADDR) && vir_addr[i]->segment != PHYS_SEG) 
+      if (phys_addr[i] <= 0 && vir_addr[i]->segment != PHYS_SEG) 
           return(EFAULT);
   }
 
-  /* Validate physical addresses before copying. */
-  if (!is_valid_phys_addr(phys_addr[_SRC_], bytes) || 
-      !is_valid_phys_addr(phys_addr[_DST_], bytes)) {
-      return(EFAULT);
-  }
-
-  /* Now copy bytes between physical addresses. */
+  /* Now copy bytes between physical addresseses. */
   phys_copy(phys_addr[_SRC_], phys_addr[_DST_], (phys_bytes) bytes);
   return(OK);
 }
