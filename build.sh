@@ -85,8 +85,8 @@ fi
 
 # Does the shell support the "local" keyword for variables in functions?
 #
-# Local variables are not required by SUSv3, but some scripts run during
-# the NetBSD build use them.
+# Local variables are not required by SUSv3, but some scripts used during
+# the build rely on them.
 #
 # ksh93 fails this test; it uses an incompatible syntax involving the
 # keywords 'function' and 'typeset'.
@@ -158,7 +158,7 @@ fi
 # Does the shell support $(...) command substitution with
 # unbalanced parentheses?
 #
-# Some shells known to fail this test are:  NetBSD /bin/ksh (as of 2009-12),
+# Some shells known to fail this test are:  /bin/ksh (as of 2009-12),
 # bash-3.1, pdksh-5.2.14, zsh-4.2.7 in "emulate sh" mode.
 #
 if test -z "$errmsg"; then
@@ -166,8 +166,8 @@ if test -z "$errmsg"; then
 	eval 'var=$(case x in x) echo abc;; esac); test x"$var" = x"abc"'
 	) >/dev/null 2>&1
     then
-	# XXX: This test is ignored because so many shells fail it; instead,
-	#      the NetBSD build avoids using the problematic construct.
+        # XXX: This test is ignored because so many shells fail it; instead,
+        #      this build script avoids using the problematic construct.
 	: ignore 'Shell does not support "$(...)" with unbalanced ")".'
     fi
 fi
@@ -236,8 +236,8 @@ EOF
     cat <<EOF
 $0: $errmsg
 
-The NetBSD build system requires a shell that supports modern POSIX
-features, as well as the "local" keyword in functions (which is a
+This build system requires a shell that supports modern POSIX features,
+as well as the "local" keyword in functions (which is a
 widely-implemented but non-standardised feature).
 
 Please re-run this script under a suitable shell.  For example:
@@ -585,13 +585,8 @@ initdefaults()
 		;;
 	esac
 
-	# Find the version of NetBSD
-	#
-	DISTRIBVER="$(${HOST_SH} ${TOP}/sys/conf/osrelease.sh)"
-
-	# Set the BUILDSEED to NetBSD-"N"
-	#
-	setmakeenv BUILDSEED "MINIX-$(${HOST_SH} ${TOP}/sys/conf/osrelease.sh -m)"
+	# Optional build seed for reproducible builds.  Not set by default;
+	# use the -S flag to provide a custom value.
 
 	# Set MKARZERO to "yes"
 	#
@@ -1085,7 +1080,7 @@ Usage: ${progname} [-EhnorUuxy] [-a arch] [-B buildid] [-C cdextras]
     -o             Set MKOBJDIRS=no; do not create objdirs at start of build.
     -R release     Set RELEASEDIR to release.  [Default: releasedir]
     -r             Remove contents of TOOLDIR and DESTDIR before building.
-    -S seed        Set BUILDSEED to seed.  [Default: NetBSD-majorversion]
+    -S seed        Set BUILDSEED to seed.  [Default: unset]
     -T tools       Set TOOLDIR to tools.  If unset, and TOOLDIR is not set in
                    the environment, ${toolprefix}make will be (re)built
                    unconditionally.
@@ -1234,10 +1229,11 @@ parseoptions()
 			do_rebuildmake=true
 			;;
 
-		-S)
-			eval ${optargcmd}
-			setmakeenv BUILDSEED "${OPTARG}"
-			;;
+               -S)
+                       # Set a custom build seed for reproducible builds
+                       eval ${optargcmd}
+                       setmakeenv BUILDSEED "${OPTARG}"
+                       ;;
 
 		-T)
 			eval ${optargcmd}; resolvepath OPTARG
@@ -2056,7 +2052,7 @@ buildmodules()
 		buildmoduleswarned=true
 	fi
 
-	statusmsg "Building kernel modules for NetBSD/${MACHINE} ${DISTRIBVER}"
+	statusmsg "Building kernel modules for ${MACHINE}"
 	if [ "${MKOBJDIRS}" != "no" ]; then
 		make_in_dir sys/modules obj
 	fi
@@ -2066,7 +2062,7 @@ buildmodules()
 	make_in_dir sys/modules dependall
 	make_in_dir sys/modules install
 
-	statusmsg "Successful build of kernel modules for NetBSD/${MACHINE} ${DISTRIBVER}"
+	statusmsg "Successful build of kernel modules for ${MACHINE}"
 }
 
 installmodules()
@@ -2191,7 +2187,6 @@ main()
 	build_start=$(date)
 	statusmsg2 "${progname} command:" "$0 $*"
 	statusmsg2 "${progname} started:" "${build_start}"
-	statusmsg2 "MINIX version:"    "${DISTRIBVER}"
 	statusmsg2 "MACHINE:"          "${MACHINE}"
 	statusmsg2 "MACHINE_ARCH:"     "${MACHINE_ARCH}"
 	statusmsg2 "Build platform:"   "${uname_s} ${uname_r} ${uname_m}"
