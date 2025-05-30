@@ -59,7 +59,7 @@
 #	Populate ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/sets
 #	from ${DESTDIR}
 #   sourcesets:
-#	Populate ${RELEASEDIR}/source/sets from ${NETBSDSRCDIR}
+#	Populate ${RELEASEDIR}/source/sets from ${MINIXSRCDIR}
 #   syspkgs:
 #	Populate ${RELEASEDIR}/${RELEASEMACHINEDIR}/binary/syspkgs
 #	from ${DESTDIR}
@@ -274,7 +274,7 @@ includes-gnu:	.PHONY includes-lib
 #
 # This is referenced by _NETBSD_VERSION_DEPENDS in <bsd.own.mk>.
 #
-.include "${NETBSDSRCDIR}/etc/Makefile.params"
+.include "${MINIXSRCDIR}/etc/Makefile.params"
 CLEANDIRFILES+= params
 params: .EXEC
 	${_MKMSG_CREATE} params
@@ -411,7 +411,7 @@ installmodules: .PHONY .MAKE
 	@printf "make ${.TARGET} finished at: " && date
 
 #
-# Create sets from $DESTDIR or $NETBSDSRCDIR into $RELEASEDIR
+# Create sets from $DESTDIR or $MINIXSRCDIR into $RELEASEDIR
 #
 
 .for tgt in sets sourcesets syspkgs

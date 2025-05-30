@@ -29,7 +29,7 @@ MKDEPCXX?= CC=${CXX:Q} mkdep
 .endif # defined(__MINIX)
 
 .if ${MKREPRO:Uno} == "yes"
-CPPFLAGS+=	-Wp,-iremap,${NETBSDSRCDIR}:/usr/src
+CPPFLAGS+=	-Wp,-iremap,${MINIXSRCDIR}:/usr/src
 CPPFLAGS+=	-Wp,-iremap,${DESTDIR}/:/
 CPPFLAGS+=	-Wp,-iremap,${X11SRCDIR}:/usr/xsrc
 .endif

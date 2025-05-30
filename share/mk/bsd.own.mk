@@ -55,8 +55,8 @@ MKSKEY:=	no
 MKYP:=		no
 MKCROSSGDB:=	no
 
-WEAKALIASOVERRIDEPASS?=${NETBSDSRCDIR}/minix/llvm/bin/weak-alias-module-override.so
-GOLD_PLUGIN?=${NETBSDSRCDIR}/minix/llvm/bin/LLVMgold.so
+WEAKALIASOVERRIDEPASS?=${MINIXSRCDIR}/minix/llvm/bin/weak-alias-module-override.so
+GOLD_PLUGIN?=${MINIXSRCDIR}/minix/llvm/bin/LLVMgold.so
 
 # By default when running LLVM passes:
 #  -  do not run optimization while running LLVM passes
@@ -334,7 +334,8 @@ _SRC_TOP_!= cd "${.CURDIR}"; while :; do \
 #
 .if (${_SRC_TOP_} != "")		# {
 
-NETBSDSRCDIR?=	${_SRC_TOP_}
+MINIXSRCDIR?=  ${_SRC_TOP_}
+NETBSDSRCDIR?=  ${MINIXSRCDIR}
 
 .if !defined(_SRC_TOP_OBJ_)
 _SRC_TOP_OBJ_!=		cd "${_SRC_TOP_}" && ${PRINTOBJDIR}
@@ -342,9 +343,9 @@ _SRC_TOP_OBJ_!=		cd "${_SRC_TOP_}" && ${PRINTOBJDIR}
 .endif
 
 _NETBSD_VERSION_DEPENDS=	${_SRC_TOP_OBJ_}/params
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/sys/param.h
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/newvers.sh
-_NETBSD_VERSION_DEPENDS+=	${NETBSDSRCDIR}/sys/conf/osrelease.sh
+_NETBSD_VERSION_DEPENDS+=	${MINIXSRCDIR}/sys/sys/param.h
+_NETBSD_VERSION_DEPENDS+=	${MINIXSRCDIR}/sys/conf/newvers.sh
+_NETBSD_VERSION_DEPENDS+=	${MINIXSRCDIR}/sys/conf/osrelease.sh
 ${_SRC_TOP_OBJ_}/params: .NOTMAIN .OPTIONAL # created by top level "make build"
 
 .endif	# _SRC_TOP_ != ""		# }
@@ -863,7 +864,8 @@ MKDYNAMICROOT?=	yes
 #
 BSDSRCDIR?=	/usr/src
 BSDOBJDIR?=	/usr/obj
-NETBSDSRCDIR?=	${BSDSRCDIR}
+MINIXSRCDIR?=      ${BSDSRCDIR}
+NETBSDSRCDIR?=      ${MINIXSRCDIR}
 
 BINGRP?=	wheel
 BINOWN?=	root
@@ -1448,13 +1450,13 @@ SYMLINK?=	-l s
 
 METALOG?=	${DESTDIR}/METALOG
 METALOG.add?=	${TOOL_CAT} -l >> ${METALOG}
-.if (${_SRC_TOP_} != "")	# only set INSTPRIV if inside ${NETBSDSRCDIR}
+.if (${_SRC_TOP_} != "")	# only set INSTPRIV if inside ${MINIXSRCDIR}
 .if ${MKUNPRIVED} != "no"
 INSTPRIV.unpriv=-U -M ${METALOG} -D ${DESTDIR} -h sha256
 .else
 INSTPRIV.unpriv=
 .endif
-INSTPRIV?=	${INSTPRIV.unpriv} -N ${NETBSDSRCDIR}/etc
+INSTPRIV?=	${INSTPRIV.unpriv} -N ${MINIXSRCDIR}/etc
 .endif
 STRIPFLAG?=	
 
@@ -1535,8 +1537,8 @@ TOOL_GZIP_N=		${TOOL_GZIP} ${GZIP_N_FLAG}
 # Where X11 sources are and where it is installed to.
 #
 .if !defined(X11SRCDIR)
-.if exists(${NETBSDSRCDIR}/../xsrc)
-X11SRCDIR!=		cd "${NETBSDSRCDIR}/../xsrc" && pwd
+.if exists(${MINIXSRCDIR}/../xsrc)
+X11SRCDIR!=		cd "${MINIXSRCDIR}/../xsrc" && pwd
 .else
 X11SRCDIR=		/usr/xsrc
 .endif
@@ -1634,8 +1636,8 @@ X11LOADABLE?=			yes
 # Where extsrc sources are and where it is installed to.
 #
 .if !defined(EXTSRCSRCDIR)
-.if exists(${NETBSDSRCDIR}/../extsrc)
-EXTSRCSRCDIR!=		cd "${NETBSDSRCDIR}/../extsrc" && pwd
+.if exists(${MINIXSRCDIR}/../extsrc)
+EXTSRCSRCDIR!=		cd "${MINIXSRCDIR}/../extsrc" && pwd
 .else
 EXTSRCSRCDIR=		/usr/extsrc
 .endif

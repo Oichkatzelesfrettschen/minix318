@@ -75,11 +75,11 @@ DPADD+=	${SHLIB_VERSION_FILE}
 
 # Check for higher installed library versions.
 .if !defined(NOCHECKVER) && !defined(NOCHECKVER_${LIB}) && \
-	exists(${NETBSDSRCDIR}/lib/checkver)
+	exists(${MINIXSRCDIR}/lib/checkver)
 checkver:
 	@(cd "${.CURDIR}" && \
 	    HOST_SH=${HOST_SH:Q} AWK=${TOOL_AWK:Q} \
-	    ${HOST_SH} ${NETBSDSRCDIR}/lib/checkver -v ${SHLIB_VERSION_FILE} \
+	    ${HOST_SH} ${MINIXSRCDIR}/lib/checkver -v ${SHLIB_VERSION_FILE} \
 		    -d ${_DEST.OBJ} ${LIB})
 .endif
 .endif									# }
@@ -212,7 +212,7 @@ SHLIB_SHFLAGS+= -L ${DESTDIR}/usr/lib
 SHLIB_SHFLAGS+= -Wl,-plugin=${GOLD_PLUGIN} \
 		-Wl,-plugin-opt=-disable-opt
 
-SECTIONIFYPASS?=${NETBSDSRCDIR}/minix/llvm/bin/sectionify.so
+SECTIONIFYPASS?=${MINIXSRCDIR}/minix/llvm/bin/sectionify.so
 # dcvmoole: the following construction is a hack for libmagicrt.  For reasons
 # not entirely under our control, clang refuses to take .bc objects even when
 # using the gold linker, saying that LLVM IR code cannot be linked.  In order
