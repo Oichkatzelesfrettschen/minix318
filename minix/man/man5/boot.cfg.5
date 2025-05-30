@@ -170,7 +170,7 @@ Here is an example
 .Nm
 file:
 .Bd -literal -offset indent
-banner=Welcome to NetBSD
+banner=Welcome to MINIX
 banner==================
 banner=
 banner=Please choose an option from the following menu:
@@ -192,13 +192,13 @@ load=/miniroot.kmod
 .Ed
 .Pp
 N.B. Xen counts serial ports from com1 upwards, but
-.Nx
+.Mx
 counts from com0, so the appropriate device name must be used.
 Please see the Xen with serial console example above.
 .Pp
 This will clear the screen and display:
 .Bd -literal -offset indent
-Welcome to NetBSD
+Welcome to MINIX
 =================
 
 Please choose an option from the following menu:
@@ -227,7 +227,7 @@ There will be no timeout.
 The
 .Nm
 file appeared in
-.Nx 5.0 .
+MINIX 3.
 .Sh AUTHORS
 The
 .Nm
@@ -240,9 +240,9 @@ were written by
 Support for
 .Nm
 is currently for
-.Nx Ns /i386
+.Mx Ns /i386
 and
-.Nx Ns /amd64
+.Mx Ns /amd64
 only.
 It is hoped that its use will be extended to other appropriate ports that
 use the

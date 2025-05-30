@@ -34,14 +34,14 @@
 
 		# postinstall fix obsolete
 
-	..but only ever after the reboot!  Either way, deleting the old service
-	tool will avoid conflicts with the same-named NetBSD utility later on.
+       ..but only ever after the reboot!  Either way, deleting the old service
+       tool will avoid conflicts with the same-named utility later on.
 
 20170218:
 	Before starting a build, you will have to update your master.passwd and
 	group files in /etc.  This is needed because we have switched over from
-	the old set of MINIX users and groups to the new set of NetBSD users
-	and groups, as needed by various imported tools.  Follow these steps.
+       the old set of MINIX users and groups to the new set used by the
+       imported tools.  Follow these steps.
 
 	1. Make a back-up copy of your old master.passwd and group files:
 
@@ -112,10 +112,10 @@
 	ps(1) output and /proc as owned by "postfix".  This is no problem.
 
 20170122:
-	MINIX 3 did not import NetBSD's passwd.conf file, which makes the
-	userland fall back by default to the old, broken UNIX password hashing
-	algorithm. Among other problems, it truncates passwords to the first
-	eight characters.
+       Earlier versions of MINIX 3 did not ship a passwd.conf file, which
+       makes the userland fall back by default to the old, broken UNIX
+       password hashing algorithm.  Among other problems, it truncates
+       passwords to the first eight characters.
 
 	Please install /etc/passwd.conf and reset your passwords with passwd.
 
