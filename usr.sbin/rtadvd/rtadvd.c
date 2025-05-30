@@ -54,7 +54,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <syslog.h>
-#if defined(__NetBSD__) || defined(__minix)
+#if defined(__minix)
 #include <util.h>
 #endif
 #include <poll.h>
@@ -255,8 +255,8 @@ main(int argc, char *argv[])
 
 	sock_open();
 
-#if defined(__NetBSD__) || defined(__minix)
-	/* record the current PID */
+#if defined(__minix)
+        /* record the current PID */
 	if (pidfile(NULL) < 0) {
 		syslog(LOG_ERR,
 		    "<%s> failed to open the pid log file, run anyway.",
