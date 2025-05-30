@@ -32,7 +32,7 @@
 
 #include <sys/cdefs.h>
 #ifndef lint
-#ifdef __NetBSD__
+#ifdef __minix
 __RCSID("$NetBSD: fast_ipsec.c,v 1.20 2013/04/15 21:20:39 christos Exp $");
 #endif
 #endif /* not lint*/

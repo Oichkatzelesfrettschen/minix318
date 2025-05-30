@@ -104,27 +104,31 @@ void utrace(struct ut *, int);
 #endif /* defined(__minix) */
 
 #include <sys/types.h>
-#if defined(__NetBSD__)
-#   define malloc_minsize               16U
-#   define HAS_UTRACE
-#   define UTRACE_LABEL "malloc",
+#ifdef __minix /* MINIX-specific tracing and locking */
+#define malloc_minsize 16U
+#define HAS_UTRACE
+#define UTRACE_LABEL "malloc",
 #include <sys/cdefs.h>
 #include "extern.h"
 #if defined(LIBC_SCCS) && !defined(lint)
-__RCSID("$NetBSD: malloc.c,v 1.56 2014/09/18 13:58:20 christos Exp $");
+    __RCSID("$NetBSD: malloc.c,v 1.56 2014/09/18 13:58:20 christos Exp $");
 #endif /* LIBC_SCCS and not lint */
-int utrace(const char *, void *, size_t);
+    int utrace(const char *, void *, size_t);
 
 #include <reentrant.h>
-extern int __isthreaded;
-static mutex_t thread_lock = MUTEX_INITIALIZER;
-#define _MALLOC_LOCK()	if (__isthreaded) mutex_lock(&thread_lock);
-#define _MALLOC_UNLOCK()	if (__isthreaded) mutex_unlock(&thread_lock);
-#endif /* __NetBSD__ */
+    extern int __isthreaded;
+    static mutex_t thread_lock = MUTEX_INITIALIZER;
+#define _MALLOC_LOCK()                                                     \
+      if (__isthreaded)                                                        \
+        mutex_lock(&thread_lock);
+#define _MALLOC_UNLOCK()                                                   \
+      if (__isthreaded)                                                        \
+        mutex_unlock(&thread_lock);
+#endif /* __minix */
 
 #if defined(__sparc__) && defined(sun)
-#   define malloc_minsize		16U
-#   define MAP_ANON			(0)
+#define malloc_minsize 16U
+#define MAP_ANON (0)
     static int fdzero;
 #   define MMAP_FD	fdzero
 #   define INIT_MMAP() \

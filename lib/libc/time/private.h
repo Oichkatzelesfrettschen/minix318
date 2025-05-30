@@ -90,7 +90,7 @@
 ** Nested includes
 */
 
-#if !defined(__NetBSD__) && !defined(__minix)
+#ifndef __minix
 /* Avoid clashes with NetBSD by renaming NetBSD's declarations.  */
 #define localtime_rz sys_localtime_rz
 #define mktime_z sys_mktime_z
@@ -406,7 +406,7 @@ void tzset(void);
 extern char *	asctime_r(struct tm const *restrict, char *restrict);
 #endif
 
-#if defined(USG_COMPAT) && !defined(__NetBSD__) && !defined(__minix)
+#if defined(USG_COMPAT) && !defined(__minix)
 # ifndef timezone
 extern long timezone;
 # endif
@@ -449,9 +449,8 @@ time_t posix2time(time_t);
 
 /* Infer TM_ZONE on systems where this information is known, but suppress
    guessing if NO_TM_ZONE is defined.  Similarly for TM_GMTOFF.  */
-#if (defined __GLIBC__ \
-     || defined __FreeBSD__ || defined __minix || defined __NetBSD__ || defined __OpenBSD__ \
-     || (defined __APPLE__ && defined __MACH__))
+#if (defined __GLIBC__ || defined __FreeBSD__ || defined __minix ||            \
+     defined __OpenBSD__ || (defined __APPLE__ && defined __MACH__))
 # if !defined TM_GMTOFF && !defined NO_TM_GMTOFF
 #  define TM_GMTOFF tm_gmtoff
 # endif
@@ -468,7 +467,7 @@ time_t posix2time(time_t);
 ** is not done here.  What we call 'struct state' NetBSD calls
 ** 'struct __state', but this is a private name so it doesn't matter.
 */
-#if !defined(__NetBSD__) && !defined(__minix)
+#ifndef __minix
 #if NETBSD_INSPIRED
 typedef struct state *timezone_t;
 struct tm *localtime_rz(timezone_t restrict, time_t const *restrict,

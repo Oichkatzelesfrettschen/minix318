@@ -36,10 +36,10 @@ __RCSID("$NetBSD: strfmon.c,v 1.10 2012/03/21 14:19:15 christos Exp $");
 #endif
 #endif /* LIBC_SCCS and not lint */
 
-#if defined(__NetBSD__) || defined(__minix)
+#ifdef __minix /* MINIX uses namespace wrappers */
 #include "namespace.h"
 #include <monetary.h>
-#endif
+#endif /* __minix */
 
 #include <sys/types.h>
 #include <assert.h>
