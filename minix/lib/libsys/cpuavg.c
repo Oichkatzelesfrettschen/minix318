@@ -263,14 +263,15 @@ cpuavg_getstats(const struct cpuavg * ca_orig, uint32_t * cpticks,
 
 	*cpticks = ca.ca_run >> FSHIFT;
 
-	/*
-	 * NetBSD's estcpu value determines a scheduling queue, and decays to
-	 * 10% in 5*(the current load average) seconds.  Our 'estcpu' simply
-	 * reports the process's percentage of CPU usage in the last second,
-	 * thus yielding a value in the range 0..100 with a decay of 100% after
-	 * one second.  This should be good enough for most practical purposes.
-	 */
-	*estcpu = (ca.ca_last / hz * 100) >> FSHIFT;
+        /*
+         * In traditional BSD kernels, the 'estcpu' value determines a
+         * scheduling queue and decays to 10% in 5*(the current load average)
+         * seconds.  MINIX reports the process's percentage of CPU usage in the
+         * last second instead, yielding a value in the range 0..100 with a
+         * decay of 100% after one second.  This should be good enough for most
+         * practical purposes.
+         */
+        *estcpu = (ca.ca_last / hz * 100) >> FSHIFT;
 
 	return ca.ca_avg;
 }
