@@ -134,7 +134,7 @@ static const wchar_t char_shell[] = L"'`\";&<>()|{}]\\$!^~";
 static const wchar_t char_glob[] = L"*?[#";
 
 #if !HAVE_NBTOOL_CONFIG_H
-#if !defined(__NetBSD__) && ! defined(__minix)
+#ifndef __minix
 /*
  * On NetBSD MB_LEN_MAX is currently 32 which does not fit on any integer
  * integral type and it is probably wrong, since currently the maximum
@@ -154,7 +154,7 @@ static const wchar_t char_glob[] = L"*?[#";
 #endif
 #endif /* __FreeBSD__ */
 CTASSERT(MB_LEN_MAX <= sizeof(uint64_t));
-#endif /* !__NetBSD__ */
+#endif /* !__minix */
 #endif
 
 /*

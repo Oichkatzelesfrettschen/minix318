@@ -64,7 +64,7 @@
 #if 0
 static char sccsid[] = "from: @(#)inet.c	8.4 (Berkeley) 4/20/94";
 #else
-#ifdef __NetBSD__
+#ifdef __minix
 __RCSID("$NetBSD: pfkey.c,v 1.1 2012/01/06 14:21:16 drochner Exp $");
 #endif
 #endif

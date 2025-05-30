@@ -61,7 +61,7 @@ void usage(void)
 	exit(1);
 }
 
-#if HAVE_NBTOOL_CONFIG_H && !defined(__NetBSD__)
+#if HAVE_NBTOOL_CONFIG_H && defined(__minix)
 #define	arc4random() rand()
 #endif
 

@@ -97,13 +97,13 @@
 
 /* LINTLIBRARY */
 
-#if defined(__NetBSD__) || defined(__minix)
+#ifdef __minix
 #  define xutrace(a, b)		utrace("malloc", (a), (b))
 #  define __DECONST(x, y)	((x)__UNCONST(y))
 #  define NO_TLS
 #else
 #  define xutrace(a, b)		utrace((a), (b))
-#endif	/* __NetBSD__ */
+#endif /* __minix */
 
 /*
  * MALLOC_PRODUCTION disables assertions and statistics gathering.  It also
@@ -159,7 +159,7 @@ __RCSID("$NetBSD: jemalloc.c,v 1.38 2015/07/26 17:21:55 martin Exp $");
 #include <strings.h>
 #include <unistd.h>
 
-#ifdef __NetBSD__
+#ifdef __minix
 #  include <reentrant.h>
 #  include "extern.h"
 
@@ -184,7 +184,7 @@ __strerror_r(int e, char *s, size_t l)
 	}
 	return slen >= l ? ERANGE : rval;
 }
-#endif
+#endif /* __minix */
 
 #ifdef __FreeBSD__
 #define STRERROR_R(a, b, c)	strerror_r(a, b, c);
@@ -941,11 +941,11 @@ static bool	malloc_init_hard(void);
  * Begin mutex.
  */
 
-#ifdef __NetBSD__
+#ifdef __minix
 #define	malloc_mutex_init(m)	mutex_init(m, NULL)
 #define	malloc_mutex_lock(m)	mutex_lock(m)
 #define	malloc_mutex_unlock(m)	mutex_unlock(m)
-#else	/* __NetBSD__ */
+#else  /* __minix */
 static inline void
 malloc_mutex_init(malloc_mutex_t *a_mutex)
 {
@@ -969,7 +969,7 @@ malloc_mutex_unlock(malloc_mutex_t *a_mutex)
 	if (__isthreaded)
 		_SPINUNLOCK(&a_mutex->lock);
 }
-#endif	/* __NetBSD__ */
+#endif /* __minix */
 
 /*
  * End mutex.
@@ -3952,7 +3952,7 @@ free(void *ptr)
 /*
  * Begin non-standard functions.
  */
-#ifndef __NetBSD__
+#ifndef __minix
 size_t
 malloc_usable_size(const void *ptr)
 {

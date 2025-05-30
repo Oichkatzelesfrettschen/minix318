@@ -229,7 +229,7 @@ static int     	  numCommands; 	    /* The number of commands actually printed
 #define DEFSHELL_INDEX 0	/* DEFSHELL_INDEX_CUSTOM or DEFSHELL_INDEX_SH */
 #endif /* !DEFSHELL_INDEX */
 
-static Shell    shells[] = {
+static Shell shells[] = {
 #ifdef DEFSHELL_CUSTOM
     /*
      * An sh-compatible shell with a non-standard name.
@@ -238,60 +238,106 @@ static Shell    shells[] = {
      * non-portable features that might not be supplied by all
      * sh-compatible shells.
      */
-{
-    DEFSHELL_CUSTOM,
-    FALSE, "", "", "", 0,
-    FALSE, "echo \"%s\"\n", "%s\n", "{ %s \n} || exit $?\n", "'\n'", '#',
-    "",
-    "",
-},
+    {
+        DEFSHELL_CUSTOM,
+        FALSE,
+        "",
+        "",
+        "",
+        0,
+        FALSE,
+        "echo \"%s\"\n",
+        "%s\n",
+        "{ %s \n} || exit $?\n",
+        "'\n'",
+        '#',
+        "",
+        "",
+    },
 #endif /* DEFSHELL_CUSTOM */
-    /*
-     * SH description. Echo control is also possible and, under
-     * sun UNIX anyway, one can even control error checking.
-     */
-{
-    "sh",
-    FALSE, "", "", "", 0,
-    FALSE, "echo \"%s\"\n", "%s\n", "{ %s \n} || exit $?\n", "'\n'", '#',
-#if defined(MAKE_NATIVE) && defined(__NetBSD__)
-    "q",
+       /*
+        * SH description. Echo control is also possible and, under
+        * sun UNIX anyway, one can even control error checking.
+        */
+    {
+        "sh",
+        FALSE,
+        "",
+        "",
+        "",
+        0,
+        FALSE,
+        "echo \"%s\"\n",
+        "%s\n",
+        "{ %s \n} || exit $?\n",
+        "'\n'",
+        '#',
+#if defined(MAKE_NATIVE) && defined(__minix)
+        "q",
 #else
     "",
 #endif
-    "",
-},
+        "",
+    },
     /*
-     * KSH description. 
+     * KSH description.
      */
-{
-    "ksh",
-    TRUE, "set +v", "set -v", "set +v", 6,
-    FALSE, "echo \"%s\"\n", "%s\n", "{ %s \n} || exit $?\n", "'\n'", '#',
-    "v",
-    "",
-},
+    {
+        "ksh",
+        TRUE,
+        "set +v",
+        "set -v",
+        "set +v",
+        6,
+        FALSE,
+        "echo \"%s\"\n",
+        "%s\n",
+        "{ %s \n} || exit $?\n",
+        "'\n'",
+        '#',
+        "v",
+        "",
+    },
     /*
      * CSH description. The csh can do echo control by playing
      * with the setting of the 'echo' shell variable. Sadly,
      * however, it is unable to do error control nicely.
      */
-{
-    "csh",
-    TRUE, "unset verbose", "set verbose", "unset verbose", 10,
-    FALSE, "echo \"%s\"\n", "csh -c \"%s || exit 0\"\n", "", "'\\\n'", '#',
-    "v", "e",
-},
+    {
+        "csh",
+        TRUE,
+        "unset verbose",
+        "set verbose",
+        "unset verbose",
+        10,
+        FALSE,
+        "echo \"%s\"\n",
+        "csh -c \"%s || exit 0\"\n",
+        "",
+        "'\\\n'",
+        '#',
+        "v",
+        "e",
+    },
     /*
      * UNKNOWN.
      */
-{
-    NULL,
-    FALSE, NULL, NULL, NULL, 0,
-    FALSE, NULL, NULL, NULL, NULL, 0,
-    NULL, NULL,
-}
-};
+    {
+        NULL,
+        FALSE,
+        NULL,
+        NULL,
+        NULL,
+        0,
+        FALSE,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        0,
+        NULL,
+        NULL,
+    }};
 static Shell *commandShell = &shells[DEFSHELL_INDEX]; /* this is the shell to
 						   * which we pass all
 						   * commands in the Makefile.
