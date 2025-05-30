@@ -9,7 +9,7 @@
 #include <sys/sched.h> /* for CP_*, CPUSTATES */
 #if CPUSTATES != MINIX_CPUSTATES
 /* If this breaks, the code in this file may have to be adapted accordingly. */
-#error "MINIX_CPUSTATES value is out of sync with NetBSD's!"
+#error "MINIX_CPUSTATES value is out of sync with CPUSTATES!"
 #endif
 
 #ifdef USE_APIC

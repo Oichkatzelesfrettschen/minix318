@@ -344,11 +344,11 @@ int rw_pipe(int rw_flag, endpoint_t usr_e, struct filp *f, int callnr, int fd,
 	if (r == SUSPEND)
 		pipe_suspend(callnr, fd, buf, nbytes, cum_io);
 
-	/* If pipe_check returns an error instead of suspending the call, we
-	 * return that error, even if we are resuming a partially completed
-	 * operation (ie, a large blocking write), to match NetBSD's behavior.
-	 */
-	return(r);
+        /* If pipe_check returns an error instead of suspending the call, we
+         * return that error, even if we are resuming a partially completed
+         * operation (ie, a large blocking write), to follow MINIX semantics.
+         */
+        return(r);
   }
 
   size = r;

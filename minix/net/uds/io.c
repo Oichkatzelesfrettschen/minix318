@@ -520,12 +520,13 @@ uds_send_peer(struct udssock * uds, const struct sockaddr * addr,
 		} else
 			peer = uds->uds_link;
 
-		/*
-		 * If the receiving end will never receive this packet, we
-		 * might as well not send it, so drop it immeiately.  Indicate
-		 * as such to the caller, using NetBSD's chosen error code.
-		 */
-		if (uds_is_shutdown(peer, SFL_SHUT_RD))
+                /*
+                 * If the receiving end will never receive this packet, we
+                 * might as well not send it, so drop it immediately.  Indicate
+                 * this condition to the caller using the MINIX error code for a
+                 * full buffer.
+                 */
+                if (uds_is_shutdown(peer, SFL_SHUT_RD))
 			return ENOBUFS;
 	} else {
 		assert(uds_has_conn(uds));
@@ -669,9 +670,10 @@ uds_send_data(struct udssock * uds, struct udssock * peer,
 	if (seglen > avail) {
 		assert(uds_get_type(uds) == SOCK_DGRAM);
 
-		/* Drop the packet, borrowing NetBSD's chosen error code. */
-		return ENOBUFS;
-	}
+                /* Drop the packet and return the MINIX error code for
+                 * insufficient buffer space. */
+                return ENOBUFS;
+        }
 
 	/*
 	 * Generate the full segment, but do not yet update the buffer head.
