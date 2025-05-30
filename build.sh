@@ -571,7 +571,10 @@ initdefaults()
 
 	# Set source directories
 	#
-	setmakeenv NETBSDSRCDIR "${TOP}"
+        # Define source tree location
+        setmakeenv MINIXSRCDIR "${TOP}"
+        # Legacy variable for compatibility with NetBSD build scripts
+        setmakeenv NETBSDSRCDIR "${MINIXSRCDIR}"
 
 	# Make sure KERNOBJDIR is an absolute path if defined
 	#
@@ -1971,7 +1974,8 @@ diskimage()
 	kernel="${kerneldir}/netbsd-${ARG}.gz"
 	[ -f "${kernel}" ] ||
 	    bomb "The kernel ${kernel} must be built first"
-	make_in_dir "${NETBSDSRCDIR}/etc" "smp_${1}"
+        # Build disk image using source tree paths
+        make_in_dir "${MINIXSRCDIR}/etc" "smp_${1}"
 }
 
 buildkernel()
@@ -2123,8 +2127,8 @@ dorump()
 	export RUMPKERN_ONLY=1
 	# create obj and distrib dirs
 	if [ "${MKOBJDIRS}" != "no" ]; then
-		make_in_dir "${NETBSDSRCDIR}/etc/mtree" obj
-		make_in_dir "${NETBSDSRCDIR}/sys/rump" obj
+                make_in_dir "${MINIXSRCDIR}/etc/mtree" obj
+                make_in_dir "${MINIXSRCDIR}/sys/rump" obj
 	fi
 	${runcmd} "${makewrapper}" ${parallel} do-distrib-dirs \
 	    || bomb 'could not create distrib-dirs'
@@ -2137,13 +2141,13 @@ dorump()
 		setmakeenv NOPROFILE 1
 	fi
 	for cmd in ${targlist} ; do
-		make_in_dir "${NETBSDSRCDIR}/sys/rump" ${cmd}
+                make_in_dir "${MINIXSRCDIR}/sys/rump" ${cmd}
 	done
 
 	# if we just wanted to build & install rump, we're done
 	[ "${1}" != "rumptest" ] && return
 
-	${runcmd} cd "${NETBSDSRCDIR}/sys/rump/librump/rumpkern" \
+        ${runcmd} cd "${MINIXSRCDIR}/sys/rump/librump/rumpkern" \
 	    || bomb "cd to rumpkern failed"
 	md_quirks=`${runcmd} "${makewrapper}" -V '${_SYMQUIRK}'`
 	# one little, two little, three little backslashes ...

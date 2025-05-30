@@ -544,11 +544,11 @@ is included.  These files may define any of the variables described below.
 <bsd.own.mk> sets the following variables, if they are not already defined
 (defaults are in brackets):
 
-NETBSDSRCDIR	Top of the NetBSD source tree.
-		If _SRC_TOP_ != "", that will be used as the default,
-		otherwise BSDSRCDIR will be used as the default.
-		Various makefiles within the NetBSD source tree will
-		use this to reference the top level of the source tree.
+MINIXSRCDIR     Top of the Minix source tree.
+If _SRC_TOP_ != "", that will be used as the default,
+otherwise BSDSRCDIR will be used as the default.
+Various makefiles within the source tree will
+use this to reference the top level of the source tree.
 
 _SRC_TOP_	Top of the system source tree, as determined by <bsd.own.mk>
 		based on the presence of tools/ and build.sh.  This variable
@@ -560,10 +560,10 @@ _NETBSD_VERSION_DEPENDS
 		the version of the NetBSD being built.  This is
 		defined only if the current directory appears
 		to be inside a NetBSD source tree.  The list of
-		files includes ${NETBSDSRCDIR}/sys/sys/param.h
+		files includes ${MINIXSRCDIR}/sys/sys/param.h
 		(which contains the kernel version number),
-		${NETBSDSRCDIR}/sys/conf/newvers.sh and
-		${NETBSDSRCDIR}/sys/conf/osrelease.sh (which
+		${MINIXSRCDIR}/sys/conf/newvers.sh and
+		${MINIXSRCDIR}/sys/conf/osrelease.sh (which
 		interpret the information in sys/sys/param.h), and
 		${_SRC_TOP_OBJ_}/params (which is an optional file,
 		created by "make build" in ${_SRC_TOP_}/Makefile,
@@ -639,7 +639,7 @@ NLSOWN		Native Language Support files owner.  [root]
 
 NLSMODE		Native Language Support files mode.  [${NONBINMODE}]
 
-X11SRCDIR	The path to the xsrc tree.  [${NETBSDSRCDIR}/../xsrc,
+X11SRCDIR	The path to the xsrc tree.  [${MINIXSRCDIR}/../xsrc,
 		if that exists; otherwise /usr/xsrc]
 
 X11SRCDIR.local	The path to the local X11 src tree.  [${X11SRCDIR}/local]

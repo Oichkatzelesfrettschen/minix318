@@ -47,7 +47,7 @@ CPPFLAGS += -D_MINIX_SYSTEM=1
 # on them, unless they have specifically requested to be built without bitcode.
 .if ${USE_BITCODE:Uno} == "yes" && ${USE_MAGIC:Uno} == "yes"
 LIBMAGICST?= ${DESTDIR}${LIBDIR}/libmagicrt.bcc
-MAGICPASS?= ${NETBSDSRCDIR}/minix/llvm/bin/magic.so
+MAGICPASS?= ${MINIXSRCDIR}/minix/llvm/bin/magic.so
 
 DPADD+= ${LIBMAGICST} ${MAGICPASS}
 
@@ -61,7 +61,7 @@ OPTFLAGS+= -load ${MAGICPASS} -magic ${MAGICFLAGS}
 # For MKASR builds, generate an additional set of rerandomized service
 # binaries.
 .if ${USE_ASR:Uno} == "yes"
-ASRPASS?= ${NETBSDSRCDIR}/minix/llvm/bin/asr.so
+ASRPASS?= ${MINIXSRCDIR}/minix/llvm/bin/asr.so
 ASRCOUNT?= 3
 ASRDIR?= /usr/service/asr
 

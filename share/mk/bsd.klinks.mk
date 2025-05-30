@@ -7,8 +7,8 @@ KLINK_MACHINE?=	${MACHINE}
 
 ##### Default values
 .if !defined(S)
-.if defined(NETBSDSRCDIR)
-S=	${NETBSDSRCDIR}/sys
+.if defined(MINIXSRCDIR)
+S=	${MINIXSRCDIR}/sys
 .elif defined(BSDSRCDIR)
 S=	${BSDSRCDIR}/sys
 .else

@@ -117,7 +117,7 @@ ${HOSTPROG}: ${OBJS} ${DPADD}
 	${_MKTARGET_LINK}
 	${HOST_LINK.c} ${HOST_LDSTATIC} -o ${.TARGET} ${OBJS} ${LDADD}
 .if !empty(.MAKE.OS:M*CYGWIN*)
-	${HOST_SH} ${NETBSDSRCDIR}/tools/binstall/mkmanifest ${HOSTPROG}
+	${HOST_SH} ${MINIXSRCDIR}/tools/binstall/mkmanifest ${HOSTPROG}
 .endif
 
 
