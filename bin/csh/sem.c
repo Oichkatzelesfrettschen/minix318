@@ -1,5 +1,3 @@
-/* $NetBSD: sem.c,v 1.29 2011/08/29 14:51:17 joerg Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -33,8 +31,6 @@
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)sem.c	8.1 (Berkeley) 5/31/93";
-#else
-__RCSID("$NetBSD: sem.c,v 1.29 2011/08/29 14:51:17 joerg Exp $");
 #endif
 #endif /* not lint */
 
@@ -578,7 +574,6 @@ doio(struct command *t, int *pipein, int *pipeout)
 	if ((flags & F_APPEND) &&
 #ifdef O_APPEND
 	    (fd = open(tmp, O_WRONLY | O_APPEND)) >= 0);
-#else
 	    (fd = open(tmp, O_WRONLY)) >= 0)
 	    (void)lseek(1, (off_t) 0, SEEK_END);
 #endif

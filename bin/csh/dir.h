@@ -1,5 +1,3 @@
-/* $NetBSD: dir.h,v 1.8 2003/08/07 09:05:04 agc Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.

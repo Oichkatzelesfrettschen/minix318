@@ -1,5 +1,3 @@
-/* $NetBSD: csh.h,v 1.26 2013/07/16 17:47:43 christos Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -66,7 +64,6 @@
 typedef short Char;
 
 #define SAVE(a) (Strsave(str2short(a)))
-#else
 typedef char Char;
 
 #define SAVE(a) (strsave(a))
@@ -207,7 +204,6 @@ sig_t parterm;			/* Parents terminate catch */
 #define	CHAR ((Char)0xff)
 #define	QUOTE ((Char)0x8000)	/* 16nth char bit used for 'ing */
 #define	TRIM ((Char)0x7fff)	/* Mask to strip quote bit */
-#else
 #define	CHAR ((Char)0x7f)
 #define	QUOTE ((Char)0x80)	/* Eighth char bit used for 'ing */
 #define	TRIM ((Char)0x7f)	/* Mask to strip quote bit */
@@ -501,7 +497,6 @@ Char HISTSUB;			/* auto-substitute character */
 #define blk2short(a)		saveblk(a)
 #define short2blk(a)		saveblk(a)
 #define short2str(a)		strip(a)
-#else
 #define Strchr(a, b)		s_strchr(a, b)
 #define Strrchr(a, b)		s_strrchr(a, b)
 #define Strcat(a, b)		s_strcat(a, b)

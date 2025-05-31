@@ -1,5 +1,3 @@
-/* $NetBSD: exp.c,v 1.20 2009/02/14 07:12:29 lukem Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -33,8 +31,6 @@
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)exp.c	8.1 (Berkeley) 5/31/93";
-#else
-__RCSID("$NetBSD: exp.c,v 1.20 2009/02/14 07:12:29 lukem Exp $");
 #endif
 #endif /* not lint */
 
@@ -518,7 +514,6 @@ exp6(Char ***vp, int ignore)
 	    case 'l':
 #ifdef S_ISLNK
 		i = S_ISLNK(stb.st_mode);
-#else
 		i = 0;
 #endif
 		break;
@@ -528,14 +523,12 @@ exp6(Char ***vp, int ignore)
 	    case 'p':
 #ifdef S_ISFIFO
 		i = S_ISFIFO(stb.st_mode);
-#else
 		i = 0;
 #endif
 		break;
 	    case 's':
 #ifdef S_ISSOCK
 		i = S_ISSOCK(stb.st_mode);
-#else
 		i = 0;
 #endif
 		break;

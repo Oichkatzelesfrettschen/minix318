@@ -1,5 +1,3 @@
-/* $NetBSD: func.c,v 1.40 2013/07/16 17:47:43 christos Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -33,8 +31,6 @@
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)func.c	8.1 (Berkeley) 5/31/93";
-#else
-__RCSID("$NetBSD: func.c,v 1.40 2013/07/16 17:47:43 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -951,7 +947,6 @@ dosetenv(Char **v, struct command *t)
 	for (k = 0200; k <= 0377 && !Isprint(k); k++)
 		continue;
 	AsciiOnly = k > 0377;
-#else
 	AsciiOnly = 0;
 #endif				/* NLS */
     }
@@ -997,7 +992,6 @@ dounsetenv(Char **v, struct command *t)
 		    for (k = 0200; k <= 0377 && !Isprint(k); k++)
 			continue;
 		    AsciiOnly = k > 0377;
-#else
 		    AsciiOnly = getenv("LANG") == NULL &&
 			getenv("LC_CTYPE") == NULL;
 #endif				/* NLS */

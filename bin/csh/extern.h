@@ -1,5 +1,3 @@
-/* $NetBSD: extern.h,v 1.29 2013/07/16 17:47:43 christos Exp $ */
-
 /*-
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -58,7 +56,6 @@ int vis_fputc(int, FILE *);
 
 #ifdef PROF
 __dead void done(int);
-#else
 __dead void xexit(int);
 #endif
 

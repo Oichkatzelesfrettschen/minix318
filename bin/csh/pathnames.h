@@ -1,5 +1,3 @@
-/* $NetBSD: pathnames.h,v 1.8 2003/08/07 09:05:06 agc Exp $ */
-
 /*
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.

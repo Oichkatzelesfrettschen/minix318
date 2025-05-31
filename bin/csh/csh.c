@@ -1,5 +1,3 @@
-/* $NetBSD: csh.c,v 1.46 2013/07/16 17:47:43 christos Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -38,8 +36,6 @@ __COPYRIGHT("@(#) Copyright (c) 1980, 1991, 1993\
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)csh.c	8.2 (Berkeley) 10/12/93";
-#else
-__RCSID("$NetBSD: csh.c,v 1.46 2013/07/16 17:47:43 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -185,7 +181,6 @@ main(int argc, char *argv[])
 	    continue;
 	AsciiOnly = k > 0377;
     }
-#else
     AsciiOnly = getenv("LANG") == NULL && getenv("LC_CTYPE") == NULL;
 #endif				/* NLS */
 
@@ -257,7 +252,6 @@ main(int argc, char *argv[])
     if ((ecp = getenv("PATH")) == NULL) {
 #ifdef _PATH_DEFPATH
 	importpath(str2short(_PATH_DEFPATH));
-#else
 	setq(STRpath, defaultpath(), &shvhed);
 #endif
     } else {
@@ -1304,7 +1298,6 @@ initdesc(void)
 __dead void
 #ifdef PROF
 done(int i)
-#else
 xexit(int i)
 #endif
 {

@@ -1,5 +1,3 @@
-/* $NetBSD: char.c,v 1.10 2012/01/19 02:42:53 christos Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -33,8 +31,6 @@
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)char.c	8.1 (Berkeley) 5/31/93";
-#else
-__RCSID("$NetBSD: char.c,v 1.10 2012/01/19 02:42:53 christos Exp $");
 #endif
 #endif /* not lint */
 

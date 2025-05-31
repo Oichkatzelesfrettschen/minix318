@@ -1,5 +1,3 @@
-/* $NetBSD: char.h,v 1.9 2012/01/19 02:42:53 christos Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -83,7 +81,6 @@ extern unsigned char _cmap_lower[], _cmap_upper[];
 #define Isalnum(c)	(((c) & QUOTE) ? 0 : isalnum((unsigned char) (c)))
 #define Iscntrl(c) 	(((c) & QUOTE) ? 0 : iscntrl((unsigned char) (c)))
 #define Isprint(c) 	(((c) & QUOTE) ? 0 : isprint((unsigned char) (c)))
-#else
 #define Isspace(c)	cmap(c, _SP|_NL)
 #define Isdigit(c)	cmap(c, _DIG)
 #define Isalpha(c)	(cmap(c,_LET) && !(((c) & META) && AsciiOnly))

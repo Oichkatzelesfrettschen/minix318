@@ -1,5 +1,3 @@
-/* $NetBSD: lex.c,v 1.31 2013/08/06 05:42:43 christos Exp $ */
-
 /*-
  * Copyright (c) 1980, 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -33,8 +31,6 @@
 #ifndef lint
 #if 0
 static char sccsid[] = "@(#)lex.c	8.1 (Berkeley) 5/31/93";
-#else
-__RCSID("$NetBSD: lex.c,v 1.31 2013/08/06 05:42:43 christos Exp $");
 #endif
 #endif /* not lint */
 
@@ -1528,7 +1524,6 @@ again:
 	feobp += c;
 #ifndef FILEC
 	goto again;
-#else
 	if (filec && !intty)
 	    goto again;
 #endif
