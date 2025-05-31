@@ -5,7 +5,7 @@
 
 YHEADER=1
 PROG=	sh
-SHSRCS=	alias.c cd.c echo.c error.c eval.c exec.c expand.c \
+SHSRCS=	alias.c cd.c error.c eval.c exec.c expand.c \
 	histedit.c input.c jobs.c mail.c main.c memalloc.c miscbltin.c \
 	mystring.c options.c parser.c redir.c show.c trap.c output.c var.c \
 	test.c kill.c syntax.c
@@ -49,7 +49,9 @@ CPPFLAGS+=-DTINY
 SRCS+=printf.c
 .endif
 
-.PATH:	${.CURDIR}/bltin ${NETBSDSRCDIR}/bin/test \
+# Search for builtin command sources in the standard locations
+# NetBSD's bltin directory has been removed.
+.PATH:	${NETBSDSRCDIR}/bin/test \
 	${NETBSDSRCDIR}/usr.bin/printf \
 	${NETBSDSRCDIR}/bin/kill
 
@@ -81,7 +83,6 @@ NBCOMPATLIB=   -L${TOOLDIR}/lib -lnbcompat
 .endif
 
 .if !defined(__MINIX)
-SUBDIR+=USD.doc
 .endif # !defined(__MINIX)
 
 COPTS.printf.c = -Wno-format-nonliteral
