@@ -1,7 +1,5 @@
 #!/bin/sh
 #
-# $NetBSD: zgrep,v 1.9 2015/07/06 12:05:40 nakayama Exp $
-#
 # Copyright (c) 2003 Thomas Klausner.
 #
 # Redistribution and use in source and binary forms, with or without
