@@ -4,13 +4,7 @@
 .include <bsd.init.mk>
 
 # missing: eqnchar.7 man.7 ms.7 term.7
-
-# MINIX:
-MAN=	\
-	nls.7 \
-	\
-	
-
+MAN=
 .if !defined(__MINIX)
 CLEANFILES=	tests.7
 .if ${MKKYUA} != "no"

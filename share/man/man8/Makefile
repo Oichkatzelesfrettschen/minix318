@@ -2,12 +2,7 @@
 #	from: @(#)Makefile	8.1 (Berkeley) 6/5/93
 
 # MINIX:
-MAN=	\
-	\
-	\
-	\
-	rc.8 rc.subr.8 \
-	\
+MAN=
 	
 #MLINKS+=MAKEDEV.8 makedev.8
 #MLINKS+=MAKEDEV.local.8 makedev.local.8
@@ -17,9 +12,6 @@ MAN=	\
 #MLINKS+=compat_svr4.8 compat_xenix.8
 #MLINKS+=compat_netbsd32.8 netbsd32.8
 #MLINKS+=nis.8 yp.8
-MLINKS+=rc.8 rc.d.8
-MLINKS+=rc.8 rc.local.8
-MLINKS+=rc.8 rc.shutdown.8
 
 .if !defined(__MINIX)
 SUBDIR= man8.acorn26 man8.acorn32 man8.alpha man8.amiga man8.atari \
