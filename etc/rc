@@ -1,6 +1,5 @@
 #!/bin/sh
 #
-# $NetBSD: rc,v 1.170 2014/07/29 20:39:16 apb Exp $
 #
 # rc --
 #	Run the scripts in /etc/rc.d with rcorder, and log output

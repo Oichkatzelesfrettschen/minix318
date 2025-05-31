@@ -1,4 +1,3 @@
-#	$NetBSD: Makefile.inc,v 1.10 2011/05/26 12:56:29 joerg Exp $
 
 .if !defined(__MAKEFILE_INC_INCLUDED__)
 __MAKEFILE_INC_INCLUDED__=1

@@ -1,4 +1,3 @@
-#	$NetBSD: Makefile,v 1.424 2015/08/31 06:08:07 uebayasi Exp $
 #	from: @(#)Makefile	8.7 (Berkeley) 5/25/95
 
 # Environment variables without default values:
@@ -21,10 +20,8 @@
 #   MKUPDATE; if not `no', don't do a 'make clean' before kernel compile
 #
 # Targets:
-#    distribution: makes a full NetBSD distribution in DESTDIR. If
 #	INSTALL_DONE is set, it will not do a `make install.'
 #	if DISTRIBUTION_DONE is set, it will not do anything.
-#    distrib-dirs: creates an empty NetBSD directory tree in DESTDIR.
 #	Called by distribution.
 #    snapshot: calls distribution, above, and then tars up the files
 #	into a release(7) format in RELEASEDIR/${RELEASEMACHINEDIR}.
@@ -64,7 +61,6 @@ DISTRIBREV!=	${HOST_SH} ${KERNSRCDIR}/conf/osrelease.sh -s
 ISO_VOLID!=	echo NETBSD_${DISTRIBREV} | tr a-z A-Z
 MKISOFS_FLAGS+= -J -l -hide-joliet-trans-tbl -r -T \
 		-V ${ISO_VOLID} \
-		-publisher "The NetBSD Project" \
 		-m "${RELEASEDIR}/${RELEASEMACHINEDIR}/installation/cdrom"
 .if ${MKISOFS_FLAGS:N-v}
 MKISOFS_FLAGS+=	-quiet
@@ -218,7 +214,6 @@ MAKEDEV: .PHONY
 CLEANFILES+=	etc-release
 etc-release: .EXEC .MAKE
 	${_MKTARGET_CREATE}
-	@(	echo "NetBSD ${DISTRIBVER}/${MACHINE}"; \
 		echo ; \
 		cat ${NETBSDSRCDIR}/sys/conf/copyright; \
 		echo ; \
@@ -350,11 +345,9 @@ install-etc-files: .PHONY .MAKE check_DESTDIR MAKEDEV
 # BJG: For Minix, the -safe target *is* performed by "make build"
 #
 # LSC: To ensure minimal modifications, the logic is a bit contrived, i.e. the
-# NetBSD build system expect install-etc-files to be unsafe, so what was done
 # is to separate that step into two steps, with the unsafe version refering 
 # (not by dependency, to ensure correct order of actions) the safe step, and 
 # use the following mapping in the main Makefile:
-#  etcforce -> install-etc-files (default NetBSD target)
 #  etcfiles -> install-etc-files-safe (new -safe- target)
 	${MAKEDIRTARGET} . install-etc-files-safe
 
@@ -536,7 +529,6 @@ install-obsolete-lists: .PHONY .MAKE
 
 
 # distrib-dirs --
-#	Populate $DESTDIR with directories needed by NetBSD
 #
 distrib-dirs: .PHONY check_DESTDIR
 	cd ${NETBSDSRCDIR}/etc/mtree && ${MAKE} distrib-dirs
@@ -561,7 +553,6 @@ release snapshot: .PHONY .MAKE check_DESTDIR check_RELEASEDIR snap_md_post
 #	Note: At least mkisofs 2.0 should be used.
 #
 CDROM_NAME_ADD?=
-CDROM_IMAGE?=${RELEASEDIR}/images/NetBSD-${DISTRIBVER}-${MACHINE}.iso
 CDROM.dir=	${.OBJDIR}/cdrom.dir
 CDROM.pathlist=	${.OBJDIR}/cdrom.pathlist
 

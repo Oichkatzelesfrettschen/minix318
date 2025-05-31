@@ -1,4 +1,3 @@
-#	$NetBSD: Makefile,v 1.3 2008/09/02 08:38:36 christos Exp $
 
 PROG=		infokey
 SRCS=		infokey.c

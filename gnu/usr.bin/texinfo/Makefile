@@ -1,4 +1,3 @@
-#	$NetBSD: Makefile,v 1.23 2008/10/25 22:35:36 apb Exp $
 
 .include <bsd.own.mk>
 
