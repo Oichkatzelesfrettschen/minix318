@@ -1,5 +1,3 @@
-/*	$NetBSD: inftree9.c,v 1.1.1.1 2006/01/14 20:10:52 christos Exp $	*/
-
 /* inftree9.c -- generate Huffman trees for efficient decoding
  * Copyright (C) 1995-2005 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h

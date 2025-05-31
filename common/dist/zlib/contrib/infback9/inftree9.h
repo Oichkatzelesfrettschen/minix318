@@ -1,5 +1,3 @@
-/*	$NetBSD: inftree9.h,v 1.1.1.1 2006/01/14 20:10:52 christos Exp $	*/
-
 /* inftree9.h -- header to use inftree9.c
  * Copyright (C) 1995-2003 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
