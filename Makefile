@@ -1,9 +1,9 @@
-#	$NetBSD: Makefile,v 1.316 2015/07/23 08:03:25 mrg Exp $
+#	Makefile for building MINIX
 
 #
-# This is the top-level makefile for building NetBSD. For an outline of
+# This is the top-level makefile for building MINIX. For an outline of
 # how to build a snapshot or release, as well as other release engineering
-# information, see http://www.NetBSD.org/developers/releng/index.html
+# information, see the MINIX release engineering guide
 #
 # Not everything you can set or do is documented in this makefile. In
 # particular, you should review the files in /usr/share/mk (especially
@@ -36,11 +36,11 @@
 #
 # Targets:
 #   build:
-#	Builds a full release of NetBSD in DESTDIR, except for the
+#	Builds a full release of MINIX in DESTDIR, except for the
 #	/etc configuration files.
 #	If BUILD_DONE is set, this is an empty target.
 #   distribution:
-#	Builds a full release of NetBSD in DESTDIR, including the /etc
+#	Builds a full release of MINIX in DESTDIR, including the /etc
 #	configuration files.
 #   buildworld:
 #	As per `make distribution', except that it ensures that DESTDIR
@@ -354,7 +354,7 @@ distribution buildworld: .PHONY .MAKE
 
 #
 # Install the distribution from $DESTDIR to $INSTALLWORLDDIR (defaults to `/')
-# If installing to /, ensures that the host's operating system is NetBSD and
+# If installing to /, ensures that the host's operating system is MINIX and
 # the host's `uname -m` == ${MACHINE}.
 #
 
@@ -372,7 +372,7 @@ installworld: .PHONY .MAKE
 .endif
 .if !defined(INSTALLWORLDDIR) || \
     ${INSTALLWORLDDIR} == "" || ${INSTALLWORLDDIR} == "/"
-.if (${HOST_UNAME_S} != "NetBSD") && (${HOST_UNAME_S} != "Minix")
+.if (${HOST_UNAME_S} != "Minix")
 	@echo "Won't cross-make ${.TARGET} from ${HOST_UNAME_S} to Minix with INSTALLWORLDDIR=/"
 	@false
 .endif
@@ -397,8 +397,8 @@ installmodules: .PHONY .MAKE
 .endif
 .if !defined(INSTALLMODULESDIR) || \
     ${INSTALLMODULESDIR} == "" || ${INSTALLMODULESDIR} == "/"
-.if (${HOST_UNAME_S} != "NetBSD")
-	@echo "Won't cross-make ${.TARGET} from ${HOST_UNAME_S} to NetBSD with INSTALLMODULESDIR=/"
+.if (${HOST_UNAME_S} != "Minix")
+	@echo "Won't cross-make ${.TARGET} from ${HOST_UNAME_S} to Minix with INSTALLMODULESDIR=/"
 	@false
 .endif
 .if (${HOST_UNAME_M} != ${MACHINE})
