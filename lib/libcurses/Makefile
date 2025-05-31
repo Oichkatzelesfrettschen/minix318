@@ -178,12 +178,8 @@ MLINKS+= curses_addch.3 addch.3 curses_addchstr.3 addchnstr.3 \
 	 curses_scanw.3 wscanw.3 curses_scroll.3 wscrl.3 \
 	 curses_scroll.3 wsetscrreg.3 curses_standout.3 wstandend.3 \
 	 curses_standout.3 wstandout.3 curses_input.3 wtimeout.3 \
-	 curses_touch.3 wtouchln.3 curses_underscore.3 wunderend.3 \
-	 curses_underscore.3 wunderscore.3 curses_line.3 wvline.3
-
-.if !defined(__MINIX)
-SUBDIR+= PSD.doc
-.endif # !defined(__MINIX)
+        curses_touch.3 wtouchln.3 curses_underscore.3 wunderend.3 \
+        curses_underscore.3 wunderscore.3 curses_line.3 wvline.3
 
 fileio.h: shlib_version genfileioh.awk
 	${TOOL_AWK} -f ${.CURDIR}/genfileioh.awk < ${.CURDIR}/shlib_version > ${.CURDIR}/fileio.h
