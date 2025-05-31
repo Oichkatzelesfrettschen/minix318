@@ -129,7 +129,6 @@
 ./usr/libdata/debug/bin/csh.debug                       minix-debug     debug
 ./usr/libdata/debug/bin/date.debug                      minix-debug     debug
 ./usr/libdata/debug/bin/dd.debug                        minix-debug     debug
-./usr/libdata/debug/bin/df.debug                        minix-debug     debug
 ./usr/libdata/debug/bin/domainname.debug                minix-debug     debug
 ./usr/libdata/debug/bin/echo.debug                      minix-debug     debug
 ./usr/libdata/debug/bin/ed.debug                        minix-debug     debug
@@ -711,7 +710,6 @@
 ./usr/libdata/debug/usr/tests/atf/atf-c/utils_test.debug minix-debug     debug
 ./usr/libdata/debug/usr/tests/atf/test-programs/c_helpers.debug minix-debug     debug
 ./usr/libdata/debug/usr/tests/atf/test-programs/cpp_helpers.debug minix-debug     debug
-./usr/libdata/debug/usr/tests/bin/df/h_df.debug         minix-debug     debug
 ./usr/libdata/debug/usr/tests/crypto/libcrypto/h_bftest.debug minix-debug     debug
 ./usr/libdata/debug/usr/tests/crypto/libcrypto/h_bntest.debug minix-debug     debug
 ./usr/libdata/debug/usr/tests/crypto/libcrypto/h_casttest.debug minix-debug     debug

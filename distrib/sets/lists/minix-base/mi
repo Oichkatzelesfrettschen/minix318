@@ -18,7 +18,6 @@
 ./bin/csh                                               minix-base
 ./bin/date                                              minix-base
 ./bin/dd                                                minix-base
-./bin/df                                                minix-base
 ./bin/domainname                                        minix-base
 ./bin/echo                                              minix-base
 ./bin/ed                                                minix-base

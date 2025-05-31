@@ -6042,7 +6042,6 @@
 ./usr/share/man/man1/dd.1			man-util-man		.man
 ./usr/share/man/man1/delv.1			man-netutil-man		.man
 ./usr/share/man/man1/deroff.1			man-util-man		.man
-./usr/share/man/man1/df.1			man-util-man		.man
 ./usr/share/man/man1/diff.1			man-util-man		.man
 ./usr/share/man/man1/diff3.1			man-util-man		.man
 ./usr/share/man/man1/dig.1			man-netutil-man		.man

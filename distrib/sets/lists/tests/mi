@@ -18,7 +18,6 @@
 ./usr/libdata/debug/usr/tests/atf/tools					tests-atf-debug		compattestfile,atf
 ./usr/libdata/debug/usr/tests/atf/units					tests-obsolete		obsolete
 ./usr/libdata/debug/usr/tests/bin					tests-bin-debug		compattestfile,atf
-./usr/libdata/debug/usr/tests/bin/df					tests-bin-debug		compattestfile,atf
 ./usr/libdata/debug/usr/tests/crypto					tests-crypto-debug	compattestfile,atf
 ./usr/libdata/debug/usr/tests/crypto/libcrypto				tests-crypto-debug	compattestfile,atf
 ./usr/libdata/debug/usr/tests/crypto/opencrypto				tests-crypto-debug	compattestfile,atf
@@ -172,7 +171,6 @@
 ./usr/libdata/debug/usr/tests/usr.bin/netpgpverify			tests-usr.bin-debug	compattestfile,atf
 ./usr/libdata/debug/usr/tests/usr.sbin					tests-usr.sbin-debug	compattestfile,atf
 ./usr/libdata/debug/usr/tests/util					tests-obsolete		obsolete
-./usr/libdata/debug/usr/tests/util/df					tests-obsolete		obsolete
 ./usr/libdata/debug/usr/tests/util/id					tests-obsolete		obsolete
 ./usr/libdata/debug/usr/tests/util/systrace				tests-obsolete		obsolete
 ./usr/tests								tests-base-tests	compattestdir
@@ -818,11 +816,6 @@
 ./usr/tests/bin/dd/Atffile						tests-bin-tests		compattestfile,atf
 ./usr/tests/bin/dd/Kyuafile						tests-bin-tests		compattestfile,atf,kyua
 ./usr/tests/bin/dd/t_dd							tests-bin-tests		compattestfile,atf
-./usr/tests/bin/df							tests-bin-tests		compattestfile,atf
-./usr/tests/bin/df/Atffile						tests-bin-tests		compattestfile,atf
-./usr/tests/bin/df/Kyuafile						tests-bin-tests		compattestfile,atf,kyua
-./usr/tests/bin/df/h_df							tests-bin-tests		compattestfile,atf
-./usr/tests/bin/df/t_df							tests-bin-tests		compattestfile,atf
 ./usr/tests/bin/expr							tests-bin-tests		compattestfile,atf
 ./usr/tests/bin/expr/Atffile						tests-bin-tests		compattestfile,atf
 ./usr/tests/bin/expr/Kyuafile						tests-bin-tests		compattestfile,atf,kyua
@@ -3900,10 +3893,6 @@
 ./usr/tests/util/cut/d_sflag.out		tests-obsolete		obsolete
 ./usr/tests/util/cut/d_utf8.in			tests-obsolete		obsolete
 ./usr/tests/util/cut/t_cut			tests-obsolete		obsolete
-./usr/tests/util/df				tests-obsolete		obsolete
-./usr/tests/util/df/Atffile			tests-obsolete		obsolete
-./usr/tests/util/df/h_df			tests-obsolete		obsolete
-./usr/tests/util/df/t_df			tests-obsolete		obsolete
 ./usr/tests/util/grep				tests-obsolete		obsolete
 ./usr/tests/util/grep/Atffile			tests-obsolete		obsolete
 ./usr/tests/util/grep/d_basic.out		tests-obsolete		obsolete

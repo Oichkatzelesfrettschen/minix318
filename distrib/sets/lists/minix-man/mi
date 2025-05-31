@@ -81,7 +81,6 @@
 ./usr/man/man1/decomp16.1                               minix-man       obsolete
 ./usr/man/man1/delv.1                                   minix-man
 ./usr/man/man1/deroff.1                                 minix-man
-./usr/man/man1/df.1                                     minix-man
 ./usr/man/man1/dhrystone.1                              minix-man
 ./usr/man/man1/diff.1                                   minix-man
 ./usr/man/man1/dig.1                                    minix-man

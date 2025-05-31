@@ -28,7 +28,6 @@
 ./bin/csh					base-util-root
 ./bin/date					base-util-root
 ./bin/dd					base-util-root
-./bin/df					base-util-root
 ./bin/domainname				base-nis-root
 ./bin/echo					base-util-root
 ./bin/ed					base-util-root
