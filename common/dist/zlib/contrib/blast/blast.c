@@ -1,5 +1,3 @@
-/*	$NetBSD: blast.c,v 1.1.1.1 2006/01/14 20:10:46 christos Exp $	*/
-
 /* blast.c
  * Copyright (C) 2003 Mark Adler
  * For conditions of distribution and use, see copyright notice in blast.h

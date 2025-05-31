@@ -1,5 +1,3 @@
-/*	$NetBSD: blast.h,v 1.1.1.1 2006/01/14 20:10:46 christos Exp $	*/
-
 /* blast.h -- interface for blast.c
   Copyright (C) 2003 Mark Adler
   version 1.1, 16 Feb 2003
