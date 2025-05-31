@@ -34,6 +34,7 @@
  *
  *	@(#)extern.h	8.3 (Berkeley) 4/2/94
  */
+/* MINIX 3 adaptation: prototypes adjusted. */
 
 #include <sys/cdefs.h>
 
@@ -66,21 +67,21 @@ void unblock(void);
 void unblock_close(void);
 ssize_t bwrite(IO *, const void *, size_t);
 
-extern IO		in, out;
-extern STAT		st;
-extern void		(*cfunc)(void);
-extern uint64_t		cpy_cnt;
-extern uint64_t		cbsz;
-extern u_int		ddflags;
+extern IO in, out;
+extern STAT st;
+extern void (*cfunc)(void);
+extern uint64_t cpy_cnt;
+extern uint64_t cbsz;
+extern u_int ddflags;
 #ifndef NO_IOFLAG
-extern u_int		iflag;
-extern u_int		oflag;
+extern u_int iflag;
+extern u_int oflag;
 #endif /* NO_IOFLAG */
-extern u_int		files_cnt;
-extern uint64_t		progress;
-extern const u_char	*ctab;
-extern const u_char	a2e_32V[], a2e_POSIX[];
-extern const u_char	e2a_32V[], e2a_POSIX[];
-extern const u_char	a2ibm_32V[], a2ibm_POSIX[];
-extern u_char		casetab[];
-extern const char	*msgfmt;
+extern u_int files_cnt;
+extern uint64_t progress;
+extern const u_char *ctab;
+extern const u_char a2e_32V[], a2e_POSIX[];
+extern const u_char e2a_32V[], e2a_POSIX[];
+extern const u_char a2ibm_32V[], a2ibm_POSIX[];
+extern u_char casetab[];
+extern const char *msgfmt;
