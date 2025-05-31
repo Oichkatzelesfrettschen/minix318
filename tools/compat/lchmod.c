@@ -1,5 +1,3 @@
-/*	$NetBSD: lchmod.c,v 1.4 2008/04/28 20:24:12 martin Exp $	*/
-
 /*-
  * Copyright (c) 2002 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -37,20 +35,18 @@
 #endif /* !defined(__minix) && !defined(_LIBC) */
 
 #if !HAVE_LCHMOD
-#include <sys/stat.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
-int
-lchmod(const char *path, mode_t mode)
-{
-	struct stat psb;
+int lchmod(const char *path, mode_t mode) {
+  struct stat psb;
 
-	if (lstat(path, &psb) == -1)
-		return -1;
-	if (S_ISLNK(psb.st_mode)) {
-		return 0;
-	}
-	return (chmod(path, mode));
+  if (lstat(path, &psb) == -1)
+    return -1;
+  if (S_ISLNK(psb.st_mode)) {
+    return 0;
+  }
+  return (chmod(path, mode));
 }
 #endif

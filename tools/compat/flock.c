@@ -1,5 +1,3 @@
-/*	$NetBSD: flock.c,v 1.6 2008/04/28 20:24:12 martin Exp $	*/
-
 /*-
  * Copyright (c) 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -41,36 +39,36 @@
 #include <fcntl.h>
 
 int flock(int fd, int op) {
-	int rc = 0;
+  int rc = 0;
 
 #if defined(F_SETLK) && defined(F_SETLKW)
-	struct flock fl = {0};
+  struct flock fl = {0};
 
-	switch (op & (LOCK_EX|LOCK_SH|LOCK_UN)) {
-	case LOCK_EX:
-		fl.l_type = F_WRLCK;
-		break;
+  switch (op & (LOCK_EX | LOCK_SH | LOCK_UN)) {
+  case LOCK_EX:
+    fl.l_type = F_WRLCK;
+    break;
 
-	case LOCK_SH:
-		fl.l_type = F_RDLCK;
-		break;
+  case LOCK_SH:
+    fl.l_type = F_RDLCK;
+    break;
 
-	case LOCK_UN:
-		fl.l_type = F_UNLCK;
-		break;
+  case LOCK_UN:
+    fl.l_type = F_UNLCK;
+    break;
 
-	default:
-		errno = EINVAL;
-		return -1;
-	}
+  default:
+    errno = EINVAL;
+    return -1;
+  }
 
-	fl.l_whence = SEEK_SET;
-	rc = fcntl(fd, op & LOCK_NB ? F_SETLK : F_SETLKW, &fl);
+  fl.l_whence = SEEK_SET;
+  rc = fcntl(fd, op & LOCK_NB ? F_SETLK : F_SETLKW, &fl);
 
-	if (rc && (errno == EAGAIN))
-		errno = EWOULDBLOCK;
+  if (rc && (errno == EAGAIN))
+    errno = EWOULDBLOCK;
 #endif
 
-	return rc;
+  return rc;
 }
 #endif

@@ -1,5 +1,3 @@
-/*	$NetBSD: fpurge.c,v 1.1 2009/06/16 22:35:34 christos Exp $	*/
-
 /*-
  * Copyright (c) 2009 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -36,14 +34,12 @@
 #include "nbtool_config.h"
 
 #if !HAVE_FPURGE
-#include <stdio.h>
 #include <fcntl.h>
+#include <stdio.h>
 
-void
-fpurge(FILE *fp)
-{
+void fpurge(FILE *fp) {
 #if HAVE___FPURGE
-	__fpurge(fp);
+  __fpurge(fp);
 #endif
 }
 #endif

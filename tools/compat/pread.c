@@ -1,5 +1,3 @@
-/*	$NetBSD: pread.c,v 1.4 2008/04/28 20:24:12 martin Exp $	*/
-
 /*-
  * Copyright (c) 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -37,19 +35,19 @@
 #include <unistd.h>
 
 ssize_t pread(int d, void *buf, size_t nbytes, off_t offset) {
-	off_t oldoff = lseek(d, offset, SEEK_SET);
-	int olderrno;
-	ssize_t nr;
+  off_t oldoff = lseek(d, offset, SEEK_SET);
+  int olderrno;
+  ssize_t nr;
 
-	if (oldoff < 0)
-		return -1;
+  if (oldoff < 0)
+    return -1;
 
-	nr = read(d, buf, nbytes);
+  nr = read(d, buf, nbytes);
 
-	olderrno = errno;
-	lseek(d, oldoff, SEEK_SET);
-	errno = olderrno;
+  olderrno = errno;
+  lseek(d, oldoff, SEEK_SET);
+  errno = olderrno;
 
-	return nr;
+  return nr;
 }
 #endif

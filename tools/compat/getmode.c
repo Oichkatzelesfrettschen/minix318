@@ -1,5 +1,3 @@
-/*	$NetBSD: getmode.c,v 1.8 2008/11/04 23:31:32 dbj Exp $	*/
-
 /*-
  * Copyright (c) 2001 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -33,25 +31,21 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-void *
-setmode(const char *str)
-{
-	mode_t *mp = malloc(sizeof(mode_t));
+void *setmode(const char *str) {
+  mode_t *mp = malloc(sizeof(mode_t));
 
-	*mp = strtoul(str, NULL, 8);
+  *mp = strtoul(str, NULL, 8);
 
-	return mp;
+  return mp;
 }
 
-mode_t
-getmode(const void *mp, mode_t mode)
-{
-	mode_t m;
+mode_t getmode(const void *mp, mode_t mode) {
+  mode_t m;
 
-	m = *((const mode_t *)mp);
+  m = *((const mode_t *)mp);
 
-	mode &= ~ALLPERMS;	/* input mode less RWX permissions */
-	m &= ALLPERMS;		/* new RWX permissions */
+  mode &= ~ALLPERMS; /* input mode less RWX permissions */
+  m &= ALLPERMS;     /* new RWX permissions */
 
-	return m | mode;
+  return m | mode;
 }
