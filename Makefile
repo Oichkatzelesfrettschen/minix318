@@ -1,9 +1,5 @@
-#	$NetBSD: Makefile,v 1.316 2015/07/23 08:03:25 mrg Exp $
-
 #
-# This is the top-level makefile for building NetBSD. For an outline of
-# how to build a snapshot or release, as well as other release engineering
-# information, see http://www.NetBSD.org/developers/releng/index.html
+# This is the top-level makefile for building . For an outline of
 #
 # Not everything you can set or do is documented in this makefile. In
 # particular, you should review the files in /usr/share/mk (especially
@@ -36,11 +32,11 @@
 #
 # Targets:
 #   build:
-#	Builds a full release of NetBSD in DESTDIR, except for the
+#	Builds a full release in DESTDIR, except for the
 #	/etc configuration files.
 #	If BUILD_DONE is set, this is an empty target.
-#   distribution:
-#	Builds a full release of NetBSD in DESTDIR, including the /etc
+# distribution:
+#	Builds a full release in DESTDIR, including the /etc
 #	configuration files.
 #   buildworld:
 #	As per `make distribution', except that it ensures that DESTDIR
@@ -98,7 +94,7 @@
 #                    if ${MKCOMPAT} != "no".
 #   do-build:        builds and installs the entire system.
 #   do-x11:          builds and installs X11 if ${MKX11} != "no"; either
-#                    X11R7 from src/external/mit/xorg 
+#                    X11R7 from src/external/mit/xorg
 #   do-extsrc:       builds and installs extsrc if ${MKEXTSRC} != "no".
 #   do-obsolete:     installs the obsolete sets (for the postinstall-* targets).
 #
@@ -141,7 +137,7 @@ _SUBDIR+=	libexec sbin usr.bin
 _SUBDIR+=	usr.sbin share sys etc tests compat
 _SUBDIR+=	.WAIT rescue .WAIT distrib regress
 .if defined(__MINIX)
-# the minix subdir depends on some other things (e.g. lib/) 
+# the minix subdir depends on some other things (e.g. lib/)
 _SUBDIR+=	.WAIT minix
 .endif # defined(__MINIX)
 
@@ -354,7 +350,7 @@ distribution buildworld: .PHONY .MAKE
 
 #
 # Install the distribution from $DESTDIR to $INSTALLWORLDDIR (defaults to `/')
-# If installing to /, ensures that the host's operating system is NetBSD and
+# If installing to /, ensures the host's operating system is compatible
 # the host's `uname -m` == ${MACHINE}.
 #
 
@@ -372,7 +368,7 @@ installworld: .PHONY .MAKE
 .endif
 .if !defined(INSTALLWORLDDIR) || \
     ${INSTALLWORLDDIR} == "" || ${INSTALLWORLDDIR} == "/"
-.if (${HOST_UNAME_S} != "NetBSD") && (${HOST_UNAME_S} != "Minix")
+.if (${HOST_UNAME_S} != "Minix")
 	@echo "Won't cross-make ${.TARGET} from ${HOST_UNAME_S} to Minix with INSTALLWORLDDIR=/"
 	@false
 .endif
@@ -397,8 +393,8 @@ installmodules: .PHONY .MAKE
 .endif
 .if !defined(INSTALLMODULESDIR) || \
     ${INSTALLMODULESDIR} == "" || ${INSTALLMODULESDIR} == "/"
-.if (${HOST_UNAME_S} != "NetBSD")
-	@echo "Won't cross-make ${.TARGET} from ${HOST_UNAME_S} to NetBSD with INSTALLMODULESDIR=/"
+.if (${HOST_UNAME_S} != "Minix")
+	@echo "Won't cross-make ${.TARGET} from ${HOST_UNAME_S} with INSTALLMODULESDIR=/"
 	@false
 .endif
 .if (${HOST_UNAME_M} != ${MACHINE})
