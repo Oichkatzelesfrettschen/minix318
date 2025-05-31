@@ -3,7 +3,6 @@
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
 # The normal system boot situation is that init(8) invokes the ramdisk RC
-# script, which invokes the NetBSD rc infrastructure, which in turn calls this
 # script through /etc/rc.d/minixrc.  With a boot ramdisk (x86_ramimage), the
 # ramdisk RC is bypassed altogether, but stored as /etc/rc.ramdisk.  We then
 # have to invoke it here (for startup only!) to let it perform its tasks first.

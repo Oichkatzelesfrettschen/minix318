@@ -1,4 +1,4 @@
-#	NOT NetBSD
+#	MINIX fetch rules
 #
 # Rules used to fetch a GNU package.  Expects GNUHOSTDIST to be set
 # and <bsd.own.mk> to be previously .include'd.

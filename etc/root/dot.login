@@ -1,4 +1,3 @@
-#	$NetBSD: dot.login,v 1.9 2009/05/15 23:57:50 ad Exp $
 
 eval `tset -sQrm 'unknown:?unknown'`
 
