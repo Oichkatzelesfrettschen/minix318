@@ -1,5 +1,3 @@
-/*	$NetBSD: zran.c,v 1.1.1.1 2006/01/14 20:11:10 christos Exp $	*/
-
 /* zran.c -- example of zlib/gzip stream indexing and random access
  * Copyright (C) 2005 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h

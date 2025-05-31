@@ -1,5 +1,3 @@
-/*	$NetBSD: zpipe.c,v 1.1.1.1 2006/01/14 20:11:09 christos Exp $	*/
-
 /* zpipe.c: example of proper use of zlib's inflate() and deflate()
    Not copyrighted -- provided to the public domain
    Version 1.2  9 November 2004  Mark Adler */

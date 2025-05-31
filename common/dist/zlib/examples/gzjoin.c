@@ -1,5 +1,3 @@
-/*	$NetBSD: gzjoin.c,v 1.1.1.1 2006/01/14 20:11:09 christos Exp $	*/
-
 /* gzjoin -- command to join gzip files into one gzip file
 
   Copyright (C) 2004 Mark Adler, all rights reserved
