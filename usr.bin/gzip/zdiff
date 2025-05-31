@@ -1,11 +1,9 @@
 #!/bin/sh -
 #
-# $NetBSD: zdiff,v 1.5 2010/04/14 20:30:28 joerg Exp $
-#
 # $OpenBSD: zdiff,v 1.2 2003/07/29 07:42:44 otto Exp $
 #
 # Copyright (c) 2003 Todd C. Miller <Todd.Miller@courtesan.com>
-# Copyright (c) 2010 Joerg Sonnenberger <joerg@NetBSD.org>
+# Copyright (c) 2010 Joerg Sonnenberger <joerg@example.org>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
