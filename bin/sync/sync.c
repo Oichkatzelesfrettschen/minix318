@@ -1,5 +1,3 @@
-/* $NetBSD: sync.c,v 1.14 2016/09/05 01:00:07 sevan Exp $ */
-
 /*
  * Copyright (c) 1987, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -35,23 +33,18 @@ __COPYRIGHT("@(#) Copyright (c) 1987, 1993\
  The Regents of the University of California.  All rights reserved.");
 #endif /* not lint */
 
-#ifndef lint
-#if 0
-static char sccsid[] = "@(#)sync.c	8.1 (Berkeley) 5/31/93";
-#else
-__RCSID("$NetBSD: sync.c,v 1.14 2016/09/05 01:00:07 sevan Exp $");
-#endif
-#endif /* not lint */
-
 #include <stdlib.h>
 #include <unistd.h>
 
 /* ARGSUSED */
-int
-main(int argc, char *argv[])
-{
-	setprogname(argv[0]);
-	sync();
-	exit(0);
-	/* NOTREACHED */
+int main(int argc, char *argv[]) {
+  /* register program name for messages */
+  setprogname(argv[0]);
+
+  /* flush all file system buffers */
+  sync();
+
+  /* terminate successfully */
+  return EXIT_SUCCESS;
+  /* NOTREACHED */
 }
