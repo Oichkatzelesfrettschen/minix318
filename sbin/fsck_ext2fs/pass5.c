@@ -1,5 +1,3 @@
-/*	$NetBSD: pass5.c,v 1.20 2012/08/26 09:33:18 dholland Exp $	*/
-
 /*
  * Copyright (c) 1980, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -58,7 +56,6 @@
 #if 0
 static char sccsid[] = "@(#)pass5.c	8.6 (Berkeley) 11/30/94";
 #else
-__RCSID("$NetBSD: pass5.c,v 1.20 2012/08/26 09:33:18 dholland Exp $");
 #endif
 #endif /* not lint */
 

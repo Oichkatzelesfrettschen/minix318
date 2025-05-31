@@ -1,5 +1,3 @@
-/*	$NetBSD: setup.c,v 1.32 2014/12/04 01:41:37 christos Exp $	*/
-
 /*
  * Copyright (c) 1980, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -58,7 +56,6 @@
 #if 0
 static char sccsid[] = "@(#)setup.c	8.5 (Berkeley) 11/23/94";
 #else
-__RCSID("$NetBSD: setup.c,v 1.32 2014/12/04 01:41:37 christos Exp $");
 #endif
 #endif /* not lint */
 

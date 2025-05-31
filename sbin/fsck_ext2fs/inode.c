@@ -1,5 +1,3 @@
-/*	$NetBSD: inode.c,v 1.36 2013/06/23 07:28:36 dholland Exp $	*/
-
 /*
  * Copyright (c) 1980, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -58,7 +56,6 @@
 #if 0
 static char sccsid[] = "@(#)inode.c	8.5 (Berkeley) 2/8/95";
 #else
-__RCSID("$NetBSD: inode.c,v 1.36 2013/06/23 07:28:36 dholland Exp $");
 #endif
 #endif /* not lint */
 

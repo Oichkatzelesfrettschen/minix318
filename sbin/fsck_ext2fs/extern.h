@@ -1,5 +1,3 @@
-/*	$NetBSD: extern.h,v 1.8 2012/11/25 19:42:14 jakllsch Exp $	*/
-
 /*
  * Copyright (c) 1997 Manuel Bouyer.
  * Copyright (c) 1994 James A. Jegers

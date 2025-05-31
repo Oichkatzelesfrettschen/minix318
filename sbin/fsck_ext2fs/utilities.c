@@ -1,5 +1,3 @@
-/*	$NetBSD: utilities.c,v 1.23 2013/06/23 02:06:04 dholland Exp $	*/
-
 /*
  * Copyright (c) 1980, 1986, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -58,7 +56,6 @@
 #if 0
 static char sccsid[] = "@(#)utilities.c	8.1 (Berkeley) 6/5/93";
 #else
-__RCSID("$NetBSD: utilities.c,v 1.23 2013/06/23 02:06:04 dholland Exp $");
 #endif
 #endif /* not lint */
 
