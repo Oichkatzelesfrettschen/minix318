@@ -1,5 +1,5 @@
-#	$NetBSD: Makefile,v 1.11 2007/06/22 03:24:16 simonb Exp $
-#	@(#)Makefile	8.1 (Berkeley) 5/31/93
+# Makefile for the test utility
+# Derived from 4.4BSD sources
 
 PROG=	test
 SRCS=   test.c

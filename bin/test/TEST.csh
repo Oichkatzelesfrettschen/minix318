@@ -1,4 +1,4 @@
-#	$NetBSD: TEST.csh,v 1.2 1995/03/21 07:03:59 cgd Exp $
+# Test script for the test utility
 #	@(#)TEST.csh	5.2 (Berkeley) 4/30/93
 
 #alias t '/usr/src/bin/test/obj/test \!*; echo $status'
