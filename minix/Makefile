@@ -1,3 +1,4 @@
+MKATF=no
 .include <bsd.own.mk>
 
 SUBDIR+=	include .WAIT
