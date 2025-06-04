@@ -4,7 +4,7 @@
 option(
     'arch',
     type : 'combo',
-    choices : ['i386', 'x86_64'],
+    choices : ['i386', 'x86_64', 'arm32', 'arm64'],
     value : 'x86_64',
     description : 'Target architecture'
 )

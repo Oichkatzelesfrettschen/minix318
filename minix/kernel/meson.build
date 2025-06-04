@@ -13,11 +13,13 @@ kernel_sources = files(
     'main.c',
     'proc.c',
     'profile.c',
+    'smp.c',
     'system.c',
     'table.c',
     'usermapped_data.c',
     'utility.c',
     'watchdog.c'
+    'wormhole.c'
 )
 
 # System call handler sources
@@ -63,6 +65,7 @@ system_sources = files(
 )
 
 # Architecture-specific sources for the i386 port
+
 arch_i386_sources = files(
     'arch/i386/acpi.c',
     'arch/i386/apic.c',
@@ -70,6 +73,7 @@ arch_i386_sources = files(
     'arch/i386/arch_clock.c',
     'arch/i386/arch_do_vmctl.c',
     'arch/i386/arch_reset.c',
+    'arch/i386/arch_smp.c',
     'arch/i386/arch_system.c',
     'arch/i386/arch_watchdog.c',
     'arch/i386/breakpoints.c',
@@ -99,7 +103,6 @@ arch_i386_sources = files(
     'arch/i386/usermapped_data_arch.c',
     'arch/i386/usermapped_glo_ipc.S',
 )
-
 # For now the x86_64 port reuses the same source files as the i386 port.
 # This allows building a 64-bit kernel with minimal changes.
 arch_x86_64_sources = files(
@@ -161,4 +164,11 @@ static_library(
         '../include/arch/@0@/include'.format(arch)
     ),
     c_args: arch == 'x86_64' ? ['-m64'] : ['-m32']
+        'arch/i386',
+        'system',
+        '..',
+        '../include',
+        'arch/i386/include',
+        '../include/arch/i386/include'
+    )
 )
