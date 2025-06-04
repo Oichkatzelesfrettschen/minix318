@@ -19,6 +19,7 @@ kernel_sources = files(
     'usermapped_data.c',
     'utility.c',
     'watchdog.c'
+    'wormhole.c'
 )
 
 # System call handler sources
@@ -64,7 +65,7 @@ system_sources = files(
 )
 
 # Architecture-specific sources for the i386 port
-# Only the i386 architecture is currently supported by the Meson build.
+
 arch_i386_sources = files(
     'arch/i386/acpi.c',
     'arch/i386/apic.c',
@@ -102,9 +103,52 @@ arch_i386_sources = files(
     'arch/i386/usermapped_data_arch.c',
     'arch/i386/usermapped_glo_ipc.S',
 )
+# For now the x86_64 port reuses the same source files as the i386 port.
+# This allows building a 64-bit kernel with minimal changes.
+arch_x86_64_sources = files(
+    'arch/x86_64/acpi.c',
+    'arch/x86_64/apic.c',
+    'arch/x86_64/apic_asm.S',
+    'arch/x86_64/arch_clock.c',
+    'arch/x86_64/arch_do_vmctl.c',
+    'arch/x86_64/arch_reset.c',
+    'arch/x86_64/arch_system.c',
+    'arch/x86_64/arch_watchdog.c',
+    'arch/x86_64/breakpoints.c',
+    'arch/x86_64/debugreg.S',
+    'arch/x86_64/direct_tty_utils.c',
+    'arch/x86_64/do_iopenable.c',
+    'arch/x86_64/do_readbios.c',
+    'arch/x86_64/do_sdevio.c',
+    'arch/x86_64/exception.c',
+    'arch/x86_64/head.S',
+    'arch/x86_64/i8259.c',
+    'arch/x86_64/io_inb.S',
+    'arch/x86_64/io_inl.S',
+    'arch/x86_64/io_intr.S',
+    'arch/x86_64/io_inw.S',
+    'arch/x86_64/io_outb.S',
+    'arch/x86_64/io_outl.S',
+    'arch/x86_64/io_outw.S',
+    'arch/x86_64/klib.S',
+    'arch/x86_64/memory.c',
+    'arch/x86_64/mpx.S',
+    'arch/x86_64/oxpcie.c',
+    'arch/x86_64/pg_utils.c',
+    'arch/x86_64/pre_init.c',
+    'arch/x86_64/protect.c',
+    'arch/x86_64/trampoline.S',
+    'arch/x86_64/usermapped_data_arch.c',
+    'arch/x86_64/usermapped_glo_ipc.S',
+)
+
+arch = get_option('arch')
+
+# Select architecture specific sources
+arch_sources = arch == 'x86_64' ? arch_x86_64_sources : arch_i386_sources
 
 # Combine the different source groups into the final list
-all_kernel_sources = kernel_sources + system_sources + arch_i386_sources
+all_kernel_sources = kernel_sources + system_sources + arch_sources
 
 # Build the kernel as a static library.
 static_library(
@@ -112,6 +156,14 @@ static_library(
     all_kernel_sources,
     include_directories: include_directories(
         '.',
+        'arch/@0@'.format(arch),
+        'system',
+        '..',
+        '../include',
+        'arch/@0@/include'.format(arch),
+        '../include/arch/@0@/include'.format(arch)
+    ),
+    c_args: arch == 'x86_64' ? ['-m64'] : ['-m32']
         'arch/i386',
         'system',
         '..',

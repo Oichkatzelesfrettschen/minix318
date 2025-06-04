@@ -2,6 +2,16 @@
 #define _MINLIB
 
 #include <sys/mount.h>
+#include <limits.h>
+#include <linux/limits.h>
+
+/* Default lengths for mount table fields. */
+#ifndef MNTNAMELEN
+#define MNTNAMELEN 32
+#endif
+#ifndef MNTFLAGLEN
+#define MNTFLAGLEN 32
+#endif
 
 /* Miscellaneous BSD. */
 char *itoa(int _n);

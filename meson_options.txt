@@ -3,7 +3,8 @@
 # Select the target architecture for the build.
 option(
     'arch',
-    type : 'string',
-    value : 'i386',
+    type : 'combo',
+    choices : ['i386', 'x86_64', 'arm32', 'arm64'],
+    value : 'x86_64',
     description : 'Target architecture'
 )

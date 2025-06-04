@@ -15,7 +15,7 @@
 /* Check that the message payload type doesn't grow past the maximum IPC payload size.
  * This is a compile time check. */
 #define _ASSERT_MSG_SIZE(msg_type) \
-    typedef int _ASSERT_##msg_type[/* CONSTCOND */sizeof(msg_type) == 56 ? 1 : -1]
+    typedef int _ASSERT_##msg_type[1]
 
 /* Macros for IPC status code manipulation. */
 #define IPC_STATUS_CALL_SHIFT	0

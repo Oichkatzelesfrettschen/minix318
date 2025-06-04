@@ -6,6 +6,7 @@
 #include <minix/const.h>
 #include <sys/signal.h>
 #include <sys/types.h>
+#include <sys/select.h>
 
 /*==========================================================================* 
  * Types relating to messages. 						    *

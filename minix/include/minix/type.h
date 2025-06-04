@@ -11,9 +11,11 @@
 #endif
 
 #include <sys/sigtypes.h>
+#include <time.h>
 
 #include <stdint.h>
 #include <stddef.h>
+#include <minix/types.h>
 
 /* Type definitions. */
 typedef unsigned int vir_clicks; 	/*  virtual addr/length in clicks */
