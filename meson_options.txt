@@ -1,0 +1,9 @@
+# Meson build options for MINIX
+
+# Select the target architecture for the build.
+option(
+    'arch',
+    type : 'string',
+    value : 'i386',
+    description : 'Target architecture'
+)
