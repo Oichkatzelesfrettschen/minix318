@@ -1,3 +1,33 @@
+/**
+ * @brief Handles SYS_VIRCOPY and SYS_PHYSCOPY kernel calls for copying data.
+ * 
+ * This function implements both virtual and physical memory copy operations.
+ * It validates the source and destination addresses, checks process permissions,
+ * and performs the actual memory copy using either virtual_copy() or 
+ * virtual_copy_vmcheck() depending on the flags specified.
+ * 
+ * @param caller Pointer to the process structure of the calling process
+ * @param m_ptr Pointer to the message containing copy parameters:
+ *              - src_addr: Source offset within segment
+ *              - src_endpt: Source process endpoint number
+ *              - dst_addr: Destination offset within segment  
+ *              - dst_endpt: Destination process endpoint number
+ *              - nr_bytes: Number of bytes to copy
+ *              - flags: Copy operation flags (e.g., CP_FLAG_TRY)
+ * 
+ * @return 0 on success, or error code on failure:
+ *         - EINVAL: Invalid endpoint number
+ *         - E2BIG: Byte count overflow detected
+ *         - EFAULT: Memory access fault (when CP_FLAG_TRY is set)
+ *         - Other error codes from virtual_copy_vmcheck()
+ * 
+ * @note The function supports SELF as a special endpoint value which resolves
+ *       to the caller's endpoint. Process validation is performed using
+ *       isokendpt() to ensure valid endpoint numbers.
+ * 
+ * @note When CP_FLAG_TRY flag is set, only VFS_PROC_NR is allowed to call
+ *       this function and fault errors are handled specially.
+ */
 /* The kernel call implemented in this file:
  *   m_type:	SYS_VIRCOPY, SYS_PHYSCOPY
  *

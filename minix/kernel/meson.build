@@ -1,10 +1,10 @@
 # meson.build - Complete kernel build configuration for MINIX
 project('minix-kernel', 'c',
-    version: '3.4.0',
-    license: 'BSD', # Assuming BSD, adjust if different
+    version: '3.4.1-unofficial',
+    license: 'BSD-mixed',
     default_options: [
-        'c_std=c11',
-        'warning_level=2', # Level 3 can be very noisy initially
+        'c_std=c23',
+        'warning_level=3', # Level 3 can be very noisy initially
         'b_staticpic=false', # Position Independent Code for static libs, not usually for kernel
         'b_pie=false',       # Position Independent Executable, no for kernel
         'b_lto=false',       # Link Time Optimization, disable for kernel dev
@@ -22,7 +22,7 @@ if arch == 'x86_64'
     arch_defines = ['-D__x86_64__', '-DARCH_X86_64']
     # Flags for x86_64 kernel
     arch_flags = ['-m64', '-mcmodel=kernel', '-mno-red-zone',
-                  '-mno-sse', '-mno-sse2', '-mno-mmx', '-mno-3dnow', # Minimal features
+                  '-sse', '-sse2', '-fpu' '-mmx', #universal features
                   '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
 elif arch == 'x86'
     arch_subdir = 'i386'

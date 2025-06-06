@@ -840,6 +840,7 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e,
 
 		/* If so, copy it in from the process. */
 		if (get_mtype) {
+			/* FIXME: offsetof may be undefined */
 			r = data_copy(src_e,
 			    m_src_v + K_OFFSETOF(message, m_type), KERNEL,
 			    (vir_bytes)&m_buff.m_type, sizeof(m_buff.m_type));

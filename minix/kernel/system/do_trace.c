@@ -1,3 +1,42 @@
+/**
+ * @brief Handle ptrace system call requests for process debugging and tracing
+ * 
+ * This function implements the SYS_TRACE kernel call which provides debugging
+ * capabilities similar to ptrace(). It handles various trace requests to control
+ * and inspect traced processes.
+ * 
+ * @param caller Pointer to the calling process structure
+ * @param m_ptr Pointer to the message containing trace parameters:
+ *              - m_lsys_krn_sys_trace.endpt: endpoint of process to be traced
+ *              - m_lsys_krn_sys_trace.request: trace request type (T_* constants)
+ *              - m_lsys_krn_sys_trace.address: memory address in traced process
+ *              - m_lsys_krn_sys_trace.data: data to write (for set operations)
+ *              - m_krn_lsys_sys_trace.data: data to return (for get operations)
+ * 
+ * @return OK on success, or appropriate error code:
+ *         - EINVAL: invalid endpoint or request
+ *         - EPERM: attempt to trace kernel process
+ *         - EFAULT: invalid memory address or alignment
+ * 
+ * Supported trace requests:
+ * - T_STOP (0): Stop the traced process
+ * - T_GETINS (1): Read value from instruction space
+ * - T_GETDATA (2): Read value from data space  
+ * - T_GETUSER (3): Read value from process table
+ * - T_SETINS (4): Write value to instruction space
+ * - T_SETDATA (5): Write value to data space
+ * - T_SETUSER (6): Write value to process table (registers)
+ * - T_DETACH/T_RESUME (7): Detach tracer and resume execution
+ * - T_STEP (9): Enable single-step tracing
+ * - T_SYSCALL (10): Enable system call tracing
+ * - T_READB_INS (11): Read single byte from instruction space
+ * - T_WRITEB_INS (12): Write single byte to instruction space
+ * 
+ * @note This function is only available when USE_TRACE is defined
+ * @note Some trace commands (T_OK, T_ATTACH, T_EXIT, T_SETOPT, T_GETRANGE, 
+ *       T_SETRANGE) are handled by the process manager, not this function
+ * @note Architecture-specific restrictions apply for register modifications
+ */
 /* The kernel call implemented in this file:
  *   m_type:	SYS_TRACE
  *

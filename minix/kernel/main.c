@@ -1,3 +1,36 @@
+/**
+ * @file main.c
+ * @brief MINIX kernel main program and system initialization
+ *
+ * This file contains the core initialization routines for the MINIX kernel.
+ * It handles the complete boot process from early system setup to process
+ * scheduling, including:
+ * - Boot parameter processing and environment variable parsing
+ * - Process table initialization for boot image processes
+ * - Privilege and security setup for kernel tasks and system processes
+ * - Memory management initialization
+ * - Interrupt and timer system setup
+ * - SMP (Symmetric Multi-Processing) configuration when enabled
+ * - System shutdown and halt procedures
+ *
+ * Key Functions:
+ * - kmain(): Primary kernel entry point that orchestrates the boot process
+ * - bsp_finish_booting(): Completes boot on the bootstrap processor
+ * - cstart(): Early system initialization before main kernel startup
+ * - prepare_shutdown()/minix_shutdown(): System shutdown procedures
+ * - announce(): Displays the MINIX startup banner
+ * - env_get()/get_value(): Environment variable access for boot parameters
+ *
+ * The initialization process sets up all kernel tasks, system processes,
+ * and user processes from the boot image, configures their privileges,
+ * and transitions control to the scheduler to begin normal operation.
+ *
+ * @note This implementation uses kernel-specific string and memory functions
+ *       (kstring.h, kmemory.h) instead of standard library functions.
+ * @note SMP support is conditionally compiled based on CONFIG_SMP flag.
+ * @note The kernel transitions from initialization mode to user mode scheduling
+ *       at the end of the boot process.
+ */
 /* This file contains the main program of MINIX as well as its shutdown code.
  * The routine main() initializes the system and starts the ball rolling by
  * setting up the process table, interrupt vectors, and scheduling each task 
