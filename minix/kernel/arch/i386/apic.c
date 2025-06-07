@@ -23,8 +23,16 @@
 #include "kernel/clock.h"
 #include "glo.h"
 #include "hw_intr.h"
-
 #include "acpi.h"
+
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+/* Forward declarations */
+int kprintf_stub(const char *fmt, ...);
+int kstrcmp(const char *s1, const char *s2);
+typedef size_t k_size_t;
 
 #ifdef USE_WATCHDOG
 #include "kernel/watchdog.h"
@@ -108,7 +116,6 @@
 #define SPL0				0x0
 #define	SPLHI				0xF
 
-
 struct io_apic io_apic[MAX_NR_IOAPICS];
 unsigned nioapics;
 
@@ -130,13 +137,10 @@ static struct irq io_apic_irq[NR_IRQ_VECTORS];
  * of CPUS to 1, cpuid to return 0 and the current cpu is always BSP
  */
 #ifdef CONFIG_SMP
-
 #include "kernel/smp.h"
-
 #endif
 
 #include "kernel/spinlock.h"
-
 
 #define lapic_write_icr1(val)	lapic_write(LAPIC_ICR1, val)
 #define lapic_write_icr2(val)	lapic_write(LAPIC_ICR2, val)
@@ -208,18 +212,6 @@ static void ioapic_disable_pin(vir_bytes ioapic_addr, int pin)
 	lo |= APIC_ICR_INT_MASK;
 	ioapic_write(ioapic_addr, IOAPIC_REDIR_TABLE + pin * 2, lo);
 }
-
-#if 0
-static void ioapic_redirt_entry_read(void * ioapic_addr,
-					int entry,
-					u32_t *hi,
-					u32_t *lo)
-{
-	*lo = ioapic_read((u32_t)ioapic_addr, (u8_t) (IOAPIC_REDIR_TABLE + entry * 2));
-	*hi = ioapic_read((u32_t)ioapic_addr, (u8_t) (IOAPIC_REDIR_TABLE + entry * 2 + 1));
-
-}
-#endif
 
 static void ioapic_redirt_entry_write(void * ioapic_addr,
 					int entry,
@@ -396,7 +388,6 @@ void ioapic_unmask_irq(unsigned irq)
 	if (ioapic_enabled)
 		ioapic_enable_irq(irq);
 	else
-		/* FIXME unlikely */
 		irq_8259_unmask(irq);
 }
 
@@ -405,7 +396,6 @@ void ioapic_mask_irq(unsigned irq)
 	if (ioapic_enabled)
 		ioapic_disable_irq(irq);
 	else
-		/* FIXME unlikely */
 		irq_8259_mask(irq);
 }
 
@@ -422,7 +412,6 @@ static int calib_clk_handler(irq_hook_t * UNUSED(hook))
 	probe_ticks++;
 	read_tsc_64(&tsc);
 	tcrt = lapic_read(LAPIC_TIMER_CCR);
-
 
 	if (probe_ticks == 1) {
 		lapic_tctr0 = tcrt;
@@ -920,7 +909,6 @@ void apic_idt_init(const int reset)
 		int_gate_idt(APIC_TIMER_INT_VECTOR, (vir_bytes) lapic_timer_int_handler,
 				PRESENT | INT_GATE_TYPE | (INTR_PRIVILEGE << DPL_SHIFT));
 	}
-
 }
 
 static int acpi_get_ioapics(struct io_apic * ioa, unsigned * nioa, unsigned max)
@@ -1005,7 +993,6 @@ void apic_send_ipi(unsigned vector, unsigned cpu, int type)
 		default:
 			kprintf_stub("WARNING : unknown send ipi type request\n"); // MODIFIED
 	}
-
 }
 
 int apic_send_startup_ipi(unsigned cpu, phys_bytes trampoline)
@@ -1181,6 +1168,56 @@ void set_irq_redir_low(unsigned irq, u32_t * low)
 {
 	u32_t val = 0;
 
+	/*
+		return 0;
+
+	lapic_addr = LOCAL_APIC_DEF_ADDR;
+	ioapic_enabled = 0;
+
+	if (!lapic_enable(0)) {
+		lapic_addr = 0x0;
+		return 0;
+	}
+
+	bsp_lapic_id = apicid();
+	kprintf_stub("Boot cpu apic id %d\n", bsp_lapic_id); // MODIFIED
+
+	acpi_init();
+
+	if (!detect_ioapics()) {
+		lapic_disable();
+		lapic_addr = 0x0;
+		return 0;
+	}
+
+	ioapic_enable_all();
+
+	if (ioapic_enabled)
+		machine.apic_enabled = 1;
+
+	apic_idt_init(0); /* Not a reset ! */
+	idt_reload();
+	return 1;
+}
+#endif
+
+static eoi_method_t set_eoi_method(unsigned irq)
+{
+	/*
+	 * in APIC mode the lowest 16 IRQs are reserved for legacy (E)ISA edge
+	 * triggered interrupts. All the rest is for PCI level triggered
+	 * interrupts
+	 */
+	if (irq < 16)
+		return ioapic_eoi_edge;
+	else
+		return ioapic_eoi_level;
+}
+
+void set_irq_redir_low(unsigned irq, u32_t * low)
+{
+	u32_t val = 0;
+
 	/* clear the polarity, trigger, mask and vector fields */
 	val &= ~(APIC_ICR_VECTOR | APIC_ICR_INT_MASK |
 			APIC_ICR_TRIGGER | APIC_ICR_INT_POLARITY);
@@ -1231,9 +1268,9 @@ void ioapic_set_irq(unsigned irq)
 			 * route the interrupts to the bsp by default
 			 */
 			hi_32 = bsp_lapic_id << 24;
-			ioapic_redirt_entry_write((void *) io_apic[ioa].addr,
-					io_apic_irq[irq].pin, hi_32, low_32);
-		}
+	ioapic_disable_irq(irq);
+	io_apic_irq[irq].ioa = NULL;
+	io_apic_irq[irq].eoi = NULL;
 	}
 }
 
