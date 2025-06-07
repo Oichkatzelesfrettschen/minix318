@@ -1,8 +1,10 @@
 {
   "configurations": [
     {
-      "name": "MainMac",
-      "includePath": ["${workspaceFolder}/**"],
+      "name": "macos-clang-arm64",
+      "includePath": [
+        "${workspaceFolder}/**"
+      ],
       "defines": [],
       "compilerPath": "/usr/bin/clang",
       "cStandard": "c23",
