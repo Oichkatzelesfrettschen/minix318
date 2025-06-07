@@ -1,0 +1,24 @@
+KSTRLCPY(3K)         Kernel Library Functions         KSTRLCPY(3K)
+
+NAME
+     kstrlcpy - size-bounded kernel string copying
+
+SYNOPSIS
+     #include <klib/include/kstring.h>
+
+     k_size_t kstrlcpy(char *dst, const char *src, k_size_t size);
+
+DESCRIPTION
+     The kstrlcpy() function copies up to size - 1 characters from the
+     null-terminated string src to dst, null-terminating the result.
+     The 'size' argument is the full size of the destination buffer.
+
+RETURN VALUES
+     kstrlcpy() returns the total length of the string it tried to create,
+     that means the length of src. This allows truncation detection: if
+     the return value is >= size, truncation occurred.
+     If dst or src is NULL, it returns 0 (behavior specific to this klib impl).
+
+NOTES
+     This function is designed to be safer than strncpy.
+     It ensures the destination string is always null-terminated if size > 0.
