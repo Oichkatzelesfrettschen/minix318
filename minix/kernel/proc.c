@@ -29,7 +29,6 @@
  * nonempty lists. As shown above, this is not required with pointer pointers.
  */
 
-// #include <stddef.h> // Removed (NULL, offsetof might be problematic)
 // #include <signal.h> // Replaced
 // #include <assert.h> // Replaced
 // #include <string.h> // Replaced
@@ -118,7 +117,7 @@ static void set_idle_name(char * name, int n)
 		kmemcpy(&(m_ptr)->m_notify.sigset,			/* MODIFIED memcpy */ \
 			&priv(dst_ptr)->s_sig_pending,			\
 			sizeof(k_sigset_t)); /* MODIFIED sigset_t */				\
-		/* FIXME: sigemptyset was here */ /* sigemptyset(&priv(dst_ptr)->s_sig_pending); */		\
+		k_sigemptyset(&priv(dst_ptr)->s_sig_pending);		\
 		break;							\
 	}
 
@@ -142,6 +141,11 @@ void proc_init(void)
 		rp->p_scheduler = NULL;		/* no user space scheduler */
 		rp->p_priority = 0;		/* no priority */
 		rp->p_quantum_size_ms = 0;	/* no quantum size */
+
+		/* Initialize the per-process IRQ-safe spinlock for signal handling.
+		 * This ensures each process structure has its p_sig_lock ready for use.
+		 */
+		spin_lock_irq_init(&rp->p_sig_lock);
 
 		/* arch-specific initialization */
 		arch_proc_reset(rp);

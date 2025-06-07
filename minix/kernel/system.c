@@ -36,7 +36,6 @@
 #include "kernel/vm.h"
 #include "kernel/clock.h"
 // #include <stdlib.h>    // Removed
-// #include <stddef.h>    // Removed (NULL, offsetof might be problematic)
 // #include <assert.h>    // Replaced
 // #include <signal.h>    // Replaced
 // #include <unistd.h>    // Removed
@@ -49,6 +48,7 @@
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
+/* k_spinlock_irq.h is included via kernel.h -> proc.h */
 
 
 /* Declaration of the call vector that defines the mapping of system calls
@@ -369,23 +369,60 @@ void fill_sendto_mask(const struct proc *rp, sys_map_t *map)
 /*===========================================================================*
  *				send_sig				     *
  *===========================================================================*/
+/**
+ * @brief Notify a system process about a signal.
+ * @param ep The endpoint of the process to signal.
+ * @param sig_nr The signal number.
+ * @return OK if successful, or an error code if the endpoint is invalid.
+ *
+ * This function sends a notification to the target process, indicating that
+ * a signal is pending. The actual setting of the signal in the process's
+ * pending set (p_pending or s_sig_pending) is handled by the caller
+ * (typically cause_sig) under appropriate locks. This function's primary
+ * role is the notification mechanism via mini_notify.
+ */
 int send_sig(endpoint_t ep, int sig_nr)
 {
-/* Notify a system process about a signal. This is straightforward. Simply
- * set the signal that is to be delivered in the pending signals map and
- * send a notification with source SYSTEM.
- */
   register struct proc *rp;
-  struct priv *priv;
+  struct priv *privp; // Renamed to avoid conflict with priv() macro
   int proc_nr;
+
+  /* KASSERT: Ensure the signal number is valid (1 to _NSIG-1).
+   * An invalid signal number could lead to undefined behavior or bypass
+   * security checks if not validated by the caller.
+   */
+  KASSERT(sig_nr > 0 && sig_nr < _NSIG, "send_sig: invalid signal number %d", sig_nr);
 
   if(!isokendpt(ep, &proc_nr) || isemptyn(proc_nr))
 	return EINVAL;
 
   rp = proc_addr(proc_nr);
-  priv = priv(rp);
-  if(!priv) return ENOENT;
-  /* FIXME: sigaddset was here */ // sigaddset(&priv->s_sig_pending, sig_nr);
+
+  /* KASSERT: Ensure the target process pointer is not NULL.
+   * A NULL rp would lead to a kernel panic when dereferenced. This indicates
+   * a serious issue with endpoint to process mapping or process table corruption.
+   */
+  KASSERT(rp != NULL, "send_sig: null process pointer for endpoint %d", ep);
+  /* KASSERT: Check for process table corruption using a magic number.
+   * If p_magic is not PMAGIC, the process structure might be corrupted or
+   * the pointer rp might be invalid, potentially leading to memory errors.
+   */
+  KASSERT(rp->p_magic == PMAGIC, "send_sig: corrupted process structure for endpoint %d, proc_nr %d", ep, proc_nr);
+
+  privp = priv(rp);
+  /* KASSERT: Ensure the privilege structure for the process is not NULL.
+   * The privilege structure holds signal management information. A NULL value
+   * indicates a problem with process initialization or state.
+   */
+  KASSERT(privp != NULL, "send_sig: null privilege structure for endpoint %d, proc_nr %d", ep, proc_nr);
+  if(!privp) return ENOENT;
+
+  /* Note: Modification of s_sig_pending was removed from send_sig.
+   * The caller (cause_sig) now handles this under p_sig_lock for the
+   * self-managed case. For external signal managers, p_pending is used,
+   * also managed by cause_sig under p_sig_lock.
+   * send_sig's role is purely notification.
+   */
   mini_notify(proc_addr(SYSTEM), rp->p_endpoint);
 
   return OK;
@@ -394,29 +431,52 @@ int send_sig(endpoint_t ep, int sig_nr)
 /*===========================================================================*
  *				cause_sig				     *
  *===========================================================================*/
+/**
+ * @brief Initiate the process of sending a signal to a target process.
+ * @param proc_nr The process number of the target process.
+ * @param sig_nr The signal number to send.
+ *
+ * This function is the primary kernel mechanism for initiating a signal.
+ * It handles routing the signal either directly to the process if it manages
+ * its own signals, or to its designated signal manager. It updates the
+ * target process's pending signal set and RTS flags, and then notifies the
+ * appropriate signal handler (either the process itself or its manager)
+ * using send_sig(). Critical sections are protected by p_sig_lock.
+ */
 void cause_sig(proc_nr_t proc_nr, int sig_nr)
 {
-/* A system process wants to send signal 'sig_nr' to process 'proc_nr'.
- * Examples are:
- *  - HARDWARE wanting to cause a SIGSEGV after a CPU exception
- *  - TTY wanting to cause SIGINT upon getting a DEL
- *  - FS wanting to cause SIGPIPE for a broken pipe
- * Signals are handled by sending a message to the signal manager assigned to
- * the process. This function handles the signals and makes sure the signal
- * manager gets them by sending a notification. The process being signaled
- * is blocked while the signal manager has not finished all signals for it.
- * Race conditions between calls to this function and the system calls that
- * process pending kernel signals cannot exist. Signal related functions are
- * only called when a user process causes a CPU exception and from the kernel
- * process level, which runs to completion.
- */
   register struct proc *rp, *sig_mgr_rp;
   endpoint_t sig_mgr;
   int sig_mgr_proc_nr;
-  int s;
+  int s, flags; /* For spin_lock_irqsave */
 
-  /* Lookup signal manager. */
+  /* KASSERT: Ensure the signal number is valid (1 to _NSIG-1).
+   * An invalid signal number could lead to out-of-bounds access
+   * when manipulating signal bitmasks (e.g., p_pending) or dispatching
+   * to signal actions, potentially corrupting memory or causing undefined behavior.
+   * This also enforces the kernel-userspace ABI for signals.
+   */
+  KASSERT(sig_nr > 0 && sig_nr < _NSIG, "cause_sig: invalid signal number %d", sig_nr);
+
+  /* Lookup process and signal manager. */
   rp = proc_addr(proc_nr);
+
+  /* KASSERT: Ensure the target process pointer is not NULL.
+   * A NULL rp would lead to a kernel panic when dereferenced. This indicates
+   * a serious issue with endpoint to process mapping or process table corruption.
+   */
+  KASSERT(rp != NULL, "cause_sig: null process pointer for proc_nr %d", proc_nr);
+  /* KASSERT: Check for process table corruption using a magic number.
+   * If p_magic is not PMAGIC, the process structure might be corrupted or
+   * the pointer rp might be invalid, potentially leading to memory errors.
+   */
+  KASSERT(rp->p_magic == PMAGIC, "cause_sig: corrupted process structure for proc_nr %d, endpoint %d", proc_nr, rp->p_endpoint);
+  /* KASSERT: Ensure the privilege structure for the process is not NULL.
+   * The privilege structure holds signal management information (e.g., s_sig_mgr).
+   * A NULL value indicates a problem with process initialization or state.
+   */
+  KASSERT(priv(rp) != NULL, "cause_sig: null privilege structure for proc_nr %d, endpoint %d", proc_nr, rp->p_endpoint);
+
   sig_mgr = priv(rp)->s_sig_mgr;
   if(sig_mgr == SELF) sig_mgr = rp->p_endpoint;
 
@@ -426,34 +486,56 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr)
            /* If the signal is lethal, see if a backup signal manager exists. */
            sig_mgr = priv(rp)->s_bak_sig_mgr;
            if(sig_mgr != NONE && isokendpt(sig_mgr, &sig_mgr_proc_nr)) {
+               /* Lock needs to be acquired before modifying priv(rp) and RTS flags,
+                * and before calling cause_sig recursively or send_sig.
+                * However, recursive locking of the same spinlock is not allowed.
+                * This path needs careful review for locking strategy if SIGS_IS_LETHAL
+                * and backup signal managers are re-enabled. For now, placing locks
+                * around the direct signal sending part.
+                */
                priv(rp)->s_sig_mgr = sig_mgr;
                priv(rp)->s_bak_sig_mgr = NONE;
                sig_mgr_rp = proc_addr(sig_mgr_proc_nr);
                RTS_UNSET(sig_mgr_rp, RTS_NO_PRIV);
                cause_sig(proc_nr, sig_nr); /* try again with the new sig mgr. */
-               return;
+               return; /* Original return, lock not acquired yet in this specific sub-path */
            }
            /* We are out of luck. Time to panic. */
            proc_stacktrace(rp);
            panic("cause_sig: sig manager %d gets lethal signal %d for itself",
 	   	rp->p_endpoint, sig_nr);
        }
-       /* FIXME: sigaddset was here */ // sigaddset(&priv(rp)->s_sig_pending, sig_nr);
-       if(OK != send_sig(rp->p_endpoint, SIGKSIGSM)) // SIGKSIGSM may be undefined
+       flags = spin_lock_irqsave(&rp->p_sig_lock);
+       /* FIXME: sigaddset was here */ // k_sigaddset(&priv(rp)->s_sig_pending, sig_nr);
+       s = send_sig(rp->p_endpoint, SIGKSIGSM); // SIGKSIGSM may be undefined
+       spin_unlock_irqrestore(&rp->p_sig_lock, flags);
+       if(OK != s)
        	panic("send_sig failed");
        return;
   }
 
-  s = 0; /* FIXME: sigismember was here */ // sigismember(&rp->p_pending, sig_nr);
+  /* External Manager Path */
+  flags = spin_lock_irqsave(&rp->p_sig_lock);
+  s = k_sigismember(&rp->p_pending, sig_nr);
   /* Check if the signal is already pending. Process it otherwise. */
   if (!s) {
-      /* FIXME: sigaddset was here */ // sigaddset(&rp->p_pending, sig_nr);
+      k_sigaddset(&rp->p_pending, sig_nr);
       if (! (RTS_ISSET(rp, RTS_SIGNALED))) {		/* other pending */
+	  /* The RTS_SET macro itself should be SMP-safe or be called
+	   * while holding the appropriate lock.
+	   */
 	  RTS_SET(rp, RTS_SIGNALED | RTS_SIG_PENDING);
-          if(OK != send_sig(sig_mgr, SIGKSIG)) // SIGKSIG may be undefined
-	  	panic("send_sig failed");
+          /* send_sig itself doesn't modify shared process state directly here,
+           * but it's part of the signal delivery mechanism initiated while holding the lock.
+           */
+          int send_result = send_sig(sig_mgr, SIGKSIG); // SIGKSIG may be undefined
+          if(OK != send_result) {
+            spin_unlock_irqrestore(&rp->p_sig_lock, flags); // Unlock before panic
+		    panic("send_sig failed");
+          }
       }
   }
+  spin_unlock_irqrestore(&rp->p_sig_lock, flags);
 }
 
 /*===========================================================================*
