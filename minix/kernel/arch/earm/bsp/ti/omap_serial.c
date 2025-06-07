@@ -1,6 +1,5 @@
-#include <assert.h>
-#include <sys/types.h>
 #include <machine/cpu.h>
+// #include <sys/types.h> // Removed, kernel should use its own types
 #include <minix/type.h>
 #include <minix/board.h>
 #include <io.h>
@@ -10,6 +9,9 @@
 #include "kernel/vm.h"
 #include "kernel/proto.h"
 #include "arch_proto.h"
+
+// Added kernel headers
+#include <klib/include/kprintf.h> // For KASSERT_PLACEHOLDER
 
 #include "omap_serial.h"
 
@@ -55,14 +57,14 @@ bsp_ser_init(void)
 	kern_phys_map_ptr(omap_serial.base, omap_serial.size,
 	    VMMF_UNCACHED | VMMF_WRITE, &serial_phys_map,
 	    (vir_bytes) & omap_serial.base);
-	assert(omap_serial.base);
+	KASSERT_PLACEHOLDER(omap_serial.base);
 }
 
 void
 bsp_ser_putc(char c)
 {
 	int i;
-	assert(omap_serial.base);
+	KASSERT_PLACEHOLDER(omap_serial.base);
 
 	/* Wait until FIFO's empty */
 	for (i = 0; i < 100000; i++) {

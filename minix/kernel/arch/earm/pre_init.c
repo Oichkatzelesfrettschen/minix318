@@ -78,10 +78,8 @@ int find_value(char * content,char * key,char *value,int value_max_len){
 	}
 
 	/* find the key and content length */
-	key_len = 0; // MODIFIED: kstrlen can be used if `content` and `key` are simple strings
-	for(iter = key ; *iter != '\0'; iter++, key_len++);
-	content_len = 0;
-	for(iter = content ; *iter != '\0'; iter++, content_len++);
+	key_len = kstrlen(key);
+	content_len = kstrlen(content);
 
 
 	/* return if key or content length invalid */
@@ -133,14 +131,7 @@ static int mb_set_param(char *bigbuf,char *name,char *value, kinfo_t *cbi)
 
 	/* Delete the item if already exists */
 	while (*p) {
-		// MODIFIED: strncmp to manual loop or kstrncmp if available
-                // if (strncmp(p, name, namelen) == 0 && p[namelen] == '=') {
-                int cmp_res = 1; // Non-zero if different or if p is shorter
-                if (kstrlen(p) >= namelen && p[namelen] == '=') {
-                    cmp_res = 0; // Assume same for now
-                    for(int k=0; k<namelen; k++) { if(p[k] != name[k]) { cmp_res=1; break; } }
-                }
-                if (cmp_res == 0) {
+                if (kstrncmp(p, name, namelen) == 0 && p[namelen] == '=') {
                 /* FIXME: strncmp was here. Manual loop above is a basic replacement.
                  * Consider creating kstrncmp or validating this logic carefully.
                  */
