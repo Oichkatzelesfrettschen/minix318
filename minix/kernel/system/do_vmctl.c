@@ -9,7 +9,15 @@
 
 #include "kernel/system.h"
 #include "kernel/vm.h"
-#include <assert.h>
+// #include <assert.h> // Replaced
+
+// Added kernel headers
+#include <minix/kernel_types.h> // For k_errno_t
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
+
 
 /*===========================================================================*
  *				do_vmctl				     *
@@ -23,15 +31,15 @@ int do_vmctl(struct proc * caller, message * m_ptr)
   if(ep == SELF) { ep = caller->p_endpoint; }
 
   if(!isokendpt(ep, &proc_nr)) {
-	printf("do_vmctl: unexpected endpoint %d from VM\n", ep);
-	return EINVAL;
+	kprintf_stub("do_vmctl: unexpected endpoint %d from VM\n", ep); // MODIFIED
+	return EINVAL; // EINVAL might be undefined
   }
 
   p = proc_addr(proc_nr);
 
   switch(m_ptr->SVMCTL_PARAM) {
 	case VMCTL_CLEAR_PAGEFAULT:
-		assert(RTS_ISSET(p,RTS_PAGEFAULT));
+		KASSERT(RTS_ISSET(p,RTS_PAGEFAULT));
 		RTS_UNSET(p, RTS_PAGEFAULT);
 		return OK;
 	case VMCTL_MEMREQ_GET:
@@ -40,11 +48,11 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 		 * filters may forbid VM from getting requests for particular
 		 * sources. However, IPC filters are used only in rare cases.
 		 */
-		for (rpp = &vmrequest; *rpp != NULL;
+		for (rpp = &vmrequest; *rpp != NULL; // NULL might be undefined
 		    rpp = &(*rpp)->p_vmrequest.nextrequestor) {
 			rp = *rpp;
 
-			assert(RTS_ISSET(rp, RTS_VMREQUEST));
+			KASSERT(RTS_ISSET(rp, RTS_VMREQUEST));
 
 			okendpt(rp->p_vmrequest.target, &proc_nr);
 			target = proc_addr(proc_nr);
@@ -76,15 +84,15 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 			return rp->p_vmrequest.req_type;
 		}
 
-		return ENOENT;
+		return ENOENT; // ENOENT might be undefined
 
 	case VMCTL_MEMREQ_REPLY:
-		assert(RTS_ISSET(p, RTS_VMREQUEST));
-		assert(p->p_vmrequest.vmresult == VMSUSPEND);
+		KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
+		KASSERT(p->p_vmrequest.vmresult == VMSUSPEND);
   		okendpt(p->p_vmrequest.target, &proc_nr);
 		target = proc_addr(proc_nr);
 		p->p_vmrequest.vmresult = m_ptr->SVMCTL_VALUE;
-		assert(p->p_vmrequest.vmresult != VMSUSPEND);
+		KASSERT(p->p_vmrequest.vmresult != VMSUSPEND);
 
 		switch(p->p_vmrequest.type) {
 		case VMSTYPE_KERNELCALL:
@@ -95,12 +103,12 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 			p->p_misc_flags |= MF_KCALL_RESUME;
 			break;
 		case VMSTYPE_DELIVERMSG:
-			assert(p->p_misc_flags & MF_DELIVERMSG);
-			assert(p == target);
-			assert(RTS_ISSET(p, RTS_VMREQUEST));
+			KASSERT(p->p_misc_flags & MF_DELIVERMSG);
+			KASSERT(p == target);
+			KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
 			break;
 		case VMSTYPE_MAP:
-			assert(RTS_ISSET(p, RTS_VMREQUEST));
+			KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
 			break;
 		default:
 			panic("strange request type: %d",p->p_vmrequest.type);
@@ -135,7 +143,7 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 #endif
 		return OK;
 	case VMCTL_VMINHIBIT_CLEAR:
-		assert(RTS_ISSET(p, RTS_VMINHIBIT));
+		KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
 		/*
 		 * the processes is certainly not runnable, no need to tell its
 		 * cpu
