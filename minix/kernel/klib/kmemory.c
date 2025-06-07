@@ -22,32 +22,31 @@ void *kmemset(void *s, int c, k_size_t n) {
 }
 
 void *kmemmove(void *dest, const void *src, k_size_t n) {
-    if (dest == NULL || src == NULL || n == 0) {
-        return dest;
-    }
-
+    // Ensure kernel_types.h is included for k_size_t if not already.
+    // It should be via "kmemory.h" -> <minix/kernel_types.h>
     unsigned char *pd = (unsigned char *)dest;
     const unsigned char *ps = (const unsigned char *)src;
 
-    // Check for overlap and copy direction
-    if (pd < ps) {
-        // Copy forwards (standard memcpy)
-        return __builtin_memcpy(dest, src, n);
-    } else if (pd > ps) {
+    if (pd == ps || n == 0) {
+        return dest;
+    }
+
+    // Correct overlap detection: backward copy needed when
+    // dest > src AND dest < src + n (i.e., dest is within src and src+n)
+    if (pd > ps && pd < (ps + n)) {
         // Copy backwards
-        // Check if regions overlap and dest is after src
-        // (pd > ps) means dest starts after src.
-        // If (ps + n > pd), then the end of src overlaps with the start of dest.
-        if ((ps + n) > pd) { // Overlap condition where backwards copy is needed
-            for (k_size_t i = n; i > 0; i--) {
-                pd[i-1] = ps[i-1];
-            }
-        } else {
-            // No overlap even if dest > src, so forward copy is fine
-            return __builtin_memcpy(dest, src, n);
+        pd = pd + n;
+        ps = ps + n;
+        while (n--) {
+            *--pd = *--ps;
+        }
+    } else {
+        // Forward copy is safe (src and dest do not overlap in a way that requires backward copy)
+        // This includes cases where dest < src, or dest >= ps + n.
+        while (n--) {
+            *pd++ = *ps++;
         }
     }
-    // else (pd == ps), no copy needed or already handled by n==0
 
     return dest;
 }

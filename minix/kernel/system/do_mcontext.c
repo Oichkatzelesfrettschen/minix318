@@ -18,6 +18,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_errno_t or similar if error codes are mapped
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -58,7 +59,8 @@ int do_getmcontext(struct proc * caller, message * m_ptr)
 	/* make sure that the FPU context is saved into proc structure first */
 	save_fpu(rp);
 	mc.mc_flags = (rp->p_misc_flags & MF_FPU_INITIALIZED) ? _MC_FPU_SAVED : 0;
-	KASSERT_PLACEHOLDER(sizeof(mc.__fpregs.__fp_reg_set) == FPU_XFP_SIZE); // MODIFIED
+	KASSERT(sizeof(mc.__fpregs.__fp_reg_set) == FPU_XFP_SIZE);
+
 	kmemcpy(&(mc.__fpregs.__fp_reg_set), rp->p_seg.fpu_state, FPU_XFP_SIZE); // MODIFIED
   } 
 #endif
@@ -99,7 +101,8 @@ int do_setmcontext(struct proc * caller, message * m_ptr)
   /* Copy FPU state */
   if (mc.mc_flags & _MC_FPU_SAVED) {
 	rp->p_misc_flags |= MF_FPU_INITIALIZED;
-	KASSERT_PLACEHOLDER(sizeof(mc.__fpregs.__fp_reg_set) == FPU_XFP_SIZE); // MODIFIED
+	KASSERT(sizeof(mc.__fpregs.__fp_reg_set) == FPU_XFP_SIZE);
+
 	kmemcpy(rp->p_seg.fpu_state, &(mc.__fpregs.__fp_reg_set), FPU_XFP_SIZE); // MODIFIED
   } else
 	rp->p_misc_flags &= ~MF_FPU_INITIALIZED;

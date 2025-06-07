@@ -20,6 +20,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_size_t, k_errno_t
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -266,7 +267,7 @@ int verify_grant(
 		sfinfo->endpt = granter;
 		/* FIXME: offsetof may be undefined */
 		sfinfo->addr = priv(granter_proc)->s_grant_table +
-		    sizeof(g) * grant_idx + offsetof(cp_grant_t, cp_faulted);
+		    sizeof(g) * grant_idx + K_OFFSETOF(cp_grant_t, cp_faulted);
 		sfinfo->value = grant;
 	}
 
@@ -413,7 +414,8 @@ int do_vsafecopy(struct proc * caller, message * m_ptr)
 
 	/* Set vector copy parameters. */
 	src.proc_nr_e = caller->p_endpoint;
-	KASSERT_PLACEHOLDER(src.proc_nr_e != NONE); // MODIFIED
+	KASSERT(src.proc_nr_e != NONE);
+
 	src.offset = (vir_bytes) m_ptr->m_lsys_krn_vsafecopy.vec_addr;
 	dst.proc_nr_e = KERNEL;
 	dst.offset = (vir_bytes) vec;

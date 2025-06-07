@@ -151,21 +151,22 @@ int do_trace(struct proc * caller, message * m_ptr)
 	 * tries to load them prior to restarting a process, so do
 	 * not allow it.
 	 */
-	if (i == (int) &((struct proc *) 0)->p_reg.cs ||
-	    i == (int) &((struct proc *) 0)->p_reg.ds ||
-	    i == (int) &((struct proc *) 0)->p_reg.es ||
-	    i == (int) &((struct proc *) 0)->p_reg.gs ||
-	    i == (int) &((struct proc *) 0)->p_reg.fs ||
-	    i == (int) &((struct proc *) 0)->p_reg.ss)
+	if (i == K_OFFSETOF(struct proc, p_reg.cs) ||
+	    i == K_OFFSETOF(struct proc, p_reg.ds) ||
+	    i == K_OFFSETOF(struct proc, p_reg.es) ||
+	    i == K_OFFSETOF(struct proc, p_reg.gs) ||
+	    i == K_OFFSETOF(struct proc, p_reg.fs) ||
+	    i == K_OFFSETOF(struct proc, p_reg.ss))
 		return(EFAULT); // EFAULT might be undefined
 
-	if (i == (int) &((struct proc *) 0)->p_reg.psw)
+	if (i == K_OFFSETOF(struct proc, p_reg.psw))
+
 		/* only selected bits are changeable */
 		SETPSW(rp, tr_data);
 	else
 		*(reg_t *) ((char *) &rp->p_reg + i) = (reg_t) tr_data;
 #elif defined(__arm__)
-	if (i == (int) &((struct proc *) 0)->p_reg.psr) {
+	if (i == K_OFFSETOF(struct proc, p_reg.psr)) {
 		/* only selected bits are changeable */
 		SET_USR_PSR(rp, tr_data);
 	} else {

@@ -13,6 +13,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h>
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -356,7 +357,7 @@ static const char *mtypename(int mtype, int *possible_callname)
 
 	if(errname) return errname;
 
-	KASSERT_PLACEHOLDER(callname); // MODIFIED
+	KASSERT(callname);
 	return callname;
 }
 
@@ -475,12 +476,12 @@ static void sortstats(void)
 			 * and should be inserted at position 'w.'
 			 */
 			rem = PRINTSLOTS-w-1;
-			KASSERT_PLACEHOLDER(rem >= 0); // MODIFIED
-			KASSERT_PLACEHOLDER(rem < PRINTSLOTS); // MODIFIED
+			KASSERT(rem >= 0);
+			KASSERT(rem < PRINTSLOTS);
 			if(rem > 0) {
-				KASSERT_PLACEHOLDER(w+1 <= PRINTSLOTS-1); // MODIFIED
-				KASSERT_PLACEHOLDER(w >= 0); // MODIFIED
-				kmemmove(&winners[w+1], &winners[w], // MODIFIED
+				KASSERT(w+1 <= PRINTSLOTS-1);
+				KASSERT(w >= 0);
+				kmemmove(&winners[w+1], &winners[w],
 					rem*sizeof(winners[0]));
 			}
 			winners[w].src = src_slot;
@@ -494,7 +495,7 @@ static void sortstats(void)
 #define proc2slot(p, s) { \
 	if(p) { s = p->p_nr; } \
 	else { s = KERNELIPC; } \
-	KASSERT_PLACEHOLDER(s >= 0 && s < IPCPROCS); \
+	KASSERT(s >= 0 && s < IPCPROCS); \
 }
 
 static void statmsg(message *msg, struct proc *srcp, struct proc *dstp)
@@ -503,9 +504,9 @@ static void statmsg(message *msg, struct proc *srcp, struct proc *dstp)
 	static int lastprint;
 
 	/* Stat message. */
-	KASSERT_PLACEHOLDER(src); // This assert was on 'src' which is uninitialized here. Assuming it meant srcp or similar.
+	KASSERT(src); // This assert was on 'src' which is uninitialized here. Assuming it meant srcp or similar.
                                // For now, keeping as is, but this is a bug in original code.
-                               // If it meant to assert srcp, it would be KASSERT_PLACEHOLDER(srcp);
+                               // If it meant to assert srcp, it would be KASSERT(srcp);
 	proc2slot(srcp, src);
 	proc2slot(dstp, dst);
 	messages[src][dst]++;
@@ -563,7 +564,8 @@ void hook_ipc_clear(struct proc *p)
 {
 #if DEBUG_IPCSTATS
 	int slot, i;
-	KASSERT_PLACEHOLDER(p); // MODIFIED
+	KASSERT(p);
+
 	proc2slot(p, slot);
 	for(i = 0; i < IPCPROCS; i++)
 		messages[slot][i] = messages[i][slot] = 0;

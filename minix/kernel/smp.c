@@ -2,6 +2,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h>
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -83,7 +84,8 @@ static void smp_schedule_sync(struct proc * p, unsigned task)
 	unsigned cpu = p->p_cpu;
 	unsigned mycpu = cpuid;
 
-	KASSERT_PLACEHOLDER(cpu != mycpu); // MODIFIED
+	KASSERT(cpu != mycpu);
+
 	/*
 	 * if some other cpu made a request to the same cpu, wait until it is
 	 * done before proceeding
@@ -123,7 +125,7 @@ void smp_schedule_stop_proc(struct proc * p)
 		smp_schedule_sync(p, SCHED_IPI_STOP_PROC);
 	else
 		RTS_SET(p, RTS_PROC_STOP);
-	KASSERT_PLACEHOLDER(RTS_ISSET(p, RTS_PROC_STOP)); // MODIFIED
+	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
 }
 
 void smp_schedule_vminhibit(struct proc * p)
@@ -132,7 +134,7 @@ void smp_schedule_vminhibit(struct proc * p)
 		smp_schedule_sync(p, SCHED_IPI_VM_INHIBIT);
 	else
 		RTS_SET(p, RTS_VMINHIBIT);
-	KASSERT_PLACEHOLDER(RTS_ISSET(p, RTS_VMINHIBIT)); // MODIFIED
+	KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
 }
 
 void smp_schedule_stop_proc_save_ctx(struct proc * p)
@@ -142,7 +144,8 @@ void smp_schedule_stop_proc_save_ctx(struct proc * p)
 	 * be saved (i.e. including FPU state and such)
 	 */
 	smp_schedule_sync(p, SCHED_IPI_STOP_PROC | SCHED_IPI_SAVE_CTX);
-	KASSERT_PLACEHOLDER(RTS_ISSET(p, RTS_PROC_STOP)); // MODIFIED
+	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
+
 }
 
 void smp_schedule_migrate_proc(struct proc * p, unsigned dest_cpu)
@@ -152,8 +155,8 @@ void smp_schedule_migrate_proc(struct proc * p, unsigned dest_cpu)
 	 * be saved (i.e. including FPU state and such)
 	 */
 	smp_schedule_sync(p, SCHED_IPI_STOP_PROC | SCHED_IPI_SAVE_CTX);
-	KASSERT_PLACEHOLDER(RTS_ISSET(p, RTS_PROC_STOP)); // MODIFIED
-	
+	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
+
 	/* assign the new cpu and let the process run again */
 	p->p_cpu = dest_cpu;
 	RTS_UNSET(p, RTS_PROC_STOP);

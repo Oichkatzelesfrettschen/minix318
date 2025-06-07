@@ -12,6 +12,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_errno_t or similar if error codes are mapped
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -69,7 +70,8 @@ int do_runctl(struct proc * caller, message * m_ptr)
 	  RTS_SET(rp, RTS_PROC_STOP);
 	break;
   case RC_RESUME:
-	KASSERT_PLACEHOLDER(RTS_ISSET(rp, RTS_PROC_STOP)); // MODIFIED
+	KASSERT(RTS_ISSET(rp, RTS_PROC_STOP));
+
 	RTS_UNSET(rp, RTS_PROC_STOP);
 	break;
   default:

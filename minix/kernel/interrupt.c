@@ -20,6 +20,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h>
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h> // For KASSERT_PLACEHOLDER and kprintf_stub
 #include <klib/include/kstring.h> // Precautionary
 #include <klib/include/kmemory.h> // Precautionary
@@ -124,7 +125,7 @@ void irq_handle(int irq)
   irq_hook_t * hook;
 
   /* here we need not to get this IRQ until all the handlers had a say */
-  KASSERT_PLACEHOLDER(irq >= 0 && irq < NR_IRQ_VECTORS); // MODIFIED
+  KASSERT(irq >= 0 && irq < NR_IRQ_VECTORS);
   hw_intr_mask(irq);
   hook = irq_handlers[irq];
 

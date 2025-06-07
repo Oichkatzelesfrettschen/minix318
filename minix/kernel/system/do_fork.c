@@ -20,6 +20,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_errno_t, k_sigset_t
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -52,7 +53,7 @@ int do_fork(struct proc * caller, message * m_ptr)
   rpc = proc_addr(m_ptr->m_lsys_krn_sys_fork.slot);
   if (isemptyp(rpp) || ! isemptyp(rpc)) return(EINVAL); // EINVAL might be undefined
 
-  KASSERT_PLACEHOLDER(!(rpp->p_misc_flags & MF_DELIVERMSG)); // MODIFIED
+  KASSERT(!(rpp->p_misc_flags & MF_DELIVERMSG));
 
   /* needs to be receiving so we know where the message buffer is */
   if(!RTS_ISSET(rpp, RTS_RECEIVING)) {

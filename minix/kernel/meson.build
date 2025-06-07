@@ -63,8 +63,9 @@ kernel_includes = include_directories(
 klib_sources = files(
     'klib/kstring.c',
     'klib/kmemory.c',
-    'klib/kprintf_stub.c'
-    # Add other klib source files here if created (e.g. kpanic.c, katom.c)
+    'klib/kprintf_stub.c',
+    'klib/kpanic.c'
+    # TODO Add other klib source files here if created (e.g. katom.c)
 )
 
 klib = static_library('klib',
@@ -154,6 +155,33 @@ elif arch_subdir == 'x86_64'
   noop_x86_64 = [] # Placeholder
 endif
 
+# Define architecture-specific assembly sources
+kernel_asm_sources = []
+if arch == 'i386'
+    kernel_asm_sources = files(
+        'arch/i386/mpx.S',
+        'arch/i386/head.S',
+        'arch/i386/klib.S',
+        'arch/i386/apic_asm.S'
+        # Add other essential .S files here if identified later e.g.
+        # 'arch/i386/debugreg.S',
+        # 'arch/i386/io_inb.S', 'arch/i386/io_inl.S', 'arch/i386/io_intr.S', 'arch/i386/io_inw.S',
+        # 'arch/i386/io_outb.S', 'arch/i386/io_outl.S', 'arch/i386/io_outw.S',
+        # 'arch/i386/trampoline.S',
+        # 'arch/i386/usermapped_glo_ipc.S'
+        # For now, using the minimal list from feedback.
+    )
+elif arch == 'x86_64'
+    # Assuming these files do not exist yet based on previous 'ls' output.
+    # If they are added, they can be listed here.
+    # kernel_asm_sources = files(
+    #     'arch/x86_64/mpx.S',
+    #     'arch/x86_64/head.S',
+    #     'arch/x86_64/klib.S'
+    # )
+    kernel_asm_sources = [] # Empty list for x86_64 if files are not present
+endif
+
 # Need to handle Assembly files separately and link them.
 # For now, focusing on C files. This will be a FIXME for the build.
 
@@ -170,7 +198,7 @@ kernel_link_args += ['-T', linker_script, '-Wl,--build-id=none']
 
 # Build kernel executable
 kernel = executable('kernel',
-    all_c_sources,
+    all_c_sources + kernel_asm_sources,
     link_with: [klib],
     link_args: kernel_link_args,
     c_args: kernel_c_args,

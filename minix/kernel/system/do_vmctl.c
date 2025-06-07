@@ -13,6 +13,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_errno_t
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -38,7 +39,8 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 
   switch(m_ptr->SVMCTL_PARAM) {
 	case VMCTL_CLEAR_PAGEFAULT:
-		KASSERT_PLACEHOLDER(RTS_ISSET(p,RTS_PAGEFAULT)); // MODIFIED
+		KASSERT(RTS_ISSET(p,RTS_PAGEFAULT));
+LDER(RTS_ISSET(p,RTS_PAGEFAULT)); // MODIFIED
 		RTS_UNSET(p, RTS_PAGEFAULT);
 		return OK;
 	case VMCTL_MEMREQ_GET:
@@ -51,7 +53,7 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 		    rpp = &(*rpp)->p_vmrequest.nextrequestor) {
 			rp = *rpp;
 
-			KASSERT_PLACEHOLDER(RTS_ISSET(rp, RTS_VMREQUEST)); // MODIFIED
+			KASSERT(RTS_ISSET(rp, RTS_VMREQUEST));
 
 			okendpt(rp->p_vmrequest.target, &proc_nr);
 			target = proc_addr(proc_nr);
@@ -86,12 +88,12 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 		return ENOENT; // ENOENT might be undefined
 
 	case VMCTL_MEMREQ_REPLY:
-		KASSERT_PLACEHOLDER(RTS_ISSET(p, RTS_VMREQUEST)); // MODIFIED
-		KASSERT_PLACEHOLDER(p->p_vmrequest.vmresult == VMSUSPEND); // MODIFIED
+		KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
+		KASSERT(p->p_vmrequest.vmresult == VMSUSPEND);
   		okendpt(p->p_vmrequest.target, &proc_nr);
 		target = proc_addr(proc_nr);
 		p->p_vmrequest.vmresult = m_ptr->SVMCTL_VALUE;
-		KASSERT_PLACEHOLDER(p->p_vmrequest.vmresult != VMSUSPEND); // MODIFIED
+		KASSERT(p->p_vmrequest.vmresult != VMSUSPEND);
 
 		switch(p->p_vmrequest.type) {
 		case VMSTYPE_KERNELCALL:
@@ -102,12 +104,12 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 			p->p_misc_flags |= MF_KCALL_RESUME;
 			break;
 		case VMSTYPE_DELIVERMSG:
-			KASSERT_PLACEHOLDER(p->p_misc_flags & MF_DELIVERMSG); // MODIFIED
-			KASSERT_PLACEHOLDER(p == target); // MODIFIED
-			KASSERT_PLACEHOLDER(RTS_ISSET(p, RTS_VMREQUEST)); // MODIFIED
+			KASSERT(p->p_misc_flags & MF_DELIVERMSG);
+			KASSERT(p == target);
+			KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
 			break;
 		case VMSTYPE_MAP:
-			KASSERT_PLACEHOLDER(RTS_ISSET(p, RTS_VMREQUEST)); // MODIFIED
+			KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
 			break;
 		default:
 			panic("strange request type: %d",p->p_vmrequest.type);
@@ -142,7 +144,8 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 #endif
 		return OK;
 	case VMCTL_VMINHIBIT_CLEAR:
-		KASSERT_PLACEHOLDER(RTS_ISSET(p, RTS_VMINHIBIT)); // MODIFIED
+		KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
+
 		/*
 		 * the processes is certainly not runnable, no need to tell its
 		 * cpu

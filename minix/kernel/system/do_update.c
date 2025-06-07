@@ -13,10 +13,10 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_errno_t
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
-
 
 #if USE_UPDATE
 
@@ -78,7 +78,7 @@ int do_update(struct proc * caller, message * m_ptr)
       return EPERM; // EPERM might be undefined
   }
 
-  KASSERT_PLACEHOLDER(!proc_is_runnable(src_rp) && !proc_is_runnable(dst_rp)); // MODIFIED
+  KASSERT(!proc_is_runnable(src_rp) && !proc_is_runnable(dst_rp));
 
   /* Check if processes are updatable. */
   if(!proc_is_updatable(src_rp) || !proc_is_updatable(dst_rp)) {

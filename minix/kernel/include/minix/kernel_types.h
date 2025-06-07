@@ -51,4 +51,29 @@ typedef unsigned long k_vaddr_t; /* Virtual address type for x86_64 */
 #error "Unsupported architecture for k_paddr_t and k_vaddr_t"
 #endif
 
+/* Atomic types (architecture might need to provide actual atomic operations) */
+typedef struct {
+    volatile long counter;
+} __attribute__((aligned(8))) k_atomic_t; /* Generic atomic type, often for counters */
+
+typedef struct {
+    volatile long counter; // Assuming long is suitable for most atomic ops.
+                           // Could also be arch-specific size.
+} __attribute__((aligned(8))) k_atomic_long_t; /* Explicitly long atomic type */
+
+/* Opaque handle types (forward declarations) */
+/* These declare pointer types to incomplete structs, hiding implementation details. */
+/* The actual struct definitions would be elsewhere (e.g., proc.h, thread.h). */
+typedef struct k_proc_handle *k_proc_handle_t;
+typedef struct k_thread_handle *k_thread_handle_t;
+typedef struct k_mem_region_handle *k_mem_region_handle_t; // Renamed from k_mem_handle for clarity
+
+/* Memory alignment macros */
+#define K_CACHE_LINE_SIZE 64 /* Common cache line size, may need arch-specific versions */
+#define __k_cacheline_aligned __attribute__((aligned(K_CACHE_LINE_SIZE)))
+
+/* Offset calculation without stdlib (for C11 _Static_assert might need careful use with this) */
+/* This macro is generally safe for standard-layout types. */
+#define K_OFFSETOF(type, member) ((k_size_t)&((type *)0)->member)
+
 #endif /* _MINIX_KERNEL_TYPES_H */

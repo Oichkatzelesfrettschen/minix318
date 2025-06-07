@@ -18,6 +18,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_size_t, k_errno_t
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -126,7 +127,8 @@ int do_vumap(struct proc *caller, message *m_ptr)
   }
 
   /* Copy out the resulting vector of physical addresses. */
-  KASSERT_PLACEHOLDER(pcount > 0); // MODIFIED
+  KASSERT(pcount > 0);
+
 
   size = pcount * sizeof(pvec[0]);
 

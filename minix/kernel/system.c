@@ -45,6 +45,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h>
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -60,7 +61,7 @@ static int (*call_vec[NR_SYS_CALLS])(struct proc * caller, message *m_ptr);
 
 #define map(call_nr, handler) 					\
     {	int call_index = call_nr-KERNEL_CALL; 				\
-	KASSERT_PLACEHOLDER(call_index >= 0 && call_index < NR_SYS_CALLS);			\
+	KASSERT(call_index >= 0 && call_index < NR_SYS_CALLS);			\
     call_vec[call_index] = (handler)  ; }
 
 static void kernel_call_finish(struct proc * caller, message *msg, int result)
@@ -70,8 +71,8 @@ static void kernel_call_finish(struct proc * caller, message *msg, int result)
 	   * until VM tells us it's allowed. VM has been notified
 	   * and we must wait for its reply to restart the call.
 	   */
-	  KASSERT_PLACEHOLDER(RTS_ISSET(caller, RTS_VMREQUEST)); // MODIFIED
-	  KASSERT_PLACEHOLDER(caller->p_vmrequest.type == VMSTYPE_KERNELCALL); // MODIFIED
+	  KASSERT(RTS_ISSET(caller, RTS_VMREQUEST));
+	  KASSERT(caller->p_vmrequest.type == VMSTYPE_KERNELCALL);
 	  caller->p_vmrequest.saved.reqmsg = *msg;
 	  caller->p_misc_flags |= MF_KCALL_RESUME;
   } else {
@@ -620,10 +621,9 @@ void kernel_call_resume(struct proc *caller)
 {
 	int result;
 
-	KASSERT_PLACEHOLDER(!RTS_ISSET(caller, RTS_SLOT_FREE)); // MODIFIED
-	KASSERT_PLACEHOLDER(!RTS_ISSET(caller, RTS_VMREQUEST)); // MODIFIED
-
-	KASSERT_PLACEHOLDER(caller->p_vmrequest.saved.reqmsg.m_source == caller->p_endpoint); // MODIFIED
+	KASSERT(!RTS_ISSET(caller, RTS_SLOT_FREE));
+	KASSERT(!RTS_ISSET(caller, RTS_VMREQUEST));
+	KASSERT(caller->p_vmrequest.saved.reqmsg.m_source == caller->p_endpoint);
 
 	/*
 	kprintf_stub("KERNEL_CALL restart from %s / %d rts 0x%08x misc 0x%08x\n", // MODIFIED
@@ -820,7 +820,7 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e,
 		return TRUE; /* no IPC filters, always allow */
 
 	if (m_src_p == NULL) { // MODIFIED (NULL)
-		KASSERT_PLACEHOLDER(m_src_v != 0); // MODIFIED
+		KASSERT(m_src_v != 0);
 
 		/* Should we copy in the message type? */
 		get_mtype = FALSE;
@@ -841,7 +841,7 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e,
 		if (get_mtype) {
 			/* FIXME: offsetof may be undefined */
 			r = data_copy(src_e,
-			    m_src_v + offsetof(message, m_type), KERNEL,
+			    m_src_v + K_OFFSETOF(message, m_type), KERNEL,
 			    (vir_bytes)&m_buff.m_type, sizeof(m_buff.m_type));
 			if (r != OK) {
 				/* allow for now, this will fail later anyway */

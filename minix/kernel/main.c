@@ -35,9 +35,9 @@
 #include <klib/include/kmemory.h>
 #include <klib/include/kprintf.h>
 #include <minix/kernel_types.h>
+#include <sys/kassert.h>
 
-
-/* dummy for linking */
+/* FIXME dummy for linking */
 char *** _penviron;
 
 /* Prototype declarations for PRIVATE functions. */
@@ -129,7 +129,7 @@ void kmain(kinfo_t *local_cbi)
   static int bss_test;
 
   /* bss sanity check */
-  KASSERT_PLACEHOLDER(bss_test == 0); // MODIFIED
+  KASSERT(bss_test == 0);
   bss_test = 1;
 
   /* save a global copy of the boot parameters */
@@ -149,7 +149,7 @@ void kmain(kinfo_t *local_cbi)
   /* Kernel may use bits of main memory before VM is started */
   kernel_may_alloc = 1;
 
-  KASSERT_PLACEHOLDER(sizeof(kinfo.boot_procs) == sizeof(image)); // MODIFIED
+  KASSERT(sizeof(kinfo.boot_procs) == sizeof(image));
   kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
 
   cstart();
@@ -230,7 +230,7 @@ void kmain(kinfo_t *local_cbi)
             }
             /* Privileges for the root system process. */
             else {
-		KASSERT_PLACEHOLDER(isrootsysn(proc_nr)); // MODIFIED
+		KASSERT(isrootsysn(proc_nr));
                 priv(rp)->s_flags= RSYS_F;        /* privilege flags */
                 priv(rp)->s_init_flags = SRV_I;   /* init flags */
                 priv(rp)->s_trap_mask= SRV_T;     /* allowed traps */
@@ -283,8 +283,8 @@ void kmain(kinfo_t *local_cbi)
   kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
 
 #define IPCNAME(n) { \
-	KASSERT_PLACEHOLDER((n) >= 0 && (n) <= IPCNO_HIGHEST); \
-	KASSERT_PLACEHOLDER(!ipc_call_names[n]);	\
+	KASSERT((n) >= 0 && (n) <= IPCNO_HIGHEST); \
+	KASSERT(!ipc_call_names[n]);	\
 	ipc_call_names[n] = #n; \
 }
 

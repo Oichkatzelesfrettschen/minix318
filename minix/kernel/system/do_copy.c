@@ -16,6 +16,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_errno_t or similar if error codes are mapped
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -86,7 +87,8 @@ int do_copy(struct proc * caller, message * m_ptr)
   /* Now try to make the actual virtual copy. */
   if(m_ptr->m_lsys_krn_sys_copy.flags & CP_FLAG_TRY) {
 	int r;
-	KASSERT_PLACEHOLDER(caller->p_endpoint == VFS_PROC_NR); // MODIFIED
+	KASSERT(caller->p_endpoint == VFS_PROC_NR);
+
 	r = virtual_copy(&vir_addr[_SRC_], &vir_addr[_DST_], bytes);
 	if(r == EFAULT_SRC || r == EFAULT_DST) return r = EFAULT; // EFAULT* might be undefined
 	return r;

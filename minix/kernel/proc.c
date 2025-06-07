@@ -43,6 +43,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h>
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -245,9 +246,9 @@ void vm_suspend(struct proc *caller, const struct proc *target,
         /* This range is not OK for this process. Set parameters
          * of the request and notify VM about the pending request.
          */
-        KASSERT_PLACEHOLDER(!RTS_ISSET(caller, RTS_VMREQUEST)); // MODIFIED
-        KASSERT_PLACEHOLDER(!RTS_ISSET(target, RTS_VMREQUEST)); // MODIFIED
-
+        KASSERT(!RTS_ISSET(caller, RTS_VMREQUEST));
+        KASSERT(!RTS_ISSET(target, RTS_VMREQUEST));
+  
         RTS_SET(caller, RTS_VMREQUEST);
 
         caller->p_vmrequest.req_type = VMPTYPE_CHECK;
@@ -269,9 +270,9 @@ void vm_suspend(struct proc *caller, const struct proc *target,
  *===========================================================================*/
 static void delivermsg(struct proc *rp)
 {
-        KASSERT_PLACEHOLDER(!RTS_ISSET(rp, RTS_VMREQUEST)); // MODIFIED
-        KASSERT_PLACEHOLDER(rp->p_misc_flags & MF_DELIVERMSG); // MODIFIED
-        KASSERT_PLACEHOLDER(rp->p_delivermsg.m_source != NONE); // MODIFIED
+        KASSERT(!RTS_ISSET(rp, RTS_VMREQUEST));
+        KASSERT(rp->p_misc_flags & MF_DELIVERMSG);
+        KASSERT(rp->p_delivermsg.m_source != NONE);
 
         if (copy_msg_to_user(&rp->p_delivermsg,
                                 (message *) rp->p_delivermsg_vir)) {
@@ -357,13 +358,15 @@ not_runnable_pick_new:
 
 check_misc_flags:
 
-	KASSERT_PLACEHOLDER(p); // MODIFIED
-	KASSERT_PLACEHOLDER(proc_is_runnable(p)); // MODIFIED
+	KASSERT(p);
+	KASSERT(proc_is_runnable(p));
+  
 	while (p->p_misc_flags &
 		(MF_KCALL_RESUME | MF_DELIVERMSG |
 		 MF_SC_DEFER | MF_SC_TRACE | MF_SC_ACTIVE)) {
 
-		KASSERT_PLACEHOLDER(proc_is_runnable(p)); // MODIFIED
+		KASSERT(proc_is_runnable(p));
+
 		if (p->p_misc_flags & MF_KCALL_RESUME) {
 			kernel_call_resume(p);
 		}
@@ -375,7 +378,7 @@ check_misc_flags:
 		else if (p->p_misc_flags & MF_SC_DEFER) {
 			/* Perform the system call that we deferred earlier. */
 
-			KASSERT_PLACEHOLDER (!(p->p_misc_flags & MF_SC_ACTIVE)); // MODIFIED
+			KASSERT (!(p->p_misc_flags & MF_SC_ACTIVE));
 
 			arch_do_syscall(p);
 
@@ -442,7 +445,8 @@ check_misc_flags:
 #endif
 
 	p = arch_finish_switch_to_user();
-	KASSERT_PLACEHOLDER(p->p_cpu_time_left); // MODIFIED
+	KASSERT(p->p_cpu_time_left);
+
 
 	context_stop(proc_addr(KERNEL));
 
@@ -458,10 +462,11 @@ check_misc_flags:
 	p->p_misc_flags &= ~MF_CONTEXT_SET;
 
 #if defined(__i386__)
-	KASSERT_PLACEHOLDER(p->p_seg.p_cr3 != 0); // MODIFIED
+	KASSERT(p->p_seg.p_cr3 != 0);
 #elif defined(__arm__)
-	KASSERT_PLACEHOLDER(p->p_seg.p_ttbr != 0); // MODIFIED
+	KASSERT(p->p_seg.p_ttbr != 0);
 #endif
+  
 #ifdef CONFIG_SMP
 	if (p->p_misc_flags & MF_FLUSH_TLB) {
 		if (tlb_must_refresh)
@@ -497,7 +502,7 @@ static int do_sync_ipc(struct proc * caller_ptr, /* who made the call */
    * endpoint to corresponds to a process. In addition, it is necessary to check
    * whether a process is allowed to send to a given destination.
    */
-  KASSERT_PLACEHOLDER(call_nr != SENDA); // MODIFIED
+  KASSERT(call_nr != SENDA);
 
   /* Only allow non-negative call_nr values less than 32 */
   if (call_nr < 0 || call_nr > IPCNO_HIGHEST || call_nr >= 32
@@ -608,7 +613,7 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3)
   struct proc *const caller_ptr = get_cpulocal_var(proc_ptr);	/* get pointer to caller */
   int call_nr = (int) r1;
 
-  KASSERT_PLACEHOLDER(!RTS_ISSET(caller_ptr, RTS_SLOT_FREE)); // MODIFIED
+  KASSERT(!RTS_ISSET(caller_ptr, RTS_SLOT_FREE));
 
   /* bill kernel time to this process. */
   kbill_ipc = caller_ptr;
@@ -623,7 +628,9 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3)
 		 * input message. Postpone the entire system call.
 		 */
 		caller_ptr->p_misc_flags &= ~MF_SC_TRACE;
-		KASSERT_PLACEHOLDER(!(caller_ptr->p_misc_flags & MF_SC_DEFER)); // MODIFIED
+
+    KASSERT(!(caller_ptr->p_misc_flags & MF_SC_DEFER));
+    
 		caller_ptr->p_misc_flags |= MF_SC_DEFER;
 		caller_ptr->p_defer.r1 = r1;
 		caller_ptr->p_defer.r2 = r2;
@@ -639,7 +646,8 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3)
 	/* If the MF_SC_DEFER flag is set, the syscall is now being resumed. */
 	caller_ptr->p_misc_flags &= ~MF_SC_DEFER;
 
-	KASSERT_PLACEHOLDER (!(caller_ptr->p_misc_flags & MF_SC_ACTIVE)); // MODIFIED
+	KASSERT (!(caller_ptr->p_misc_flags & MF_SC_ACTIVE));
+
 
 	/* Set a flag to allow reliable tracing of leaving the system call. */
 	caller_ptr->p_misc_flags |= MF_SC_ACTIVE;
@@ -730,8 +738,9 @@ static int deadlock(
       int src_dst_slot;
       okendpt(src_dst_e, &src_dst_slot);
       xp = proc_addr(src_dst_slot);		/* follow chain of processes */
-      KASSERT_PLACEHOLDER(proc_ptr_ok(xp)); // MODIFIED
-      KASSERT_PLACEHOLDER(!RTS_ISSET(xp, RTS_SLOT_FREE)); // MODIFIED
+      KASSERT(proc_ptr_ok(xp));
+      KASSERT(!RTS_ISSET(xp, RTS_SLOT_FREE));
+
 #if DEBUG_ENABLE_IPC_WARNINGS
       processes[group_size] = xp;
 #endif
@@ -902,7 +911,7 @@ int mini_send(
   if (WILLRECEIVE(caller_ptr->p_endpoint, dst_ptr, (vir_bytes)m_ptr, NULL)) {
 	int call;
 	/* Destination is indeed waiting for this message. */
-	KASSERT_PLACEHOLDER(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));	// MODIFIED
+	KASSERT(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));
 
 	if (!(flags & FROM_KERNEL)) {
 		if(copy_msg_from_user(m_ptr, &dst_ptr->p_delivermsg))
@@ -956,7 +965,8 @@ int mini_send(
 	caller_ptr->p_sendto_e = dst_e;
 
 	/* Process is now blocked.  Put in on the destination's queue. */
-	KASSERT_PLACEHOLDER(caller_ptr->p_q_link == NULL); // MODIFIED (NULL can be an issue if stddef.h is truly gone)
+	KASSERT(caller_ptr->p_q_link == NULL); /* NULL can be an issue if stddef.h is truly gone */
+
 	xpp = &dst_ptr->p_caller_q;		/* find end of list */
 	while (*xpp) xpp = &(*xpp)->p_q_link;	
 	*xpp = caller_ptr;			/* add caller to end */
@@ -984,7 +994,7 @@ static int mini_receive(struct proc * caller_ptr,
   int r, src_id, found, src_proc_nr, src_p;
   endpoint_t sender_e;
 
-  KASSERT_PLACEHOLDER(!(caller_ptr->p_misc_flags & MF_DELIVERMSG)); // MODIFIED
+  KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
 
   /* This is where we want our message. */
   caller_ptr->p_delivermsg_vir = (vir_bytes) m_buff_usr;
@@ -1025,12 +1035,13 @@ static int mini_receive(struct proc * caller_ptr,
 		kprintf_stub("mini_receive: sending notify from NONE\n"); // MODIFIED
 	    }
 #endif
-	    KASSERT_PLACEHOLDER(src_proc_nr != NONE); // MODIFIED
+	    KASSERT(src_proc_nr != NONE);
             unset_notify_pending(caller_ptr, src_id);	/* no longer pending */
 
             /* Found a suitable source, deliver the notification message. */
-	    KASSERT_PLACEHOLDER(!(caller_ptr->p_misc_flags & MF_DELIVERMSG)); // MODIFIED
-	    KASSERT_PLACEHOLDER(src_e == ANY || sender_e == src_e); // MODIFIED
+	    KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
+	    KASSERT(src_e == ANY || sender_e == src_e);
+
 
 	    /* assemble message */
 	    BuildNotifyMessage(&caller_ptr->p_delivermsg, src_proc_nr, caller_ptr);
@@ -1064,11 +1075,12 @@ static int mini_receive(struct proc * caller_ptr,
 
         if (CANRECEIVE(src_e, sender_e, caller_ptr, 0, &sender->p_sendmsg)) {
             int call;
-	    KASSERT_PLACEHOLDER(!RTS_ISSET(sender, RTS_SLOT_FREE)); // MODIFIED
-	    KASSERT_PLACEHOLDER(!RTS_ISSET(sender, RTS_NO_ENDPOINT)); // MODIFIED
+	    KASSERT(!RTS_ISSET(sender, RTS_SLOT_FREE));
+	    KASSERT(!RTS_ISSET(sender, RTS_NO_ENDPOINT));
 
 	    /* Found acceptable message. Copy it and update status. */
-	    KASSERT_PLACEHOLDER(!(caller_ptr->p_misc_flags & MF_DELIVERMSG)); // MODIFIED
+	    KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
+
 	    caller_ptr->p_delivermsg = sender->p_sendmsg;
 	    caller_ptr->p_delivermsg.m_source = sender->p_endpoint;
 	    caller_ptr->p_misc_flags |= MF_DELIVERMSG;
@@ -1152,7 +1164,7 @@ int mini_notify(
        * message and deliver it. Copy from pseudo-source HARDWARE, since the
        * message is in the kernel's address space.
        */ 
-      KASSERT_PLACEHOLDER(!(dst_ptr->p_misc_flags & MF_DELIVERMSG)); // MODIFIED
+      KASSERT(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));
 
       BuildNotifyMessage(&dst_ptr->p_delivermsg, proc_nr(caller_ptr), dst_ptr);
       dst_ptr->p_delivermsg.m_source = caller_ptr->p_endpoint;
@@ -1382,7 +1394,8 @@ static int try_async(struct proc * caller_ptr)
 	}
 #endif
 
-	KASSERT_PLACEHOLDER(!(caller_ptr->p_misc_flags & MF_DELIVERMSG)); // MODIFIED
+	KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
+
 	if ((r = try_one(ANY, src_ptr, caller_ptr)) == OK)
 		return(r);
   }
@@ -1462,7 +1475,8 @@ static int try_one(endpoint_t receive_e, struct proc *src_ptr,
 	if (dst != dst_ptr->p_endpoint) continue;
 
 	if (!CANRECEIVE(receive_e, src_e, dst_ptr,
-		table_v + i*sizeof(asynmsg_t) + offsetof(struct asynmsg,msg), // offsetof may be an issue
+		table_v + i*sizeof(asynmsg_t) + K_OFFSETOF(struct asynmsg,msg),
+
 		NULL)) { // MODIFIED (NULL)
 		continue;
 	}
@@ -1614,9 +1628,9 @@ void enqueue(
   int q = rp->p_priority;	 		/* scheduling queue to use */
   struct proc **rdy_head, **rdy_tail;
   
-  KASSERT_PLACEHOLDER(proc_is_runnable(rp)); // MODIFIED
+  KASSERT(proc_is_runnable(rp));
 
-  KASSERT_PLACEHOLDER(q >= 0); // MODIFIED
+  KASSERT(q >= 0);
 
   rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
   rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
@@ -1640,7 +1654,9 @@ void enqueue(
 	   */
 	  struct proc * p;
 	  p = get_cpulocal_var(proc_ptr);
-	  KASSERT_PLACEHOLDER(p); // MODIFIED
+
+    KASSERT(p);
+
 	  if((p->p_priority > rp->p_priority) &&
 			  (priv(p)->s_flags & PREEMPTIBLE))
 		  RTS_SET(p, RTS_PREEMPTED); /* calls dequeue() */
@@ -1661,7 +1677,7 @@ void enqueue(
 
 
 #if DEBUG_SANITYCHECKS
-  KASSERT_PLACEHOLDER(runqueues_ok_local()); // MODIFIED
+  KASSERT(runqueues_ok_local());
 #endif
 }
 
@@ -1680,17 +1696,16 @@ static void enqueue_head(struct proc *rp)
 
   struct proc **rdy_head, **rdy_tail;
 
-  KASSERT_PLACEHOLDER(proc_ptr_ok(rp)); // MODIFIED
-  KASSERT_PLACEHOLDER(proc_is_runnable(rp)); // MODIFIED
+  KASSERT(proc_ptr_ok(rp));
+  KASSERT(proc_is_runnable(rp));
 
   /*
    * the process was runnable without its quantum expired when dequeued. A
    * process with no time left should have been handled else and differently
    */
-  KASSERT_PLACEHOLDER(rp->p_cpu_time_left); // MODIFIED
+  KASSERT(rp->p_cpu_time_left);
 
-  KASSERT_PLACEHOLDER(q >= 0); // MODIFIED
-
+  KASSERT(q >= 0);
 
   rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
   rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
@@ -1713,7 +1728,8 @@ static void enqueue_head(struct proc *rp)
   rp->p_accounting.preempted++;
 
 #if DEBUG_SANITYCHECKS
-  KASSERT_PLACEHOLDER(runqueues_ok_local()); // MODIFIED
+  KASSERT(runqueues_ok_local());
+
 #endif
 }
 
@@ -1737,11 +1753,11 @@ void dequeue(struct proc *rp)
 
   struct proc **rdy_tail;
 
-  KASSERT_PLACEHOLDER(proc_ptr_ok(rp)); // MODIFIED
-  KASSERT_PLACEHOLDER(!proc_is_runnable(rp)); // MODIFIED
+  KASSERT(proc_ptr_ok(rp));
+  KASSERT(!proc_is_runnable(rp));
 
   /* Side-effect for kernel: check if the task's stack still is ok? */
-  KASSERT_PLACEHOLDER (!iskernelp(rp) || *priv(rp)->s_stack_guard == STACK_GUARD); // MODIFIED
+  KASSERT (!iskernelp(rp) || *priv(rp)->s_stack_guard == STACK_GUARD);
 
   rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
 
@@ -1782,7 +1798,8 @@ void dequeue(struct proc *rp)
   rp->p_dequeued = get_monotonic();
 
 #if DEBUG_SANITYCHECKS
-  KASSERT_PLACEHOLDER(runqueues_ok_local()); // MODIFIED
+  KASSERT(runqueues_ok_local());
+
 #endif
 }
 
@@ -1811,7 +1828,8 @@ static struct proc * pick_proc(void)
 		TRACE(VF_PICKPROC, kprintf_stub("cpu %d queue %d empty\n", cpuid, q);); // MODIFIED
 		continue;
 	}
-	KASSERT_PLACEHOLDER(proc_is_runnable(rp)); // MODIFIED
+	KASSERT(proc_is_runnable(rp));
+
 	if (priv(rp)->s_flags & BILLABLE)	 	
 		get_cpulocal_var(bill_ptr) = rp; /* bill for system time */
 	return rp;
@@ -1869,7 +1887,7 @@ static void notify_scheduler(struct proc *p)
 	message m_no_quantum;
 	int err;
 
-	KASSERT_PLACEHOLDER(!proc_kernel_scheduler(p)); // MODIFIED
+	KASSERT(!proc_kernel_scheduler(p));
 
 	/* dequeue the process */
 	RTS_SET(p, RTS_NO_QUANTUM);
@@ -1942,7 +1960,8 @@ void copr_not_available_handler(void)
 	/* if FPU is not owned by anyone, do not store anything */
 	local_fpu_owner = get_cpulocal_var_ptr(fpu_owner);
 	if (*local_fpu_owner != NULL) { // MODIFIED (NULL)
-		KASSERT_PLACEHOLDER(*local_fpu_owner != p); // MODIFIED
+		KASSERT(*local_fpu_owner != p);
+
 		save_local_fpu(*local_fpu_owner, FALSE /*retain*/);
 	}
 
