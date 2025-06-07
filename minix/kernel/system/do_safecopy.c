@@ -265,6 +265,7 @@ int verify_grant(
 	/* If requested, store information regarding soft faults. */
 	if (sfinfo != NULL && (sfinfo->try = !!(g.cp_flags & CPF_TRY))) { // MODIFIED (NULL)
 		sfinfo->endpt = granter;
+		/* FIXME: offsetof may be undefined */
 		sfinfo->addr = priv(granter_proc)->s_grant_table +
 		    sizeof(g) * grant_idx + K_OFFSETOF(cp_grant_t, cp_faulted);
 		sfinfo->value = grant;
@@ -414,6 +415,7 @@ int do_vsafecopy(struct proc * caller, message * m_ptr)
 	/* Set vector copy parameters. */
 	src.proc_nr_e = caller->p_endpoint;
 	KASSERT(src.proc_nr_e != NONE);
+
 	src.offset = (vir_bytes) m_ptr->m_lsys_krn_vsafecopy.vec_addr;
 	dst.proc_nr_e = KERNEL;
 	dst.offset = (vir_bytes) vec;

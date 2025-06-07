@@ -88,6 +88,7 @@ int do_copy(struct proc * caller, message * m_ptr)
   if(m_ptr->m_lsys_krn_sys_copy.flags & CP_FLAG_TRY) {
 	int r;
 	KASSERT(caller->p_endpoint == VFS_PROC_NR);
+
 	r = virtual_copy(&vir_addr[_SRC_], &vir_addr[_DST_], bytes);
 	if(r == EFAULT_SRC || r == EFAULT_DST) return r = EFAULT; // EFAULT* might be undefined
 	return r;

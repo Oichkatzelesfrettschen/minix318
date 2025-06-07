@@ -40,6 +40,7 @@ int do_vmctl(struct proc * caller, message * m_ptr)
   switch(m_ptr->SVMCTL_PARAM) {
 	case VMCTL_CLEAR_PAGEFAULT:
 		KASSERT(RTS_ISSET(p,RTS_PAGEFAULT));
+LDER(RTS_ISSET(p,RTS_PAGEFAULT)); // MODIFIED
 		RTS_UNSET(p, RTS_PAGEFAULT);
 		return OK;
 	case VMCTL_MEMREQ_GET:
@@ -144,6 +145,7 @@ int do_vmctl(struct proc * caller, message * m_ptr)
 		return OK;
 	case VMCTL_VMINHIBIT_CLEAR:
 		KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
+
 		/*
 		 * the processes is certainly not runnable, no need to tell its
 		 * cpu

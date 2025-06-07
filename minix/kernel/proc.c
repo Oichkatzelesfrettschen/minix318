@@ -248,7 +248,7 @@ void vm_suspend(struct proc *caller, const struct proc *target,
          */
         KASSERT(!RTS_ISSET(caller, RTS_VMREQUEST));
         KASSERT(!RTS_ISSET(target, RTS_VMREQUEST));
-
+  
         RTS_SET(caller, RTS_VMREQUEST);
 
         caller->p_vmrequest.req_type = VMPTYPE_CHECK;
@@ -360,11 +360,13 @@ check_misc_flags:
 
 	KASSERT(p);
 	KASSERT(proc_is_runnable(p));
+  
 	while (p->p_misc_flags &
 		(MF_KCALL_RESUME | MF_DELIVERMSG |
 		 MF_SC_DEFER | MF_SC_TRACE | MF_SC_ACTIVE)) {
 
 		KASSERT(proc_is_runnable(p));
+
 		if (p->p_misc_flags & MF_KCALL_RESUME) {
 			kernel_call_resume(p);
 		}
@@ -445,6 +447,7 @@ check_misc_flags:
 	p = arch_finish_switch_to_user();
 	KASSERT(p->p_cpu_time_left);
 
+
 	context_stop(proc_addr(KERNEL));
 
 	/* If the process isn't the owner of FPU, enable the FPU exception */
@@ -463,6 +466,7 @@ check_misc_flags:
 #elif defined(__arm__)
 	KASSERT(p->p_seg.p_ttbr != 0);
 #endif
+  
 #ifdef CONFIG_SMP
 	if (p->p_misc_flags & MF_FLUSH_TLB) {
 		if (tlb_must_refresh)
@@ -624,7 +628,9 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3)
 		 * input message. Postpone the entire system call.
 		 */
 		caller_ptr->p_misc_flags &= ~MF_SC_TRACE;
-		KASSERT(!(caller_ptr->p_misc_flags & MF_SC_DEFER));
+
+    KASSERT(!(caller_ptr->p_misc_flags & MF_SC_DEFER));
+    
 		caller_ptr->p_misc_flags |= MF_SC_DEFER;
 		caller_ptr->p_defer.r1 = r1;
 		caller_ptr->p_defer.r2 = r2;
@@ -641,6 +647,7 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3)
 	caller_ptr->p_misc_flags &= ~MF_SC_DEFER;
 
 	KASSERT (!(caller_ptr->p_misc_flags & MF_SC_ACTIVE));
+
 
 	/* Set a flag to allow reliable tracing of leaving the system call. */
 	caller_ptr->p_misc_flags |= MF_SC_ACTIVE;
@@ -733,6 +740,7 @@ static int deadlock(
       xp = proc_addr(src_dst_slot);		/* follow chain of processes */
       KASSERT(proc_ptr_ok(xp));
       KASSERT(!RTS_ISSET(xp, RTS_SLOT_FREE));
+
 #if DEBUG_ENABLE_IPC_WARNINGS
       processes[group_size] = xp;
 #endif
@@ -958,6 +966,7 @@ int mini_send(
 
 	/* Process is now blocked.  Put in on the destination's queue. */
 	KASSERT(caller_ptr->p_q_link == NULL); /* NULL can be an issue if stddef.h is truly gone */
+
 	xpp = &dst_ptr->p_caller_q;		/* find end of list */
 	while (*xpp) xpp = &(*xpp)->p_q_link;	
 	*xpp = caller_ptr;			/* add caller to end */
@@ -1033,6 +1042,7 @@ static int mini_receive(struct proc * caller_ptr,
 	    KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
 	    KASSERT(src_e == ANY || sender_e == src_e);
 
+
 	    /* assemble message */
 	    BuildNotifyMessage(&caller_ptr->p_delivermsg, src_proc_nr, caller_ptr);
 	    caller_ptr->p_delivermsg.m_source = sender_e;
@@ -1070,6 +1080,7 @@ static int mini_receive(struct proc * caller_ptr,
 
 	    /* Found acceptable message. Copy it and update status. */
 	    KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
+
 	    caller_ptr->p_delivermsg = sender->p_sendmsg;
 	    caller_ptr->p_delivermsg.m_source = sender->p_endpoint;
 	    caller_ptr->p_misc_flags |= MF_DELIVERMSG;
@@ -1384,6 +1395,7 @@ static int try_async(struct proc * caller_ptr)
 #endif
 
 	KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
+
 	if ((r = try_one(ANY, src_ptr, caller_ptr)) == OK)
 		return(r);
   }
@@ -1464,6 +1476,7 @@ static int try_one(endpoint_t receive_e, struct proc *src_ptr,
 
 	if (!CANRECEIVE(receive_e, src_e, dst_ptr,
 		table_v + i*sizeof(asynmsg_t) + K_OFFSETOF(struct asynmsg,msg),
+
 		NULL)) { // MODIFIED (NULL)
 		continue;
 	}
@@ -1641,7 +1654,9 @@ void enqueue(
 	   */
 	  struct proc * p;
 	  p = get_cpulocal_var(proc_ptr);
-	  KASSERT(p);
+
+    KASSERT(p);
+
 	  if((p->p_priority > rp->p_priority) &&
 			  (priv(p)->s_flags & PREEMPTIBLE))
 		  RTS_SET(p, RTS_PREEMPTED); /* calls dequeue() */
@@ -1692,7 +1707,6 @@ static void enqueue_head(struct proc *rp)
 
   KASSERT(q >= 0);
 
-
   rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
   rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
 
@@ -1715,6 +1729,7 @@ static void enqueue_head(struct proc *rp)
 
 #if DEBUG_SANITYCHECKS
   KASSERT(runqueues_ok_local());
+
 #endif
 }
 
@@ -1784,6 +1799,7 @@ void dequeue(struct proc *rp)
 
 #if DEBUG_SANITYCHECKS
   KASSERT(runqueues_ok_local());
+
 #endif
 }
 
@@ -1813,6 +1829,7 @@ static struct proc * pick_proc(void)
 		continue;
 	}
 	KASSERT(proc_is_runnable(rp));
+
 	if (priv(rp)->s_flags & BILLABLE)	 	
 		get_cpulocal_var(bill_ptr) = rp; /* bill for system time */
 	return rp;
@@ -1944,6 +1961,7 @@ void copr_not_available_handler(void)
 	local_fpu_owner = get_cpulocal_var_ptr(fpu_owner);
 	if (*local_fpu_owner != NULL) { // MODIFIED (NULL)
 		KASSERT(*local_fpu_owner != p);
+
 		save_local_fpu(*local_fpu_owner, FALSE /*retain*/);
 	}
 

@@ -47,5 +47,6 @@ void *kmemmove(void *dest, const void *src, k_size_t n) {
             *pd++ = *ps++;
         }
     }
+
     return dest;
 }

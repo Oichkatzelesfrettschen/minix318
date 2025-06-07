@@ -37,8 +37,7 @@
 #include <minix/kernel_types.h>
 #include <sys/kassert.h>
 
-
-/* dummy for linking */
+/* FIXME dummy for linking */
 char *** _penviron;
 
 /* Prototype declarations for PRIVATE functions. */

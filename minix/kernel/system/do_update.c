@@ -18,7 +18,6 @@
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
 
-
 #if USE_UPDATE
 
 #define DEBUG 0

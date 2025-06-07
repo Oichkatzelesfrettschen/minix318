@@ -85,6 +85,7 @@ static void smp_schedule_sync(struct proc * p, unsigned task)
 	unsigned mycpu = cpuid;
 
 	KASSERT(cpu != mycpu);
+
 	/*
 	 * if some other cpu made a request to the same cpu, wait until it is
 	 * done before proceeding
@@ -144,6 +145,7 @@ void smp_schedule_stop_proc_save_ctx(struct proc * p)
 	 */
 	smp_schedule_sync(p, SCHED_IPI_STOP_PROC | SCHED_IPI_SAVE_CTX);
 	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
+
 }
 
 void smp_schedule_migrate_proc(struct proc * p, unsigned dest_cpu)
@@ -154,7 +156,7 @@ void smp_schedule_migrate_proc(struct proc * p, unsigned dest_cpu)
 	 */
 	smp_schedule_sync(p, SCHED_IPI_STOP_PROC | SCHED_IPI_SAVE_CTX);
 	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
-	
+
 	/* assign the new cpu and let the process run again */
 	p->p_cpu = dest_cpu;
 	RTS_UNSET(p, RTS_PROC_STOP);

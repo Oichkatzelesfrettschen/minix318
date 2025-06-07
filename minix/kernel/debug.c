@@ -565,6 +565,7 @@ void hook_ipc_clear(struct proc *p)
 #if DEBUG_IPCSTATS
 	int slot, i;
 	KASSERT(p);
+
 	proc2slot(p, slot);
 	for(i = 0; i < IPCPROCS; i++)
 		messages[slot][i] = messages[i][slot] = 0;

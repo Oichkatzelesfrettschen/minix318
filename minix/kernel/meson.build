@@ -65,7 +65,7 @@ klib_sources = files(
     'klib/kmemory.c',
     'klib/kprintf_stub.c',
     'klib/kpanic.c'
-    # Add other klib source files here if created (e.g. katom.c)
+    # TODO Add other klib source files here if created (e.g. katom.c)
 )
 
 klib = static_library('klib',

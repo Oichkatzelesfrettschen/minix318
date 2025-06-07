@@ -160,6 +160,7 @@ int do_trace(struct proc * caller, message * m_ptr)
 		return(EFAULT); // EFAULT might be undefined
 
 	if (i == K_OFFSETOF(struct proc, p_reg.psw))
+
 		/* only selected bits are changeable */
 		SETPSW(rp, tr_data);
 	else

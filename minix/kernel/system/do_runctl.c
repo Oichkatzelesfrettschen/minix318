@@ -71,6 +71,7 @@ int do_runctl(struct proc * caller, message * m_ptr)
 	break;
   case RC_RESUME:
 	KASSERT(RTS_ISSET(rp, RTS_PROC_STOP));
+
 	RTS_UNSET(rp, RTS_PROC_STOP);
 	break;
   default:

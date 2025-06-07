@@ -60,6 +60,7 @@ int do_getmcontext(struct proc * caller, message * m_ptr)
 	save_fpu(rp);
 	mc.mc_flags = (rp->p_misc_flags & MF_FPU_INITIALIZED) ? _MC_FPU_SAVED : 0;
 	KASSERT(sizeof(mc.__fpregs.__fp_reg_set) == FPU_XFP_SIZE);
+
 	kmemcpy(&(mc.__fpregs.__fp_reg_set), rp->p_seg.fpu_state, FPU_XFP_SIZE); // MODIFIED
   } 
 #endif
@@ -101,6 +102,7 @@ int do_setmcontext(struct proc * caller, message * m_ptr)
   if (mc.mc_flags & _MC_FPU_SAVED) {
 	rp->p_misc_flags |= MF_FPU_INITIALIZED;
 	KASSERT(sizeof(mc.__fpregs.__fp_reg_set) == FPU_XFP_SIZE);
+
 	kmemcpy(rp->p_seg.fpu_state, &(mc.__fpregs.__fp_reg_set), FPU_XFP_SIZE); // MODIFIED
   } else
 	rp->p_misc_flags &= ~MF_FPU_INITIALIZED;

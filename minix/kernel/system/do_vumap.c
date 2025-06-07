@@ -129,6 +129,7 @@ int do_vumap(struct proc *caller, message *m_ptr)
   /* Copy out the resulting vector of physical addresses. */
   KASSERT(pcount > 0);
 
+
   size = pcount * sizeof(pvec[0]);
 
   r = data_copy_vmcheck(caller, KERNEL, (vir_bytes) pvec, endpt, paddr, size);

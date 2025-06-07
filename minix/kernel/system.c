@@ -623,7 +623,6 @@ void kernel_call_resume(struct proc *caller)
 
 	KASSERT(!RTS_ISSET(caller, RTS_SLOT_FREE));
 	KASSERT(!RTS_ISSET(caller, RTS_VMREQUEST));
-
 	KASSERT(caller->p_vmrequest.saved.reqmsg.m_source == caller->p_endpoint);
 
 	/*
@@ -840,6 +839,7 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e,
 
 		/* If so, copy it in from the process. */
 		if (get_mtype) {
+			/* FIXME: offsetof may be undefined */
 			r = data_copy(src_e,
 			    m_src_v + K_OFFSETOF(message, m_type), KERNEL,
 			    (vir_bytes)&m_buff.m_type, sizeof(m_buff.m_type));
