@@ -8,7 +8,7 @@
  */
 
 #include "kernel/system.h"
-// #include <assert.h> // Replaced
+// #include <assert.h> // Replaced because kernel-specific assertion macros (e.g., KASSERT_PLACEHOLDER) are used instead for better integration with the kernel environment.
 #include <minix/type.h> // Kept for now, may need future review
 
 #include "arch_proto.h"
