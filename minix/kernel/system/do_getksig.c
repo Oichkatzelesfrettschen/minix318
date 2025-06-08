@@ -24,7 +24,12 @@
  * @brief Handle the SYS_GETKSIG kernel call.
  * @param caller Pointer to the calling process structure (the signal manager).
 <<<<<<< HEAD
+<<<<<<< HEAD
  * @param m_ptr  Pointer to the message containing call parameters and for result.
+=======
+ * @param m_ptr  Pointer to the message containing call parameters and for
+ * result.
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
  * @param m_ptr  Pointer to the message containing call parameters and for
  * result.
@@ -40,21 +45,28 @@
  * and RTS_SIGNALED is unset for the target process. These operations are
  * protected by the target process's p_sig_lock.
 <<<<<<< HEAD
+<<<<<<< HEAD
  * If no process has pending signals for this manager, m_sigcalls.endpt is set to NONE.
  */
 int do_getksig(struct proc * caller, message * m_ptr)
 {
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * If no process has pending signals for this manager, m_sigcalls.endpt is set
  * to NONE.
  */
 int do_getksig(struct proc *caller, message *m_ptr) {
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   register struct proc *rp;
   int flags; /* For spin_lock_irqsave */
 
   /* Find the next process with pending signals. */
   for (rp = BEG_USER_ADDR; rp < END_PROC_ADDR; rp++) {
+<<<<<<< HEAD
 <<<<<<< HEAD
       if (isemptyp(rp)) continue; /* Skip empty slots */
       if (RTS_ISSET(rp, RTS_SIGNALED)) {
@@ -79,6 +91,8 @@ int do_getksig(struct proc *caller, message *m_ptr) {
           return(OK);
       }
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     if (isemptyp(rp)) continue; /* Skip empty slots */
     if (RTS_ISSET(rp, RTS_SIGNALED)) {
       /* KASSERT: Verify caller is the designated signal manager for this
@@ -115,6 +129,9 @@ int do_getksig(struct proc *caller, message *m_ptr) {
       spin_unlock_irqrestore(&rp->p_sig_lock, flags);
       return (OK);
     }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 

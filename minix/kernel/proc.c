@@ -37,6 +37,18 @@
 #include "clock.h"
 #include "spinlock.h"
 #include "vm.h"
+<<<<<<< HEAD
+
+// #include <minix/syslib.h> // Removed
+
+// Added kernel headers
+#include <klib/include/kmemory.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+<<<<<<< HEAD
+#include <klib/include/kmemory.h>
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
 // #include <minix/syslib.h> // Removed
 
@@ -47,15 +59,10 @@
 <<<<<<< HEAD
 #include <klib/include/kmemory.h>
 
-// #include <minix/syslib.h> // Removed
-
-// Added kernel headers
+=======
 #include <minix/kernel_types.h>
 #include <sys/kassert.h>
-#include <klib/include/kprintf.h>
-#include <klib/include/kstring.h>
-#include <klib/include/kmemory.h>
-
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
 #include <minix/kernel_types.h>
 #include <sys/kassert.h>
@@ -70,15 +77,21 @@ static int mini_send(struct proc *caller_ptr, endpoint_t dst_e, message
 */
 static int mini_receive(struct proc *caller_ptr, endpoint_t src,
 <<<<<<< HEAD
+<<<<<<< HEAD
 	message *m_buff_usr, int flags);
 static int mini_senda(struct proc *caller_ptr, asynmsg_t *table, k_size_t // MODIFIED size_t
 static int mini_senda(struct proc *caller_ptr, asynmsg_t *table, k_size_t // MODIFIED size_t
 	size);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
                         message *m_buff_usr, int flags);
 static int mini_senda(struct proc *caller_ptr, asynmsg_t *table,
                       k_size_t  // MODIFIED size_t
                           size);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 static int deadlock(int function, register struct proc *caller,
                     endpoint_t src_dst_e);
@@ -138,6 +151,7 @@ static void set_idle_name(char *name, int n) {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define BuildNotifyMessage(m_ptr, src, dst_ptr) \
 	kmemset((m_ptr), 0, sizeof(*(m_ptr)));				/* MODIFIED memset */ \
 	kmemset((m_ptr), 0, sizeof(*(m_ptr)));				/* MODIFIED memset */ \
@@ -157,6 +171,9 @@ static void set_idle_name(char *name, int n) {
 		/* FIXME: sigemptyset was here */ /* sigemptyset(&priv(dst_ptr)->s_sig_pending); */		\
 		break;							\
 	}
+=======
+static message m_notify_buff = {0, NOTIFY_MESSAGE};
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
 static message m_notify_buff = {0, NOTIFY_MESSAGE};
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -183,6 +200,7 @@ void proc_init(void) {
      * This ensures each process structure has its p_sig_lock ready for use.
      */
     spin_lock_irq_init(&rp->p_sig_lock);
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 		/* Initialize the per-process IRQ-safe spinlock for signal handling.
@@ -201,6 +219,9 @@ void proc_init(void) {
 		sp->s_bak_sig_mgr = NONE;
 	}
 =======
+=======
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     /* arch-specific initialization */
     arch_proc_reset(rp);
   }
@@ -211,6 +232,9 @@ void proc_init(void) {
     sp->s_sig_mgr = NONE;   /* clear signal managers */
     sp->s_bak_sig_mgr = NONE;
   }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   idle_priv.s_flags = IDL_F;
@@ -296,6 +320,7 @@ static void idle(void) {
  *===========================================================================*/
 void vm_suspend(struct proc *caller, const struct proc *target,
 <<<<<<< HEAD
+<<<<<<< HEAD
         const vir_bytes linaddr, const vir_bytes len, const int type,
         const int writeflag)
 {
@@ -307,6 +332,8 @@ void vm_suspend(struct proc *caller, const struct proc *target,
 
         RTS_SET(caller, RTS_VMREQUEST);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
                 const vir_bytes linaddr, const vir_bytes len, const int type,
                 const int writeflag) {
   /* This range is not OK for this process. Set parameters
@@ -314,6 +341,7 @@ void vm_suspend(struct proc *caller, const struct proc *target,
    */
   KASSERT(!RTS_ISSET(caller, RTS_VMREQUEST));
   KASSERT(!RTS_ISSET(target, RTS_VMREQUEST));
+<<<<<<< HEAD
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   RTS_SET(caller, RTS_VMREQUEST);
@@ -326,6 +354,11 @@ void vm_suspend(struct proc *caller, const struct proc *target,
                         panic("send_sig failed");
         vmrequest = caller;
 =======
+=======
+
+  RTS_SET(caller, RTS_VMREQUEST);
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   caller->p_vmrequest.req_type = VMPTYPE_CHECK;
   caller->p_vmrequest.target = target->p_endpoint;
   caller->p_vmrequest.params.check.start = linaddr;
@@ -338,12 +371,16 @@ void vm_suspend(struct proc *caller, const struct proc *target,
     if (OK != send_sig(VM_PROC_NR, SIGKMEM))  // SIGKMEM might be undefined
       panic("send_sig failed");
   vmrequest = caller;
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 
 /*===========================================================================*
  *                              delivermsg                                *
  *===========================================================================*/
+<<<<<<< HEAD
 <<<<<<< HEAD
 static void delivermsg(struct proc *rp)
 {
@@ -402,6 +439,32 @@ static void delivermsg(struct proc *rp) {
     rp->p_misc_flags &= ~(MF_DELIVERMSG | MF_MSGFAILED);
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
+=======
+static void delivermsg(struct proc *rp) {
+  KASSERT(!RTS_ISSET(rp, RTS_VMREQUEST));
+  KASSERT(rp->p_misc_flags & MF_DELIVERMSG);
+  KASSERT(rp->p_delivermsg.m_source != NONE);
+
+  if (copy_msg_to_user(&rp->p_delivermsg, (message *)rp->p_delivermsg_vir)) {
+    if (rp->p_misc_flags & MF_MSGFAILED) {
+      /* 2nd consecutive failure means this won't succeed */
+      kprintf_stub(
+          "WARNING wrong user pointer 0x%08lx from "  // MODIFIED
+          "process %s / %d\n",
+          rp->p_delivermsg_vir, rp->p_name, rp->p_endpoint);
+      cause_sig(rp->p_nr, SIGSEGV);  // SIGSEGV might be undefined
+    } else {
+      /* 1st failure means we have to ask VM to handle it */
+      vm_suspend(rp, rp, rp->p_delivermsg_vir, sizeof(message),
+                 VMSTYPE_DELIVERMSG, 1);
+      rp->p_misc_flags |= MF_MSGFAILED;
+    }
+  } else {
+    /* Indicate message has been delivered; address is 'used'. */
+    rp->p_delivermsg.m_source = NONE;
+    rp->p_misc_flags &= ~(MF_DELIVERMSG | MF_MSGFAILED);
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     if (!(rp->p_misc_flags & MF_CONTEXT_SET)) {
       rp->p_reg.retreg = OK;
     }
@@ -463,6 +526,7 @@ not_runnable_pick_new:
 
 check_misc_flags:
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	KASSERT(p);
 	KASSERT(proc_is_runnable(p));
@@ -536,6 +600,44 @@ check_misc_flags:
 			 */
 			p->p_misc_flags &= ~MF_SC_ACTIVE;
 =======
+=======
+  KASSERT(p);
+  KASSERT(proc_is_runnable(p));
+
+  while (p->p_misc_flags & (MF_KCALL_RESUME | MF_DELIVERMSG | MF_SC_DEFER |
+                            MF_SC_TRACE | MF_SC_ACTIVE)) {
+    KASSERT(proc_is_runnable(p));
+
+    if (p->p_misc_flags & MF_KCALL_RESUME) {
+      kernel_call_resume(p);
+    } else if (p->p_misc_flags & MF_DELIVERMSG) {
+      TRACE(VF_SCHEDULING, kprintf_stub("delivering to %s / %d\n",  // MODIFIED
+                                        p->p_name, p->p_endpoint););
+      delivermsg(p);
+    } else if (p->p_misc_flags & MF_SC_DEFER) {
+      /* Perform the system call that we deferred earlier. */
+
+      KASSERT(!(p->p_misc_flags & MF_SC_ACTIVE));
+
+      arch_do_syscall(p);
+
+      /* If the process is stopped for signal delivery, and
+       * not blocked sending a message after the system call,
+       * inform PM.
+       */
+      if ((p->p_misc_flags & MF_SIG_DELAY) && !RTS_ISSET(p, RTS_SENDING))
+        sig_delay_done(p);
+    } else if (p->p_misc_flags & MF_SC_TRACE) {
+      /* Trigger a system call leave event if this was a
+       * system call. We must do this after processing the
+       * other flags above, both for tracing correctness and
+       * to be able to use 'break'.
+       */
+      if (!(p->p_misc_flags & MF_SC_ACTIVE)) break;
+
+      p->p_misc_flags &= ~(MF_SC_TRACE | MF_SC_ACTIVE);
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
       /* Signal the "leave system call" event.
        * Block the process.
        */
@@ -545,6 +647,9 @@ check_misc_flags:
        * we're leaving the system call.
        */
       p->p_misc_flags &= ~MF_SC_ACTIVE;
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
       break;
@@ -569,15 +674,21 @@ check_misc_flags:
   if (!proc_is_runnable(p)) goto not_runnable_pick_new;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	TRACE(VF_SCHEDULING, kprintf_stub("cpu %d starting %s / %d " // MODIFIED
 	TRACE(VF_SCHEDULING, kprintf_stub("cpu %d starting %s / %d " // MODIFIED
 				"pc 0x%08x\n",
 		cpuid, p->p_name, p->p_endpoint, p->p_reg.pc););
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   TRACE(VF_SCHEDULING,
         kprintf_stub("cpu %d starting %s / %d "  // MODIFIED
                      "pc 0x%08x\n",
                      cpuid, p->p_name, p->p_endpoint, p->p_reg.pc););
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 #if DEBUG_TRACE
   p->p_schedules++;
@@ -585,6 +696,7 @@ check_misc_flags:
 
   p = arch_finish_switch_to_user();
   KASSERT(p->p_cpu_time_left);
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 	context_stop(proc_addr(KERNEL));
@@ -598,6 +710,17 @@ check_misc_flags:
     disable_fpu_exception();
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
+=======
+
+  context_stop(proc_addr(KERNEL));
+
+  /* If the process isn't the owner of FPU, enable the FPU exception */
+  if (get_cpulocal_var(fpu_owner) != p)
+    enable_fpu_exception();
+  else
+    disable_fpu_exception();
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /* If MF_CONTEXT_SET is set, don't clobber process state within
    * the kernel. The next kernel entry is OK again though.
    */
@@ -605,11 +728,17 @@ check_misc_flags:
 
 #if defined(__i386__)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	KASSERT(p->p_seg.p_cr3 != 0);
 	KASSERT(p->p_seg.p_cr3 != 0);
 #elif defined(__arm__)
 	KASSERT(p->p_seg.p_ttbr != 0);
 	KASSERT(p->p_seg.p_ttbr != 0);
+=======
+  KASSERT(p->p_seg.p_cr3 != 0);
+#elif defined(__arm__)
+  KASSERT(p->p_seg.p_ttbr != 0);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   KASSERT(p->p_seg.p_cr3 != 0);
 #elif defined(__arm__)
@@ -659,9 +788,15 @@ static int do_sync_ipc(struct proc *caller_ptr, /* who made the call */
       !(callname = ipc_call_names[call_nr])) {
 #if DEBUG_ENABLE_IPC_WARNINGS
 <<<<<<< HEAD
+<<<<<<< HEAD
       kprintf_stub("sys_call: trap %d not allowed, caller %d, src_dst %d\n",  // MODIFIED
       kprintf_stub("sys_call: trap %d not allowed, caller %d, src_dst %d\n",  // MODIFIED
           call_nr, proc_nr(caller_ptr), src_dst_e);
+=======
+    kprintf_stub(
+        "sys_call: trap %d not allowed, caller %d, src_dst %d\n",  // MODIFIED
+        call_nr, proc_nr(caller_ptr), src_dst_e);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
     kprintf_stub(
         "sys_call: trap %d not allowed, caller %d, src_dst %d\n",  // MODIFIED
@@ -702,11 +837,17 @@ static int do_sync_ipc(struct proc *caller_ptr, /* who made the call */
       if (!may_send_to(caller_ptr, src_dst_p)) {
 #if DEBUG_ENABLE_IPC_WARNINGS
 <<<<<<< HEAD
+<<<<<<< HEAD
 			kprintf_stub( // MODIFIED
 			kprintf_stub( // MODIFIED
 			"sys_call: ipc mask denied %s from %d to %d\n",
 				callname,
 				caller_ptr->p_endpoint, src_dst_e);
+=======
+        kprintf_stub(  // MODIFIED
+            "sys_call: ipc mask denied %s from %d to %d\n", callname,
+            caller_ptr->p_endpoint, src_dst_e);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
         kprintf_stub(  // MODIFIED
             "sys_call: ipc mask denied %s from %d to %d\n", callname,
@@ -725,9 +866,15 @@ static int do_sync_ipc(struct proc *caller_ptr, /* who made the call */
   if (!(priv(caller_ptr)->s_trap_mask & (1 << call_nr))) {
 #if DEBUG_ENABLE_IPC_WARNINGS
 <<<<<<< HEAD
+<<<<<<< HEAD
       kprintf_stub("sys_call: %s not allowed, caller %d, src_dst %d\n", // MODIFIED
       kprintf_stub("sys_call: %s not allowed, caller %d, src_dst %d\n", // MODIFIED
           callname, proc_nr(caller_ptr), src_dst_p);
+=======
+    kprintf_stub(
+        "sys_call: %s not allowed, caller %d, src_dst %d\n",  // MODIFIED
+        callname, proc_nr(caller_ptr), src_dst_p);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
     kprintf_stub(
         "sys_call: %s not allowed, caller %d, src_dst %d\n",  // MODIFIED
@@ -740,9 +887,15 @@ static int do_sync_ipc(struct proc *caller_ptr, /* who made the call */
   if (call_nr != SENDREC && call_nr != RECEIVE && iskerneln(src_dst_p)) {
 #if DEBUG_ENABLE_IPC_WARNINGS
 <<<<<<< HEAD
+<<<<<<< HEAD
       kprintf_stub("sys_call: trap %s not allowed, caller %d, src_dst %d\n", // MODIFIED
       kprintf_stub("sys_call: trap %s not allowed, caller %d, src_dst %d\n", // MODIFIED
            callname, proc_nr(caller_ptr), src_dst_e);
+=======
+    kprintf_stub(
+        "sys_call: trap %s not allowed, caller %d, src_dst %d\n",  // MODIFIED
+        callname, proc_nr(caller_ptr), src_dst_e);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
     kprintf_stub(
         "sys_call: trap %s not allowed, caller %d, src_dst %d\n",  // MODIFIED
@@ -795,6 +948,7 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3) {
 
   /* If this process is subject to system call tracing, handle that first. */
   if (caller_ptr->p_misc_flags & (MF_SC_TRACE | MF_SC_DEFER)) {
+<<<<<<< HEAD
 <<<<<<< HEAD
 	/* Are we tracing this process, and is it the first sys_call entry? */
 	if ((caller_ptr->p_misc_flags & (MF_SC_TRACE | MF_SC_DEFER)) ==
@@ -850,6 +1004,38 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3) {
     /* Set a flag to allow reliable tracing of leaving the system call. */
     caller_ptr->p_misc_flags |= MF_SC_ACTIVE;
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
+    /* Are we tracing this process, and is it the first sys_call entry? */
+    if ((caller_ptr->p_misc_flags & (MF_SC_TRACE | MF_SC_DEFER)) ==
+        MF_SC_TRACE) {
+      /* We must notify the tracer before processing the actual
+       * system call. If we don't, the tracer could not obtain the
+       * input message. Postpone the entire system call.
+       */
+      caller_ptr->p_misc_flags &= ~MF_SC_TRACE;
+
+      KASSERT(!(caller_ptr->p_misc_flags & MF_SC_DEFER));
+
+      caller_ptr->p_misc_flags |= MF_SC_DEFER;
+      caller_ptr->p_defer.r1 = r1;
+      caller_ptr->p_defer.r2 = r2;
+      caller_ptr->p_defer.r3 = r3;
+
+      /* Signal the "enter system call" event. Block the process. */
+      cause_sig(proc_nr(caller_ptr), SIGTRAP);  // SIGTRAP might be undefined
+
+      /* Preserve the return register's value. */
+      return caller_ptr->p_reg.retreg;
+    }
+
+    /* If the MF_SC_DEFER flag is set, the syscall is now being resumed. */
+    caller_ptr->p_misc_flags &= ~MF_SC_DEFER;
+
+    KASSERT(!(caller_ptr->p_misc_flags & MF_SC_ACTIVE));
+
+    /* Set a flag to allow reliable tracing of leaving the system call. */
+    caller_ptr->p_misc_flags |= MF_SC_ACTIVE;
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 
   if (caller_ptr->p_misc_flags & MF_DELIVERMSG) {
@@ -874,6 +1060,7 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3) {
       /* Process accounting for scheduling */
       caller_ptr->p_accounting.ipc_sync++;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   	    return do_sync_ipc(caller_ptr, call_nr, (endpoint_t) r2,
 			    (message *) r3);
@@ -904,6 +1091,8 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3) {
 			return EBADCALL;
 		}
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
       return do_sync_ipc(caller_ptr, call_nr, (endpoint_t)r2, (message *)r3);
     }
     case SENDA: {
@@ -912,6 +1101,9 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3) {
        * table
        */
       k_size_t msg_size = (k_size_t)r2;  // MODIFIED size_t
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
       /* Process accounting for scheduling */
@@ -958,6 +1150,7 @@ static int deadlock(int function,             /* trap number */
 #endif
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   while (src_dst_e != ANY) { 			/* check while process nr */
       int src_dst_slot;
       okendpt(src_dst_e, &src_dst_slot);
@@ -965,6 +1158,8 @@ static int deadlock(int function,             /* trap number */
       KASSERT(proc_ptr_ok(xp));
       KASSERT(!RTS_ISSET(xp, RTS_SLOT_FREE));
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   while (src_dst_e != ANY) { /* check while process nr */
     int src_dst_slot;
     okendpt(src_dst_e, &src_dst_slot);
@@ -983,6 +1178,7 @@ static int deadlock(int function,             /* trap number */
      */
     if ((src_dst_e = P_BLOCKEDON(xp)) == NONE) return 0;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
       /* Now check if there is a cyclic dependency. For group sizes of two,  
        * a combination of SEND(REC) and RECEIVE is not fatal. Larger groups
@@ -1014,6 +1210,8 @@ static int deadlock(int function,             /* trap number */
 #endif
           return(group_size);			/* deadlock found */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     /* Now check if there is a cyclic dependency. For group sizes of two,
      * a combination of SEND(REC) and RECEIVE is not fatal. Larger groups
      * or other combinations indicate a deadlock.
@@ -1024,6 +1222,9 @@ static int deadlock(int function,             /* trap number */
         if ((xp->p_rts_flags ^ (function << 2)) & RTS_SENDING) {
           return (0); /* not a deadlock */
         }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
       }
 #if DEBUG_ENABLE_IPC_WARNINGS
@@ -1165,10 +1366,16 @@ int mini_send(
    */
   if (WILLRECEIVE(caller_ptr->p_endpoint, dst_ptr, (vir_bytes)m_ptr, NULL)) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	int call;
 	/* Destination is indeed waiting for this message. */
 	KASSERT(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));
 	KASSERT(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));
+=======
+    int call;
+    /* Destination is indeed waiting for this message. */
+    KASSERT(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
     int call;
     /* Destination is indeed waiting for this message. */
@@ -1226,12 +1433,15 @@ int mini_send(
     caller_ptr->p_sendto_e = dst_e;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	/* Process is now blocked.  Put in on the destination's queue. */
 	KASSERT(caller_ptr->p_q_link == NULL); /* NULL can be an issue if stddef.h is truly gone */
 	xpp = &dst_ptr->p_caller_q;		/* find end of list */
 	while (*xpp) xpp = &(*xpp)->p_q_link;	
 	*xpp = caller_ptr;			/* add caller to end */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     /* Process is now blocked.  Put in on the destination's queue. */
     KASSERT(caller_ptr->p_q_link ==
             NULL); /* NULL can be an issue if stddef.h is truly gone */
@@ -1239,6 +1449,9 @@ int mini_send(
     xpp = &dst_ptr->p_caller_q; /* find end of list */
     while (*xpp) xpp = &(*xpp)->p_q_link;
     *xpp = caller_ptr; /* add caller to end */
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
 #if DEBUG_IPC_HOOK
@@ -1296,6 +1509,7 @@ static int mini_receive(struct proc *caller_ptr,
       if (found && CANRECEIVE(src_e, sender_e, caller_ptr, 0, &m_notify_buff)) {
 #if DEBUG_ENABLE_IPC_WARNINGS
 <<<<<<< HEAD
+<<<<<<< HEAD
 	    if(src_proc_nr == NONE) {
 		kprintf_stub("mini_receive: sending notify from NONE\n"); // MODIFIED
 		kprintf_stub("mini_receive: sending notify from NONE\n"); // MODIFIED
@@ -1317,6 +1531,10 @@ static int mini_receive(struct proc *caller_ptr,
 	    IPC_STATUS_ADD_CALL(caller_ptr, NOTIFY);
 
 	    goto receive_done;
+=======
+        if (src_proc_nr == NONE) {
+          kprintf_stub("mini_receive: sending notify from NONE\n");  // MODIFIED
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
         if (src_proc_nr == NONE) {
           kprintf_stub("mini_receive: sending notify from NONE\n");  // MODIFIED
@@ -1361,6 +1579,7 @@ static int mini_receive(struct proc *caller_ptr,
       endpoint_t sender_e = sender->p_endpoint;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         if (CANRECEIVE(src_e, sender_e, caller_ptr, 0, &sender->p_sendmsg)) {
             int call;
 	    KASSERT(!RTS_ISSET(sender, RTS_SLOT_FREE));
@@ -1392,6 +1611,24 @@ static int mini_receive(struct proc *caller_ptr,
         call = (sender->p_misc_flags & MF_REPLY_PEND ? SENDREC : SEND);
         IPC_STATUS_ADD_CALL(caller_ptr, call);
 
+=======
+      if (CANRECEIVE(src_e, sender_e, caller_ptr, 0, &sender->p_sendmsg)) {
+        int call;
+        KASSERT(!RTS_ISSET(sender, RTS_SLOT_FREE));
+        KASSERT(!RTS_ISSET(sender, RTS_NO_ENDPOINT));
+
+        /* Found acceptable message. Copy it and update status. */
+        KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
+
+        caller_ptr->p_delivermsg = sender->p_sendmsg;
+        caller_ptr->p_delivermsg.m_source = sender->p_endpoint;
+        caller_ptr->p_misc_flags |= MF_DELIVERMSG;
+        RTS_UNSET(sender, RTS_SENDING);
+
+        call = (sender->p_misc_flags & MF_REPLY_PEND ? SENDREC : SEND);
+        IPC_STATUS_ADD_CALL(caller_ptr, call);
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
         /*
          * if the message is originally from the kernel on behalf of this
          * process, we must send the status flags accordingly
@@ -1407,6 +1644,7 @@ static int mini_receive(struct proc *caller_ptr,
         hook_ipc_msgrecv(&caller_ptr->p_delivermsg, *xpp, caller_ptr);
 #endif
 <<<<<<< HEAD
+<<<<<<< HEAD
 		
             *xpp = sender->p_q_link;		/* remove from queue */
 	    sender->p_q_link = NULL; // MODIFIED (NULL)
@@ -1415,12 +1653,17 @@ static int mini_receive(struct proc *caller_ptr,
 	}
 	xpp = &sender->p_q_link;		/* proceed to next */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
         *xpp = sender->p_q_link;  /* remove from queue */
         sender->p_q_link = NULL;  // MODIFIED (NULL)
         goto receive_done;
       }
       xpp = &sender->p_q_link; /* proceed to next */
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     }
   }
@@ -1459,10 +1702,16 @@ int mini_notify(const struct proc *caller_ptr, /* sender of the notification */
 
   if (!isokendpt(dst_e, &dst_p)) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	util_stacktrace();
 	kprintf_stub("mini_notify: bogus endpoint %d\n", dst_e); // MODIFIED
 	kprintf_stub("mini_notify: bogus endpoint %d\n", dst_e); // MODIFIED
 	return EDEADSRCDST;
+=======
+    util_stacktrace();
+    kprintf_stub("mini_notify: bogus endpoint %d\n", dst_e);  // MODIFIED
+    return EDEADSRCDST;
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
     util_stacktrace();
     kprintf_stub("mini_notify: bogus endpoint %d\n", dst_e);  // MODIFIED
@@ -1477,6 +1726,7 @@ int mini_notify(const struct proc *caller_ptr, /* sender of the notification */
    */
   if (WILLRECEIVE(caller_ptr->p_endpoint, dst_ptr, 0, &m_notify_buff) &&
 <<<<<<< HEAD
+<<<<<<< HEAD
     !(dst_ptr->p_misc_flags & MF_REPLY_PEND)) {
       /* Destination is indeed waiting for a message. Assemble a notification 
        * message and deliver it. Copy from pseudo-source HARDWARE, since the
@@ -1485,12 +1735,17 @@ int mini_notify(const struct proc *caller_ptr, /* sender of the notification */
       KASSERT(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));
       KASSERT(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
       !(dst_ptr->p_misc_flags & MF_REPLY_PEND)) {
     /* Destination is indeed waiting for a message. Assemble a notification
      * message and deliver it. Copy from pseudo-source HARDWARE, since the
      * message is in the kernel's address space.
      */
     KASSERT(!(dst_ptr->p_misc_flags & MF_DELIVERMSG));
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
     BuildNotifyMessage(&dst_ptr->p_delivermsg, proc_nr(caller_ptr), dst_ptr);
@@ -1513,6 +1768,7 @@ int mini_notify(const struct proc *caller_ptr, /* sender of the notification */
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define ASCOMPLAIN(caller, entry, field)	\
 	kprintf_stub("kernel:%s:%d: asyn failed for %s in %s "	\
 	kprintf_stub("kernel:%s:%d: asyn failed for %s in %s "	\
@@ -1520,6 +1776,8 @@ int mini_notify(const struct proc *caller_ptr, /* sender of the notification */
 field, caller->p_name, entry, (k_size_t)priv(caller)->s_asynsize, priv(caller)->s_asyntab) /* MODIFIED k_size_t for %zu if it becomes unsigned long */
 field, caller->p_name, entry, (k_size_t)priv(caller)->s_asynsize, priv(caller)->s_asyntab) /* MODIFIED k_size_t for %zu if it becomes unsigned long */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 #define ASCOMPLAIN(caller, entry, field)                                  \
   kprintf_stub(                                                           \
       "kernel:%s:%d: asyn failed for %s in %s "                           \
@@ -1528,6 +1786,9 @@ field, caller->p_name, entry, (k_size_t)priv(caller)->s_asynsize, priv(caller)->
       (k_size_t)priv(caller)->s_asynsize,                                 \
       priv(caller)->s_asyntab) /* MODIFIED k_size_t for %zu if it becomes \
                                   unsigned long */
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
 #define A_RETR(entry)                                            \
@@ -1557,10 +1818,15 @@ field, caller->p_name, entry, (k_size_t)priv(caller)->s_asynsize, priv(caller)->
  *				try_deliver_senda			     *
  *===========================================================================*/
 <<<<<<< HEAD
+<<<<<<< HEAD
 int try_deliver_senda(struct proc *caller_ptr,
 				asynmsg_t *table,
 				k_size_t size) // MODIFIED size_t
 				k_size_t size) // MODIFIED size_t
+=======
+int try_deliver_senda(struct proc *caller_ptr, asynmsg_t *table,
+                      k_size_t size)  // MODIFIED size_t
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
 int try_deliver_senda(struct proc *caller_ptr, asynmsg_t *table,
                       k_size_t size)  // MODIFIED size_t
@@ -1574,9 +1840,14 @@ int try_deliver_senda(struct proc *caller_ptr, asynmsg_t *table,
   struct priv *privp;
   asynmsg_t tabent;
 <<<<<<< HEAD
+<<<<<<< HEAD
   const vir_bytes table_v = (vir_bytes) table;
   message *m_ptr = NULL; // MODIFIED (NULL)
   message *m_ptr = NULL; // MODIFIED (NULL)
+=======
+  const vir_bytes table_v = (vir_bytes)table;
+  message *m_ptr = NULL;  // MODIFIED (NULL)
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   const vir_bytes table_v = (vir_bytes)table;
   message *m_ptr = NULL;  // MODIFIED (NULL)
@@ -1646,6 +1917,7 @@ int try_deliver_senda(struct proc *caller_ptr, asynmsg_t *table,
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	/* Check if 'dst' is blocked waiting for this message.
 	 * If AMF_NOREPLY is set, do not satisfy the receiving part of
 	 * a SENDREC.
@@ -1661,6 +1933,8 @@ int try_deliver_senda(struct proc *caller_ptr, asynmsg_t *table,
 		IPC_STATUS_ADD_CALL(dst_ptr, SENDA);
 		RTS_UNSET(dst_ptr, RTS_RECEIVING);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     /* Check if 'dst' is blocked waiting for this message.
      * If AMF_NOREPLY is set, do not satisfy the receiving part of
      * a SENDREC.
@@ -1675,6 +1949,9 @@ int try_deliver_senda(struct proc *caller_ptr, asynmsg_t *table,
       dst_ptr->p_misc_flags |= MF_DELIVERMSG;
       IPC_STATUS_ADD_CALL(dst_ptr, SENDA);
       RTS_UNSET(dst_ptr, RTS_RECEIVING);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 #if DEBUG_IPC_HOOK
       hook_ipc_msgrecv(&dst_ptr->p_delivermsg, caller_ptr, dst_ptr);
@@ -1697,6 +1974,7 @@ int try_deliver_senda(struct proc *caller_ptr, asynmsg_t *table,
     continue;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 asyn_error:
 	if (dst != NONE)
 		kprintf_stub("KERNEL senda error %d to %d\n", r, dst); // MODIFIED
@@ -1705,11 +1983,16 @@ asyn_error:
 		kprintf_stub("KERNEL senda error %d\n", r); // MODIFIED
 		kprintf_stub("KERNEL senda error %d\n", r); // MODIFIED
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   asyn_error:
     if (dst != NONE)
       kprintf_stub("KERNEL senda error %d to %d\n", r, dst);  // MODIFIED
     else
       kprintf_stub("KERNEL senda error %d\n", r);  // MODIFIED
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 
@@ -1727,8 +2010,13 @@ asyn_error:
  *				mini_senda				     *
  *===========================================================================*/
 <<<<<<< HEAD
+<<<<<<< HEAD
 static int mini_senda(struct proc *caller_ptr, asynmsg_t *table, k_size_t size) // MODIFIED size_t
 static int mini_senda(struct proc *caller_ptr, asynmsg_t *table, k_size_t size) // MODIFIED size_t
+=======
+static int mini_senda(struct proc *caller_ptr, asynmsg_t *table,
+                      k_size_t size)  // MODIFIED size_t
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
 static int mini_senda(struct proc *caller_ptr, asynmsg_t *table,
                       k_size_t size)  // MODIFIED size_t
@@ -1739,9 +2027,15 @@ static int mini_senda(struct proc *caller_ptr, asynmsg_t *table,
   privp = priv(caller_ptr);
   if (!(privp->s_flags & SYS_PROC)) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	kprintf_stub( "mini_senda: warning caller has no privilege structure\n"); // MODIFIED
 	kprintf_stub( "mini_senda: warning caller has no privilege structure\n"); // MODIFIED
 	return(EPERM);
+=======
+    kprintf_stub(
+        "mini_senda: warning caller has no privilege structure\n");  // MODIFIED
+    return (EPERM);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
     kprintf_stub(
         "mini_senda: warning caller has no privilege structure\n");  // MODIFIED
@@ -1783,9 +2077,15 @@ static int try_async(struct proc *caller_ptr) {
 #endif
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
 	if ((r = try_one(ANY, src_ptr, caller_ptr)) == OK)
 		return(r);
+=======
+    KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
+
+    if ((r = try_one(ANY, src_ptr, caller_ptr)) == OK) return (r);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
     KASSERT(!(caller_ptr->p_misc_flags & MF_DELIVERMSG));
 
@@ -1805,8 +2105,12 @@ static int try_one(endpoint_t receive_e, struct proc *src_ptr,
   int r = EAGAIN, done, do_notify;
   unsigned int flags, i;
 <<<<<<< HEAD
+<<<<<<< HEAD
   k_size_t size; // MODIFIED size_t
   k_size_t size; // MODIFIED size_t
+=======
+  k_size_t size;  // MODIFIED size_t
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   k_size_t size;  // MODIFIED size_t
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -1872,6 +2176,7 @@ static int try_one(endpoint_t receive_e, struct proc *src_ptr,
     if (dst != dst_ptr->p_endpoint) continue;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if (!CANRECEIVE(receive_e, src_e, dst_ptr,
 		table_v + i*sizeof(asynmsg_t) + K_OFFSETOF(struct asynmsg,msg),
 		NULL)) { // MODIFIED (NULL)
@@ -1894,6 +2199,23 @@ static int try_one(endpoint_t receive_e, struct proc *src_ptr,
     if ((flags & AMF_NOREPLY) && (dst_ptr->p_misc_flags & MF_REPLY_PEND))
       continue;
 
+=======
+    if (!CANRECEIVE(
+            receive_e, src_e, dst_ptr,
+            table_v + i * sizeof(asynmsg_t) + K_OFFSETOF(struct asynmsg, msg),
+
+            NULL)) {  // MODIFIED (NULL)
+      continue;
+    }
+
+    /* If AMF_NOREPLY is set, then this message is not a reply to a
+     * SENDREC and thus should not satisfy the receiving part of the
+     * SENDREC. This message is to be delivered later.
+     */
+    if ((flags & AMF_NOREPLY) && (dst_ptr->p_misc_flags & MF_REPLY_PEND))
+      continue;
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     /* Destination is ready to receive the message; deliver it */
     r = OK;
     dst_ptr->p_delivermsg = tabent.msg;
@@ -1941,8 +2263,12 @@ int cancel_async(struct proc *src_ptr, struct proc *dst_ptr) {
   int done, do_notify;
   unsigned int flags, i;
 <<<<<<< HEAD
+<<<<<<< HEAD
   k_size_t size; // MODIFIED size_t
   k_size_t size; // MODIFIED size_t
+=======
+  k_size_t size;  // MODIFIED size_t
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   k_size_t size;  // MODIFIED size_t
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -2039,7 +2365,10 @@ void enqueue(register struct proc *rp /* this process is now runnable */
   int q = rp->p_priority; /* scheduling queue to use */
   struct proc **rdy_head, **rdy_tail;
 
+<<<<<<< HEAD
   KASSERT(proc_is_runnable(rp));
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   KASSERT(proc_is_runnable(rp));
 
   KASSERT(q >= 0);
@@ -2049,6 +2378,7 @@ void enqueue(register struct proc *rp /* this process is now runnable */
   rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
 
   /* Now add the process to the queue. */
+<<<<<<< HEAD
 <<<<<<< HEAD
   if (!rdy_head[q]) {		/* add to empty queue */
       rdy_head[q] = rdy_tail[q] = rp; 		/* create a new queue */
@@ -2085,6 +2415,18 @@ void enqueue(register struct proc *rp /* this process is now runnable */
   }
 
   if (cpuid == rp->p_cpu) {
+=======
+  if (!rdy_head[q]) {                           /* add to empty queue */
+    rdy_head[q] = rdy_tail[q] = rp;             /* create a new queue */
+    rp->p_nextready = NULL; /* mark new end */  // MODIFIED (NULL)
+  } else {                                      /* add to tail of queue */
+    rdy_tail[q]->p_nextready = rp;              /* chain tail of queue */
+    rdy_tail[q] = rp;                           /* set new queue tail */
+    rp->p_nextready = NULL; /* mark new end */  // MODIFIED (NULL)
+  }
+
+  if (cpuid == rp->p_cpu) {
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     /*
      * enqueueing a process with a higher priority than the current one,
      * it gets preempted. The current process must be preemptible. Testing
@@ -2097,6 +2439,9 @@ void enqueue(register struct proc *rp /* this process is now runnable */
 
     if ((p->p_priority > rp->p_priority) && (priv(p)->s_flags & PREEMPTIBLE))
       RTS_SET(p, RTS_PREEMPTED); /* calls dequeue() */
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 #ifdef CONFIG_SMP
@@ -2153,6 +2498,7 @@ static void enqueue_head(struct proc *rp) {
 
   /* Now add the process to the queue. */
 <<<<<<< HEAD
+<<<<<<< HEAD
   if (!rdy_head[q]) {		/* add to empty queue */
 	rdy_head[q] = rdy_tail[q] = rp; 	/* create a new queue */
 	rp->p_nextready = NULL;			/* mark new end */ // MODIFIED (NULL)
@@ -2161,12 +2507,17 @@ static void enqueue_head(struct proc *rp) {
 	rp->p_nextready = rdy_head[q];		/* chain head of queue */
 	rdy_head[q] = rp;			/* set new queue head */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   if (!rdy_head[q]) {                           /* add to empty queue */
     rdy_head[q] = rdy_tail[q] = rp;             /* create a new queue */
     rp->p_nextready = NULL; /* mark new end */  // MODIFIED (NULL)
   } else {                                      /* add to head of queue */
     rp->p_nextready = rdy_head[q];              /* chain head of queue */
     rdy_head[q] = rp;                           /* set new queue head */
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 
@@ -2209,8 +2560,12 @@ void dequeue(struct proc *rp)
 
   /* Side-effect for kernel: check if the task's stack still is ok? */
 <<<<<<< HEAD
+<<<<<<< HEAD
   KASSERT (!iskernelp(rp) || *priv(rp)->s_stack_guard == STACK_GUARD);
   KASSERT (!iskernelp(rp) || *priv(rp)->s_stack_guard == STACK_GUARD);
+=======
+  KASSERT(!iskernelp(rp) || *priv(rp)->s_stack_guard == STACK_GUARD);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   KASSERT(!iskernelp(rp) || *priv(rp)->s_stack_guard == STACK_GUARD);
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -2222,8 +2577,12 @@ void dequeue(struct proc *rp)
    * running by being sent a signal that kills it.
    */
 <<<<<<< HEAD
+<<<<<<< HEAD
   prev_xp = NULL; // MODIFIED (NULL)
   prev_xp = NULL; // MODIFIED (NULL)
+=======
+  prev_xp = NULL;  // MODIFIED (NULL)
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   prev_xp = NULL;  // MODIFIED (NULL)
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -2281,6 +2640,7 @@ static struct proc *pick_proc(void) {
    */
   rdy_head = get_cpulocal_var(run_q_head);
 <<<<<<< HEAD
+<<<<<<< HEAD
   for (q=0; q < NR_SCHED_QUEUES; q++) {	
 	if(!(rp = rdy_head[q])) {
 		TRACE(VF_PICKPROC, kprintf_stub("cpu %d queue %d empty\n", cpuid, q);); // MODIFIED
@@ -2309,6 +2669,21 @@ static struct proc *pick_proc(void) {
   }
   return NULL;  // MODIFIED (NULL)
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
+  for (q = 0; q < NR_SCHED_QUEUES; q++) {
+    if (!(rp = rdy_head[q])) {
+      TRACE(VF_PICKPROC,
+            kprintf_stub("cpu %d queue %d empty\n", cpuid, q););  // MODIFIED
+      continue;
+    }
+    KASSERT(proc_is_runnable(rp));
+
+    if (priv(rp)->s_flags & BILLABLE)
+      get_cpulocal_var(bill_ptr) = rp; /* bill for system time */
+    return rp;
+  }
+  return NULL;  // MODIFIED (NULL)
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 
 /*===========================================================================*
@@ -2318,8 +2693,12 @@ struct proc *endpoint_lookup(endpoint_t e) {
   int n;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if(!isokendpt(e, &n)) return NULL; // MODIFIED (NULL)
 	if(!isokendpt(e, &n)) return NULL; // MODIFIED (NULL)
+=======
+  if (!isokendpt(e, &n)) return NULL;  // MODIFIED (NULL)
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   if (!isokendpt(e, &n)) return NULL;  // MODIFIED (NULL)
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -2363,8 +2742,12 @@ static void notify_scheduler(struct proc *p) {
   int err;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	KASSERT(!proc_kernel_scheduler(p));
 	KASSERT(!proc_kernel_scheduler(p));
+=======
+  KASSERT(!proc_kernel_scheduler(p));
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   KASSERT(!proc_kernel_scheduler(p));
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -2433,6 +2816,7 @@ void copr_not_available_handler(void) {
   disable_fpu_exception();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	/* if FPU is not owned by anyone, do not store anything */
 	local_fpu_owner = get_cpulocal_var_ptr(fpu_owner);
 	if (*local_fpu_owner != NULL) { // MODIFIED (NULL)
@@ -2466,6 +2850,18 @@ void copr_not_available_handler(void) {
   }
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
+=======
+  p = get_cpulocal_var(proc_ptr);
+
+  /* if FPU is not owned by anyone, do not store anything */
+  local_fpu_owner = get_cpulocal_var_ptr(fpu_owner);
+  if (*local_fpu_owner != NULL) {  // MODIFIED (NULL)
+    KASSERT(*local_fpu_owner != p);
+
+    save_local_fpu(*local_fpu_owner, FALSE /*retain*/);
+  }
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /*
    * restore the current process' state and let it run again, do not
    * schedule!
@@ -2491,9 +2887,13 @@ void release_fpu(struct proc *p) {
   fpu_owner_ptr = get_cpu_var_ptr(p->p_cpu, fpu_owner);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if (*fpu_owner_ptr == p)
 		*fpu_owner_ptr = NULL; // MODIFIED (NULL)
 		*fpu_owner_ptr = NULL; // MODIFIED (NULL)
+=======
+  if (*fpu_owner_ptr == p) *fpu_owner_ptr = NULL;  // MODIFIED (NULL)
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   if (*fpu_owner_ptr == p) *fpu_owner_ptr = NULL;  // MODIFIED (NULL)
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)

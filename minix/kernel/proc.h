@@ -1,7 +1,7 @@
 #ifndef PROC_H
 #define PROC_H
 
-#include <minix/const.h>  // Kept
+#include <minix/const.h> // Kept
 // #include <sys/cdefs.h> // Removed
 #include <minix/const.h> // Kept
 // #include <sys/cdefs.h> // Removed
@@ -16,17 +16,17 @@
  * fields are defined in the assembler include file sconst.h.  When changing
  * struct proc, be sure to change sconst.h to match.
  */
-#include <minix/com.h>     // Kept
-#include <minix/portio.h>  // Kept for now (for phys_bytes, etc.)
+#include <minix/com.h>    // Kept
+#include <minix/portio.h> // Kept for now (for phys_bytes, etc.)
 
-#include "const.h"  // Kept (local kernel header)
-#include "priv.h"   // Kept (local kernel header)
+#include "const.h" // Kept (local kernel header)
+#include "priv.h"  // Kept (local kernel header)
 
 // Added kernel headers
 #include <klib/include/kmemory.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
-#include <minix/kernel_types.h>  // For k_clock_t, k_sigset_t
+#include <minix/kernel_types.h> // For k_clock_t, k_sigset_t
 
 #include "kernel/k_spinlock_irq.h" /* For spinlock_irq_t */
 
@@ -66,29 +66,36 @@ struct proc {
   } p_accounting;
 
 <<<<<<< HEAD
-  k_clock_t p_dequeued;		/* uptime at which process was last dequeued */ // MODIFIED clock_t
-  k_clock_t p_dequeued;		/* uptime at which process was last dequeued */ // MODIFIED clock_t
-
-  k_clock_t p_user_time;		/* user time in ticks */ // MODIFIED clock_t
-  k_clock_t p_sys_time;		/* sys time in ticks */ // MODIFIED clock_t
-  k_clock_t p_user_time;		/* user time in ticks */ // MODIFIED clock_t
-  k_clock_t p_sys_time;		/* sys time in ticks */ // MODIFIED clock_t
-
-  k_clock_t p_virt_left;		/* number of ticks left on virtual timer */ // MODIFIED clock_t
-  k_clock_t p_prof_left;		/* number of ticks left on profile timer */ // MODIFIED clock_t
-  k_clock_t p_virt_left;		/* number of ticks left on virtual timer */ // MODIFIED clock_t
-  k_clock_t p_prof_left;		/* number of ticks left on profile timer */ // MODIFIED clock_t
-=======
+<<<<<<< HEAD
   k_clock_t p_dequeued;
-      /* uptime at which process was last dequeued */  // MODIFIED clock_t
+      /* uptime at which process was last dequeued */ // MODIFIED clock_t
+  k_clock_t p_dequeued;
+      /* uptime at which process was last dequeued */ // MODIFIED clock_t
 
-  k_clock_t p_user_time; /* user time in ticks */  // MODIFIED clock_t
-  k_clock_t p_sys_time; /* sys time in ticks */    // MODIFIED clock_t
+  k_clock_t p_user_time; /* user time in ticks */ // MODIFIED clock_t
+  k_clock_t p_sys_time; /* sys time in ticks */   // MODIFIED clock_t
+  k_clock_t p_user_time; /* user time in ticks */ // MODIFIED clock_t
+  k_clock_t p_sys_time; /* sys time in ticks */   // MODIFIED clock_t
 
   k_clock_t p_virt_left;
-      /* number of ticks left on virtual timer */  // MODIFIED clock_t
+      /* number of ticks left on virtual timer */ // MODIFIED clock_t
   k_clock_t p_prof_left;
-      /* number of ticks left on profile timer */  // MODIFIED clock_t
+      /* number of ticks left on profile timer */ // MODIFIED clock_t
+  k_clock_t p_virt_left;
+      /* number of ticks left on virtual timer */ // MODIFIED clock_t
+  k_clock_t p_prof_left;
+      /* number of ticks left on profile timer */ // MODIFIED clock_t
+=======
+  k_clock_t p_dequeued;
+  /* uptime at which process was last dequeued */ // MODIFIED clock_t
+
+  k_clock_t p_user_time; /* user time in ticks */ // MODIFIED clock_t
+  k_clock_t p_sys_time; /* sys time in ticks */   // MODIFIED clock_t
+
+  k_clock_t p_virt_left;
+  /* number of ticks left on virtual timer */ // MODIFIED clock_t
+  k_clock_t p_prof_left;
+  /* number of ticks left on profile timer */ // MODIFIED clock_t
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   u64_t p_cycles;       /* how many cycles did the process use */
@@ -105,7 +112,49 @@ struct proc {
   endpoint_t p_sendto_e;    /* to whom does process want to send? */
 
   k_sigset_t p_pending;
-      /* bit map for pending kernel signals */  // MODIFIED sigset_t
+  /* bit map for pending kernel signals */ // MODIFIED sigset_t
+  /**
+   * @brief IRQ-safe spinlock protecting signal-related state.
+   * This lock serializes access to signal fields such as `p_pending`,
+   * `s_sig_pending` (via `priv(rp)`), and associated RTS flags
+   * (e.g., `RTS_SIGNALED`, `RTS_SIG_PENDING`).
+   * Being an IRQ-safe spinlock (`spinlock_irq_t`), local CPU interrupts
+   * are disabled while the lock is held, which is achieved by using
+   * `spin_lock_irqsave()` and `spin_unlock_irqrestore()`.
+   */
+  spinlock_irq_t p_sig_lock;
+
+  char p_name[PROC_NAME_LEN]; /* name of the process, including \0 */
+
+  endpoint_t p_endpoint;      /* endpoint number, generation-aware */
+
+=======
+  k_clock_t p_dequeued;
+  /* uptime at which process was last dequeued */ // MODIFIED clock_t
+
+  k_clock_t p_user_time; /* user time in ticks */ // MODIFIED clock_t
+  k_clock_t p_sys_time; /* sys time in ticks */   // MODIFIED clock_t
+
+  k_clock_t p_virt_left;
+  /* number of ticks left on virtual timer */ // MODIFIED clock_t
+  k_clock_t p_prof_left;
+  /* number of ticks left on profile timer */ // MODIFIED clock_t
+
+  u64_t p_cycles;       /* how many cycles did the process use */
+  u64_t p_kcall_cycles; /* kernel cycles caused by this proc (kcall) */
+  u64_t p_kipc_cycles;  /* cycles caused by this proc (ipc) */
+
+  u64_t p_tick_cycles;    /* cycles accumulated for up to a clock tick */
+  struct cpuavg p_cpuavg; /* running CPU average, for ps(1) */
+
+  struct proc *p_nextready; /* pointer to next ready process */
+  struct proc *p_caller_q;  /* head of list of procs wishing to send */
+  struct proc *p_q_link;    /* link to next proc wishing to send */
+  endpoint_t p_getfrom_e;   /* from whom does process want to receive? */
+  endpoint_t p_sendto_e;    /* to whom does process want to send? */
+
+  k_sigset_t p_pending;
+  /* bit map for pending kernel signals */ // MODIFIED sigset_t
   /**
    * @brief IRQ-safe spinlock protecting signal-related state.
    * This lock serializes access to signal fields such as `p_pending`,
@@ -121,6 +170,7 @@ struct proc {
 
   endpoint_t p_endpoint; /* endpoint number, generation-aware */
 
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   message p_sendmsg;          /* Message from this process if SENDING */
   message p_delivermsg;       /* Message for this process if MF_DELIVERMSG */
   vir_bytes p_delivermsg_vir; /* Virtual addr this proc wants message at */
@@ -194,18 +244,18 @@ struct proc {
 #define RTS_PAGEFAULT 0x400    /* process has unhandled pagefault */
 #define RTS_VMREQUEST 0x800    /* originator of vm memory request */
 #define RTS_VMREQTARGET 0x1000 /* target of vm memory request */
-#define RTS_PREEMPTED                                     \
-  0x4000 /* this process was preempted by a higher        \
-            priority process and we should pick a new one \
-            to run. Processes with this flag should be    \
-            returned to the front of their current        \
-            priority queue if they are still runnable     \
-            before we pick a new one                      \
+#define RTS_PREEMPTED                                                          \
+  0x4000 /* this process was preempted by a higher                             \
+            priority process and we should pick a new one                      \
+            to run. Processes with this flag should be                         \
+            returned to the front of their current                             \
+            priority queue if they are still runnable                          \
+            before we pick a new one                                           \
           */
-#define RTS_NO_QUANTUM                                   \
-  0x8000 /* process ran out of its quantum and we should \
-            pick a new one. Process was dequeued and     \
-            should be enqueued at the end of some run    \
+#define RTS_NO_QUANTUM                                                         \
+  0x8000 /* process ran out of its quantum and we should                       \
+            pick a new one. Process was dequeued and                           \
+            should be enqueued at the end of some run                          \
             queue again */
 #define RTS_BOOTINHIBIT 0x10000 /* not ready until VM has made it */
 
@@ -219,7 +269,7 @@ struct proc {
 #define proc_used_fpu(p) ((p)->p_misc_flags & (MF_FPU_INITIALIZED))
 
 /* test whether the process is scheduled by the kernel's default policy  */
-#define proc_kernel_scheduler(p) \
+#define proc_kernel_scheduler(p)                                               \
   ((p)->p_scheduler == NULL || (p)->p_scheduler == (p))
 
 /* Macro to return: on which process is a certain process blocked?
@@ -228,9 +278,9 @@ struct proc {
  * both be on (if a ipc_sendrec() blocks on sending), and p_getfrom_e
  * could be nonsense even though RTS_RECEIVING is on.
  */
-#define P_BLOCKEDON(p)              \
-  (((p)->p_rts_flags & RTS_SENDING) \
-       ? (p)->p_sendto_e            \
+#define P_BLOCKEDON(p)                                                         \
+  (((p)->p_rts_flags & RTS_SENDING)                                            \
+       ? (p)->p_sendto_e                                                       \
        : ((((p)->p_rts_flags & RTS_RECEIVING) ? (p)->p_getfrom_e : NONE)))
 
 /* These runtime flags can be tested and manipulated by these macros. */
@@ -238,66 +288,66 @@ struct proc {
 #define RTS_ISSET(rp, f) (((rp)->p_rts_flags & (f)) == (f))
 
 /* Set flag and dequeue if the process was runnable. */
-#define RTS_SET(rp, f)                                     \
-  do {                                                     \
-    const int rts = (rp)->p_rts_flags;                     \
-    (rp)->p_rts_flags |= (f);                              \
-    if (rts_f_is_runnable(rts) && !proc_is_runnable(rp)) { \
-      dequeue(rp);                                         \
-    }                                                      \
+#define RTS_SET(rp, f)                                                         \
+  do {                                                                         \
+    const int rts = (rp)->p_rts_flags;                                         \
+    (rp)->p_rts_flags |= (f);                                                  \
+    if (rts_f_is_runnable(rts) && !proc_is_runnable(rp)) {                     \
+      dequeue(rp);                                                             \
+    }                                                                          \
   } while (0)
 
 /* Clear flag and enqueue if the process was not runnable but is now. */
-#define RTS_UNSET(rp, f)                                   \
-  do {                                                     \
-    int rts;                                               \
-    rts = (rp)->p_rts_flags;                               \
-    (rp)->p_rts_flags &= ~(f);                             \
-    if (!rts_f_is_runnable(rts) && proc_is_runnable(rp)) { \
-      enqueue(rp);                                         \
-    }                                                      \
+#define RTS_UNSET(rp, f)                                                       \
+  do {                                                                         \
+    int rts;                                                                   \
+    rts = (rp)->p_rts_flags;                                                   \
+    (rp)->p_rts_flags &= ~(f);                                                 \
+    if (!rts_f_is_runnable(rts) && proc_is_runnable(rp)) {                     \
+      enqueue(rp);                                                             \
+    }                                                                          \
   } while (0)
 
 /* Set flags to this value. */
-#define RTS_SETFLAGS(rp, f)            \
-  do {                                 \
-    if (proc_is_runnable(rp) && (f)) { \
-      dequeue(rp);                     \
-    }                                  \
-    (rp)->p_rts_flags = (f);           \
+#define RTS_SETFLAGS(rp, f)                                                    \
+  do {                                                                         \
+    if (proc_is_runnable(rp) && (f)) {                                         \
+      dequeue(rp);                                                             \
+    }                                                                          \
+    (rp)->p_rts_flags = (f);                                                   \
   } while (0)
 
 /* Misc flags */
 #define MF_REPLY_PEND 0x001 /* reply to IPC_REQUEST is pending */
 #define MF_VIRT_TIMER 0x002 /* process-virtual timer is running */
 #define MF_PROF_TIMER 0x004 /* process-virtual profile timer is running */
-#define MF_KCALL_RESUME                                                      \
-  0x008                     /* processing a kernel call was interrupted,     \
-                               most likely because we need VM to resolve a   \
-                               problem or a long running copy was preempted. \
-                               We need to resume the kernel call execution   \
-                               now                                           \
+#define MF_KCALL_RESUME                                                        \
+  0x008                     /* processing a kernel call was interrupted,       \
+                               most likely because we need VM to resolve a     \
+                               problem or a long running copy was preempted.   \
+                               We need to resume the kernel call execution     \
+                               now                                             \
                              */
 #define MF_DELIVERMSG 0x040 /* Copy message for him before running */
 #define MF_SIG_DELAY 0x080  /* Send signal when no longer sending */
 #define MF_SC_ACTIVE 0x100  /* Syscall tracing: in a system call now */
 #define MF_SC_DEFER 0x200   /* Syscall tracing: deferred system call */
 #define MF_SC_TRACE 0x400   /* Syscall tracing: trigger syscall events */
-#define MF_FPU_INITIALIZED                    \
-  0x1000 /* process already used math, so fpu \
+#define MF_FPU_INITIALIZED                                                     \
+  0x1000 /* process already used math, so fpu                                  \
           * regs are significant (initialized)*/
-#define MF_SENDING_FROM_KERNEL \
+#define MF_SENDING_FROM_KERNEL                                                 \
   0x2000                      /* message of this process is from kernel */
 #define MF_CONTEXT_SET 0x4000 /* don't touch context */
 #define MF_SPROF_SEEN 0x8000  /* profiling has seen this process */
-#define MF_FLUSH_TLB                                    \
-  0x10000 /* if set, TLB must be flushed before letting \
-             this process run again. Currently it only  \
+#define MF_FLUSH_TLB                                                           \
+  0x10000 /* if set, TLB must be flushed before letting                        \
+             this process run again. Currently it only                         \
              applies to SMP */
-#define MF_SENDA_VM_MISS                                                \
-  0x20000               /* set if a processes wanted to receive an asyn \
-                           message from this sender but could not       \
-                           because of VM modifying the sender's address \
+#define MF_SENDA_VM_MISS                                                       \
+  0x20000               /* set if a processes wanted to receive an asyn        \
+                           message from this sender but could not              \
+                           because of VM modifying the sender's address        \
                            space*/
 #define MF_STEP 0x40000 /* Single-step process */
 #define MF_MSGFAILED 0x80000

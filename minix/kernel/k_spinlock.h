@@ -5,16 +5,22 @@
  * This header provides a basic spinlock implementation suitable for short
  * critical sections, particularly in contexts where sleeping is not permissible
 <<<<<<< HEAD
+<<<<<<< HEAD
  * (e.g., some interrupt handlers or core kernel code before schedulers are fully active).
  * It is designed with SMP considerations, relying on GCC's atomic builtins which
  * typically ensure full memory barriers for sequential consistency.
  * Includes adaptive spinning using `arch_pause()` for supported architectures.
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * (e.g., some interrupt handlers or core kernel code before schedulers are
  * fully active). It is designed with SMP considerations, relying on GCC's
  * atomic builtins which typically ensure full memory barriers for sequential
  * consistency. Includes adaptive spinning using `arch_pause()` for supported
  * architectures.
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  */
 #ifndef K_SPINLOCK_H
@@ -25,7 +31,11 @@
 /* Include arch-specific definitions, e.g., for arch_pause() */
 #if defined(__i386__) || defined(__x86_64__)
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "arch/i386/include/arch_cpu.h" // Provides arch_pause for x86
+=======
+#include "arch/i386/include/arch_cpu.h"  // Provides arch_pause for x86
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
 #include "arch/i386/include/arch_cpu.h"  // Provides arch_pause for x86
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -34,9 +44,15 @@
  * @brief Placeholder for arch_pause on non-x86 architectures.
  *
 <<<<<<< HEAD
+<<<<<<< HEAD
  * For architectures other than i386/x86_64, this function currently acts as a no-op.
  * It can be defined with architecture-specific pause/yield instructions if available
  * to improve spin-wait loop performance.
+=======
+ * For architectures other than i386/x86_64, this function currently acts as a
+ * no-op. It can be defined with architecture-specific pause/yield instructions
+ * if available to improve spin-wait loop performance.
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
  * For architectures other than i386/x86_64, this function currently acts as a
  * no-op. It can be defined with architecture-specific pause/yield instructions
@@ -48,10 +64,13 @@ static inline void arch_pause(void) { /* No-op */ }
 
 /**
 <<<<<<< HEAD
+<<<<<<< HEAD
  * @brief Structure representing a simple spinlock.
  *
  * The spinlock's state is determined by the `locked` member.
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * @brief Maximum number of spin iterations before attempting to yield.
  *
  * This threshold is used in `simple_spin_lock` to prevent a CPU from
@@ -93,11 +112,15 @@ static inline void kernel_yield(void) {
  *
  * The spinlock's state is determined by the `locked` member.
  * It also includes basic statistics for acquisitions and contentions.
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * It is crucial that operations on this structure use the provided
  * `simple_spin_*` functions to ensure atomicity and correct memory ordering.
  */
 typedef struct {
+<<<<<<< HEAD
 <<<<<<< HEAD
     /**
      * @brief The lock state. 0 for unlocked, 1 for locked.
@@ -121,6 +144,8 @@ static inline void simple_spin_init(simple_spinlock_t *lock) {
     // Initialize the lock state to 0 (unlocked).
     lock->locked = 0;
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /**
    * @brief The lock state. 0 for unlocked, 1 for locked.
    *
@@ -153,6 +178,9 @@ static inline void simple_spin_init(simple_spinlock_t *lock) {
   // Initialize statistics.
   lock->acquisitions = 0;
   lock->contentions = 0;
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 
@@ -164,6 +192,7 @@ static inline void simple_spin_init(simple_spinlock_t *lock) {
  * it will spin (busy-wait) until the lock becomes available.
  * This function is non-recursive; a thread attempting to acquire a lock
  * it already holds will deadlock.
+<<<<<<< HEAD
 <<<<<<< HEAD
  */
 static inline void simple_spin_lock(simple_spinlock_t *lock) {
@@ -194,6 +223,8 @@ static inline void simple_spin_lock(simple_spinlock_t *lock) {
      * and a full memory barrier is implied by __sync_lock_test_and_set.
      */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * Includes a spin counter and calls `kernel_yield()` if spinning excessively.
  * Also updates lock acquisition and contention statistics.
  */
@@ -249,6 +280,9 @@ static inline void simple_spin_lock(simple_spinlock_t *lock) {
     // attempt (a race). In this case, the outer while(1) loop continues, and we
     // re-enter the inner spin.
   }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 
@@ -261,6 +295,7 @@ static inline void simple_spin_lock(simple_spinlock_t *lock) {
  */
 static inline void simple_spin_unlock(simple_spinlock_t *lock) {
 <<<<<<< HEAD
+<<<<<<< HEAD
     /* Atomically set lock->locked to 0 (unlocked).
      * __sync_lock_release provides a release memory barrier. This ensures that all
      * memory writes made by this thread within the critical section (before this
@@ -268,6 +303,8 @@ static inline void simple_spin_unlock(simple_spinlock_t *lock) {
      */
     __sync_lock_release(&lock->locked);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /* Atomically set lock->locked to 0 (unlocked).
    * __sync_lock_release provides a release memory barrier. This ensures that
    * all memory writes made by this thread within the critical section (before
@@ -275,6 +312,9 @@ static inline void simple_spin_unlock(simple_spinlock_t *lock) {
    * released.
    */
   __sync_lock_release(&lock->locked);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 

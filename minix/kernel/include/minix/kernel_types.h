@@ -61,9 +61,12 @@ typedef struct {
 
 typedef struct {
 <<<<<<< HEAD
+<<<<<<< HEAD
   volatile long counter; // Assuming long is suitable for most atomic ops.
                          // Could also be arch-specific size.
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     volatile k_int64_t counter; // Changed to k_int64_t for true 64-bit atomic
                            // Could also be arch-specific size.
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -87,6 +90,14 @@ typedef struct k_mem_region_handle
  * use with this) */
 /* This macro is generally safe for standard-layout types. */
 #define K_OFFSETOF(type, member) ((k_size_t) & ((type *)0)->member)
+
+/* Kernel-specific signal set manipulation macros */
+/* Assumes signo is 1-based and fits within unsigned long bitmask. */
+#define k_sigemptyset(set)    (*(set) = 0UL)
+#define k_sigaddset(set, signo)   (*(set) |= (1UL << ((signo) - 1)))
+#define k_sigdelset(set, signo)   (*(set) &= ~(1UL << ((signo) - 1))) /* Added for completeness */
+#define k_sigismember(set, signo) ((*(set) & (1UL << ((signo) - 1))) != 0)
+#define k_sigisempty(set)      (*(set) == 0UL) /* Added for completeness */
 
 /* Kernel-specific signal set manipulation macros */
 /* Assumes signo is 1-based and fits within unsigned long bitmask. */

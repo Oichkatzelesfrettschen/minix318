@@ -119,12 +119,17 @@ int do_sigsend(struct proc * caller, message * m_ptr)
   fr.sf_ra_sigreturn = ksm.sm_sigreturn; /* Userspace _sigreturn address */
   fr.sf_ra = rp->p_reg.pc;      /* Return address after signal handler (current PC) */
 <<<<<<< HEAD
+<<<<<<< HEAD
 
   fr.sf_sc.sc_trap_style = rp->p_seg.p_kern_trap_style; /* Save how kernel was entered */
 =======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   fr.sf_sc.sc_trap_style = rp->p_seg.p_kern_trap_style; /* Save how kernel was entered */
+=======
+
+  fr.sf_sc.sc_trap_style = rp->p_seg.p_kern_trap_style; /* Save how kernel was entered */
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   if (fr.sf_sc.sc_trap_style == KTS_NONE) {
 	kprintf_stub("do_sigsend: sigsend an unsaved process\n");

@@ -6,7 +6,12 @@
  * restoring local CPU interrupts. This is crucial for preventing deadlocks
  * when a spinlock might be acquired by both normal kernel code and an
 <<<<<<< HEAD
+<<<<<<< HEAD
  * interrupt handler on the same CPU. These locks wrap the basic `simple_spinlock_t`.
+=======
+ * interrupt handler on the same CPU. These locks wrap the basic
+ * `simple_spinlock_t`.
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
  * interrupt handler on the same CPU. These locks wrap the basic
  * `simple_spinlock_t`.
@@ -17,7 +22,11 @@
 
 #include "kernel/k_spinlock.h" /* For simple_spinlock_t and its operations */
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "kernel/protect.h"    /* For disable_interrupts() and restore_interrupts() */
+=======
+#include "kernel/protect.h" /* For disable_interrupts() and restore_interrupts() */
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
 #include "kernel/protect.h" /* For disable_interrupts() and restore_interrupts() */
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -31,6 +40,7 @@
  */
 typedef struct {
 <<<<<<< HEAD
+<<<<<<< HEAD
     /** @brief The underlying simple spinlock instance. */
     simple_spinlock_t lock;
     /* Future extensions could include debug info, owner CPU, etc. for more
@@ -38,12 +48,17 @@ typedef struct {
      * implementation.
      */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /** @brief The underlying simple spinlock instance. */
   simple_spinlock_t lock;
   /* Future extensions could include debug info, owner CPU, etc. for more
    * advanced debugging or lock tracking, but are not part of this simple
    * implementation.
    */
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 } spinlock_irq_t;
 
@@ -52,6 +67,7 @@ typedef struct {
  * @param irq_lock Pointer to the spinlock_irq_t to initialize.
  *
 <<<<<<< HEAD
+<<<<<<< HEAD
  * This function initializes the underlying simple spinlock to an unlocked state.
  * It must be called before the spinlock_irq_t is used for the first time.
  */
@@ -59,6 +75,8 @@ static inline void spin_lock_irq_init(spinlock_irq_t *irq_lock) {
     // Initialize the embedded simple_spinlock.
     simple_spin_init(&irq_lock->lock);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * This function initializes the underlying simple spinlock to an unlocked
  * state. It must be called before the spinlock_irq_t is used for the first
  * time.
@@ -66,6 +84,9 @@ static inline void spin_lock_irq_init(spinlock_irq_t *irq_lock) {
 static inline void spin_lock_irq_init(spinlock_irq_t *irq_lock) {
   // Initialize the embedded simple_spinlock.
   simple_spin_init(&irq_lock->lock);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 
@@ -73,8 +94,13 @@ static inline void spin_lock_irq_init(spinlock_irq_t *irq_lock) {
  * @brief Acquires an interrupt-safe spinlock and disables local CPU interrupts.
  * @param irq_lock Pointer to the spinlock_irq_t to acquire.
 <<<<<<< HEAD
+<<<<<<< HEAD
  * @return int The previous interrupt state (e.g., EFLAGS on x86) to be used with
  *             spin_unlock_irqrestore.
+=======
+ * @return int The previous interrupt state (e.g., EFLAGS on x86) to be used
+ * with spin_unlock_irqrestore.
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
  * @return int The previous interrupt state (e.g., EFLAGS on x86) to be used
  * with spin_unlock_irqrestore.
@@ -84,6 +110,7 @@ static inline void spin_lock_irq_init(spinlock_irq_t *irq_lock) {
  * previous state. Then, it acquires the spinlock using a busy-wait.
  * Disabling interrupts before attempting to acquire the lock prevents deadlocks
  * that could occur if an interrupt handler on the same CPU tries to take the
+<<<<<<< HEAD
 <<<<<<< HEAD
  * same lock that the interrupted code already holds or is attempting to acquire.
  */
@@ -98,6 +125,8 @@ static inline int spin_lock_irqsave(spinlock_irq_t *irq_lock) {
     // Return the saved interrupt flags to the caller.
     return flags;
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * same lock that the interrupted code already holds or is attempting to
  * acquire.
  */
@@ -111,6 +140,9 @@ static inline int spin_lock_irqsave(spinlock_irq_t *irq_lock) {
   simple_spin_lock(&irq_lock->lock);
   // Return the saved interrupt flags to the caller.
   return flags;
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 
@@ -120,6 +152,7 @@ static inline int spin_lock_irqsave(spinlock_irq_t *irq_lock) {
  * @param flags    The interrupt state (e.g., EFLAGS on x86) previously returned
  *                 by spin_lock_irqsave.
  *
+<<<<<<< HEAD
 <<<<<<< HEAD
  * This function first releases the underlying simple spinlock. Then, it restores
  * the interrupt state of the local CPU to what it was before `spin_lock_irqsave`
@@ -134,6 +167,8 @@ static inline void spin_unlock_irqrestore(spinlock_irq_t *irq_lock, int flags) {
     // if they were enabled before calling spin_lock_irqsave.
     restore_interrupts(flags);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * This function first releases the underlying simple spinlock. Then, it
  * restores the interrupt state of the local CPU to what it was before
  * `spin_lock_irqsave` was called. It is crucial to release the lock *before*
@@ -147,6 +182,9 @@ static inline void spin_unlock_irqrestore(spinlock_irq_t *irq_lock, int flags) {
   // Restore the previous interrupt state (e.g., EFLAGS), which may re-enable
   // interrupts if they were enabled before calling spin_lock_irqsave.
   restore_interrupts(flags);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 

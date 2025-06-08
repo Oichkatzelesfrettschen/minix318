@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "kernel/k_spinlock.h"  /* For simple_spinlock_t and functions */
 #include "kernel/kernel.h"      /* For KASSERT, kprintf_stub (via debug.h, klib) */
 #include "kernel/proc.h"        /* For struct proc, if needed for context, though not directly for these tests */
@@ -6,20 +7,30 @@
                                 /* If protect.h is too heavy or causes issues,
                                    we can use arch_disable_interrupts_placeholder below. */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 #include "kernel/k_spinlock.h" /* For simple_spinlock_t and functions */
 #include "kernel/kernel.h" /* For KASSERT, kprintf_stub (via debug.h, klib) */
 #include "kernel/proc.h" /* For struct proc, if needed for context, though not directly for these tests */
 #include "kernel/protect.h" /* For disable_interrupts, restore_interrupts, KERNEL_CS */
                             /* If protect.h is too heavy or causes issues,
                                we can use arch_disable_interrupts_placeholder below. */
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
 /*
  * Placeholder interrupt control functions if actual ones are problematic
  * for this standalone test context.
 <<<<<<< HEAD
+<<<<<<< HEAD
  * The actual kernel functions (disable_interrupts/restore_interrupts from protect.h)
  * are preferred if they can be used without issue.
+=======
+ * The actual kernel functions (disable_interrupts/restore_interrupts from
+ * protect.h) are preferred if they can be used without issue.
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
  * The actual kernel functions (disable_interrupts/restore_interrupts from
  * protect.h) are preferred if they can be used without issue.
@@ -30,6 +41,7 @@
 //     return 0; // Placeholder flags
 // }
 // static inline void arch_restore_interrupts_placeholder(unsigned long flags) {
+<<<<<<< HEAD
 <<<<<<< HEAD
 //     kprintf_stub("arch_restore_interrupts_placeholder(0x%lx) called\n", flags);
 // }
@@ -58,6 +70,8 @@ void test_basic_spinlock(void) {
  * This test relies on the spinlock being non-recursive. Attempting to lock
  * it again in the same thread of execution without an intervening unlock
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 //     kprintf_stub("arch_restore_interrupts_placeholder(0x%lx) called\n",
 //     flags);
 // }
@@ -84,12 +98,16 @@ void test_basic_spinlock(void) {
  * Test 2: Lock exclusion (prevents recursive acquisition on the same CPU
  * context). This test relies on the spinlock being non-recursive. Attempting to
  * lock it again in the same thread of execution without an intervening unlock
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * would typically cause a deadlock if the lock were truly tested for
  * recursive locking by another thread trying to acquire it. Here, we just
  * verify it remains locked.
  */
 void test_spinlock_exclusion(void) {
+<<<<<<< HEAD
 <<<<<<< HEAD
     simple_spinlock_t lock;
     // machine_t machine; /* For saved_eflags, if using real interrupt functions */
@@ -135,6 +153,8 @@ void test_spinlock_exclusion(void) {
 
     kprintf_stub("test_spinlock_exclusion: PASSED (conceptual non-reentrancy)\n");
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   simple_spinlock_t lock;
   // machine_t machine; /* For saved_eflags, if using real interrupt functions
   // */
@@ -183,6 +203,9 @@ void test_spinlock_exclusion(void) {
   restore_interrupts(saved_eflags);  // From kernel/protect.h
 
   kprintf_stub("test_spinlock_exclusion: PASSED (conceptual non-reentrancy)\n");
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 

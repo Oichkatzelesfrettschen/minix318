@@ -60,6 +60,7 @@
 static int (*call_vec[NR_SYS_CALLS])(struct proc *caller, message *m_ptr);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define map(call_nr, handler) 					\
     {	int call_index = call_nr-KERNEL_CALL; 				\
 	KASSERT(call_index >= 0 && call_index < NR_SYS_CALLS);			\
@@ -87,6 +88,15 @@ static void kernel_call_finish(struct proc * caller, message *msg, int result)
     call_vec[call_index] = (handler);                      \
   }
 
+=======
+#define map(call_nr, handler)                              \
+  {                                                        \
+    int call_index = call_nr - KERNEL_CALL;                \
+    KASSERT(call_index >= 0 && call_index < NR_SYS_CALLS); \
+    call_vec[call_index] = (handler);                      \
+  }
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 /**
  * @brief Finalizes a kernel call after it has been dispatched and handled.
  * @param caller Pointer to the calling process's structure.
@@ -129,6 +139,9 @@ static void kernel_call_finish(struct proc *caller, message *msg, int result) {
     caller->p_vmrequest.saved.reqmsg =
         *msg;  // Save the original request message.
     caller->p_misc_flags |= MF_KCALL_RESUME;  // Mark for resumption.
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   } else {
     /* The call is finished (not VMSUSPEND).
@@ -155,6 +168,7 @@ static void kernel_call_finish(struct proc *caller, message *msg, int result) {
       hook_ipc_msgkresult(msg, caller);
 #endif
 <<<<<<< HEAD
+<<<<<<< HEAD
 		  if (copy_msg_to_user(msg, (message *)caller->p_delivermsg_vir)) {
 			  kprintf_stub("WARNING wrong user pointer 0x%08x from " // MODIFIED
 			  kprintf_stub("WARNING wrong user pointer 0x%08x from " // MODIFIED
@@ -167,6 +181,8 @@ static void kernel_call_finish(struct proc *caller, message *msg, int result) {
 		  }
 	  }
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
       // Attempt to copy the reply message to the user's address space.
       if (copy_msg_to_user(msg, (message *)caller->p_delivermsg_vir)) {
         // Failed to copy reply to user, likely a bad pointer in
@@ -179,6 +195,9 @@ static void kernel_call_finish(struct proc *caller, message *msg, int result) {
         cause_sig(proc_nr(caller), SIGSEGV);  // SIGSEGV may be undefined
       }
     }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 }
@@ -224,6 +243,7 @@ static int kernel_call_dispatch(struct proc *caller, message *msg) {
   call_nr = msg->m_type - KERNEL_CALL;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /* See if the caller made a valid request and try to handle it. */
   if (call_nr < 0 || call_nr >= NR_SYS_CALLS) {	/* check call number */
 	  kprintf_stub("SYSTEM: illegal request %d from %d.\n", // MODIFIED
@@ -231,6 +251,8 @@ static int kernel_call_dispatch(struct proc *caller, message *msg) {
 			  call_nr,msg->m_source);
 	  result = EBADREQUEST;			/* illegal message type */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /* KASSERT: Validate derived call_nr before array access or privilege check.
    * This ensures call_nr is within the bounds of call_vec and s_k_call_mask.
    */
@@ -244,6 +266,7 @@ static int kernel_call_dispatch(struct proc *caller, message *msg) {
     kprintf_stub("SYSTEM: illegal request %d from %d.\n",  // MODIFIED
                  call_nr, msg->m_source);
     result = EBADREQUEST;
+<<<<<<< HEAD
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
   /* Runtime check for privilege (kept for non-KASSERT builds). */
@@ -276,6 +299,23 @@ static int kernel_call_dispatch(struct proc *caller, message *msg) {
                  call_nr, msg->m_source);
     result = ECALLDENIED;
   } else {
+=======
+  }
+  /* Runtime check for privilege (kept for non-KASSERT builds). */
+  else if (!GET_BIT(priv(caller)->s_k_call_mask, call_nr)) {
+    /* KASSERT: Make privilege violations fatal in debug builds.
+     * This helps in early detection of misconfigured privileges or unauthorized
+     * call attempts.
+     */
+    KASSERT(GET_BIT(priv(caller)->s_k_call_mask, call_nr),
+            "kernel_call_dispatch: call %d (type %d) denied by s_k_call_mask "
+            "for caller %d",
+            call_nr, msg->m_type, caller->p_endpoint);
+    kprintf_stub("SYSTEM: denied request %d from %d.\n",  // MODIFIED
+                 call_nr, msg->m_source);
+    result = ECALLDENIED;
+  } else {
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     /* Handle the system call by invoking the registered handler. */
     if (call_vec[call_nr])
       result = (*call_vec[call_nr])(caller, msg);
@@ -285,6 +325,9 @@ static int kernel_call_dispatch(struct proc *caller, message *msg) {
                    call_nr, caller->p_endpoint);
       result = EBADREQUEST;
     }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 
@@ -337,6 +380,7 @@ void kernel_call(message *m_user, struct proc *caller) {
    */
   if (copy_msg_from_user(m_user, &msg) == 0) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	  msg.m_source = caller->p_endpoint;
 	  result = kernel_call_dispatch(caller, &msg);
   }
@@ -348,6 +392,8 @@ void kernel_call(message *m_user, struct proc *caller) {
 	  cause_sig(proc_nr(caller), SIGSEGV); // SIGSEGV may be undefined
 	  return;
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     // Successfully copied message from user space.
     // Set the message source to the caller's endpoint. This is crucial for
     // identifying the origin of the request within the kernel.
@@ -378,6 +424,9 @@ void kernel_call(message *m_user, struct proc *caller) {
     // Send SIGSEGV to the caller for providing an invalid pointer.
     cause_sig(proc_nr(caller), SIGSEGV);  // SIGSEGV may be undefined
     return;  // Do not proceed further with this call.
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 
@@ -411,9 +460,14 @@ void system_init(void) {
    * if an illegal call number is used. The ordering is not important here.
    */
 <<<<<<< HEAD
+<<<<<<< HEAD
   for (i=0; i<NR_SYS_CALLS; i++) {
       call_vec[i] = NULL; // MODIFIED (NULL)
       call_vec[i] = NULL; // MODIFIED (NULL)
+=======
+  for (i = 0; i < NR_SYS_CALLS; i++) {
+    call_vec[i] = NULL;  // MODIFIED (NULL)
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   for (i = 0; i < NR_SYS_CALLS; i++) {
     call_vec[i] = NULL;  // MODIFIED (NULL)
@@ -599,10 +653,16 @@ void fill_sendto_mask(const struct proc *rp, sys_map_t *map) {
  * role is the notification mechanism via mini_notify.
  */
 <<<<<<< HEAD
+<<<<<<< HEAD
 int send_sig(endpoint_t ep, int sig_nr)
 {
   register struct proc *rp;
   struct priv *privp; // Renamed to avoid conflict with priv() macro
+=======
+int send_sig(endpoint_t ep, int sig_nr) {
+  register struct proc *rp;
+  struct priv *privp;  // Renamed to avoid conflict with priv() macro
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
 int send_sig(endpoint_t ep, int sig_nr) {
   register struct proc *rp;
@@ -615,15 +675,21 @@ int send_sig(endpoint_t ep, int sig_nr) {
    * security checks if not validated by the caller.
    */
 <<<<<<< HEAD
+<<<<<<< HEAD
   KASSERT(sig_nr > 0 && sig_nr < _NSIG, "send_sig: invalid signal number %d", sig_nr);
 
   if(!isokendpt(ep, &proc_nr) || isemptyn(proc_nr))
 	return EINVAL;
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   KASSERT(sig_nr > 0 && sig_nr < _NSIG, "send_sig: invalid signal number %d",
           sig_nr);
 
   if (!isokendpt(ep, &proc_nr) || isemptyn(proc_nr)) return EINVAL;
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   rp = proc_addr(proc_nr);
@@ -679,8 +745,12 @@ int send_sig(endpoint_t ep, int sig_nr) {
  * using send_sig(). Critical sections are protected by p_sig_lock.
  */
 <<<<<<< HEAD
+<<<<<<< HEAD
 void cause_sig(proc_nr_t proc_nr, int sig_nr)
 {
+=======
+void cause_sig(proc_nr_t proc_nr, int sig_nr) {
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
 void cause_sig(proc_nr_t proc_nr, int sig_nr) {
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -693,16 +763,22 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
    * An invalid signal number could lead to out-of-bounds access
    * when manipulating signal bitmasks (e.g., p_pending) or dispatching
 <<<<<<< HEAD
+<<<<<<< HEAD
    * to signal actions, potentially corrupting memory or causing undefined behavior.
    * This also enforces the kernel-userspace ABI for signals.
    */
   KASSERT(sig_nr > 0 && sig_nr < _NSIG, "cause_sig: invalid signal number %d", sig_nr);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
    * to signal actions, potentially corrupting memory or causing undefined
    * behavior. This also enforces the kernel-userspace ABI for signals.
    */
   KASSERT(sig_nr > 0 && sig_nr < _NSIG, "cause_sig: invalid signal number %d",
           sig_nr);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   /* Lookup process and signal manager. */
@@ -711,20 +787,27 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
   /* KASSERT: Ensure the target process pointer is not NULL.
    * A NULL rp would lead to a kernel panic when dereferenced. This indicates
 <<<<<<< HEAD
+<<<<<<< HEAD
    * a serious issue with endpoint to process mapping or process table corruption.
    */
   KASSERT(rp != NULL, "cause_sig: null process pointer for proc_nr %d", proc_nr);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
    * a serious issue with endpoint to process mapping or process table
    * corruption.
    */
   KASSERT(rp != NULL, "cause_sig: null process pointer for proc_nr %d",
           proc_nr);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /* KASSERT: Check for process table corruption using a magic number.
    * If p_magic is not PMAGIC, the process structure might be corrupted or
    * the pointer rp might be invalid, potentially leading to memory errors.
    */
+<<<<<<< HEAD
 <<<<<<< HEAD
   KASSERT(rp->p_magic == PMAGIC, "cause_sig: corrupted process structure for proc_nr %d, endpoint %d", proc_nr, rp->p_endpoint);
   /* KASSERT: Ensure the privilege structure for the process is not NULL.
@@ -733,6 +816,8 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
    */
   KASSERT(priv(rp) != NULL, "cause_sig: null privilege structure for proc_nr %d, endpoint %d", proc_nr, rp->p_endpoint);
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   KASSERT(rp->p_magic == PMAGIC,
           "cause_sig: corrupted process structure for proc_nr %d, endpoint %d",
           proc_nr, rp->p_endpoint);
@@ -744,12 +829,16 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
   KASSERT(priv(rp) != NULL,
           "cause_sig: null privilege structure for proc_nr %d, endpoint %d",
           proc_nr, rp->p_endpoint);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   sig_mgr = priv(rp)->s_sig_mgr;
   if (sig_mgr == SELF) sig_mgr = rp->p_endpoint;
 
   /* If the target is the signal manager of itself, send the signal directly. */
+<<<<<<< HEAD
 <<<<<<< HEAD
   if(rp->p_endpoint == sig_mgr) {
        if(0 /* FIXME: SIGS_IS_LETHAL(sig_nr) was here */) { // SIGS_IS_LETHAL may be undefined
@@ -781,6 +870,8 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
        	panic("send_sig failed");
        return;
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   if (rp->p_endpoint == sig_mgr) {
     if (0 /* FIXME: SIGS_IS_LETHAL(sig_nr) was here */) {  // SIGS_IS_LETHAL may
                                                            // be undefined
@@ -814,6 +905,9 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
     spin_unlock_irqrestore(&rp->p_sig_lock, flags);
     if (OK != s) panic("send_sig failed");
     return;
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 
@@ -822,6 +916,7 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
   s = k_sigismember(&rp->p_pending, sig_nr);
   /* Check if the signal is already pending. Process it otherwise. */
   if (!s) {
+<<<<<<< HEAD
 <<<<<<< HEAD
       /* FIXME: sigaddset was here */ // sigaddset(&rp->p_pending, sig_nr);
       if (! (RTS_ISSET(rp, RTS_SIGNALED))) {		/* other pending */
@@ -832,6 +927,8 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
           if(OK != send_sig(sig_mgr, SIGKSIG)) // SIGKSIG may be undefined
 	  	panic("send_sig failed");
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     k_sigaddset(&rp->p_pending, sig_nr);
     if (!(RTS_ISSET(rp, RTS_SIGNALED))) { /* other pending */
       /* The RTS_SET macro itself should be SMP-safe or be called
@@ -846,6 +943,9 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
       if (OK != send_result) {
         spin_unlock_irqrestore(&rp->p_sig_lock, flags);  // Unlock before panic
         panic("send_sig failed");
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
       }
     }
@@ -865,8 +965,12 @@ void sig_delay_done(struct proc *rp) {
   rp->p_misc_flags &= ~MF_SIG_DELAY;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   cause_sig(proc_nr(rp), SIGSNDELAY); // SIGSNDELAY may be undefined
   cause_sig(proc_nr(rp), SIGSNDELAY); // SIGSNDELAY may be undefined
+=======
+  cause_sig(proc_nr(rp), SIGSNDELAY);  // SIGSNDELAY may be undefined
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   cause_sig(proc_nr(rp), SIGSNDELAY);  // SIGSNDELAY may be undefined
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -884,16 +988,22 @@ void send_diag_sig(void) {
 
   for (privp = BEG_PRIV_ADDR; privp < END_PRIV_ADDR; privp++) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if (privp->s_proc_nr != NONE && privp->s_diag_sig == TRUE) {
 		ep = proc_addr(privp->s_proc_nr)->p_endpoint;
 		send_sig(ep, SIGKMESS); // SIGKMESS may be undefined
 		send_sig(ep, SIGKMESS); // SIGKMESS may be undefined
 	}
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     if (privp->s_proc_nr != NONE && privp->s_diag_sig == TRUE) {
       ep = proc_addr(privp->s_proc_nr)->p_endpoint;
       send_sig(ep, SIGKMESS);  // SIGKMESS may be undefined
     }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 }
@@ -907,6 +1017,7 @@ static void clear_memreq(struct proc *rp) {
   if (!RTS_ISSET(rp, RTS_VMREQUEST)) return; /* nothing to do */
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   for (rpp = &vmrequest; *rpp != NULL; // MODIFIED (NULL)
   for (rpp = &vmrequest; *rpp != NULL; // MODIFIED (NULL)
      rpp = &(*rpp)->p_vmrequest.nextrequestor) {
@@ -915,12 +1026,17 @@ static void clear_memreq(struct proc *rp) {
 		break;
 	}
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   for (rpp = &vmrequest; *rpp != NULL;  // MODIFIED (NULL)
        rpp = &(*rpp)->p_vmrequest.nextrequestor) {
     if (*rpp == rp) {
       *rpp = rp->p_vmrequest.nextrequestor;
       break;
     }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
 
@@ -945,9 +1061,14 @@ static void clear_ipc(register struct proc *rc /* slot of process to clean up */
         *xpp = (*xpp)->p_q_link;               /* replace by next process */
 #if DEBUG_ENABLE_IPC_WARNINGS
 <<<<<<< HEAD
+<<<<<<< HEAD
 	      kprintf_stub("endpoint %d / %s removed from queue at %d\n", // MODIFIED
 	      kprintf_stub("endpoint %d / %s removed from queue at %d\n", // MODIFIED
 	          rc->p_endpoint, rc->p_name, rc->p_sendto_e);
+=======
+        kprintf_stub("endpoint %d / %s removed from queue at %d\n",  // MODIFIED
+                     rc->p_endpoint, rc->p_name, rc->p_sendto_e);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
         kprintf_stub("endpoint %d / %s removed from queue at %d\n",  // MODIFIED
                      rc->p_endpoint, rc->p_name, rc->p_sendto_e);
@@ -1035,6 +1156,7 @@ void kernel_call_resume(struct proc *caller) {
   int result;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	KASSERT(!RTS_ISSET(caller, RTS_SLOT_FREE));
 	KASSERT(!RTS_ISSET(caller, RTS_VMREQUEST));
 
@@ -1058,6 +1180,18 @@ void kernel_call_resume(struct proc *caller) {
    */
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
+=======
+  KASSERT(!RTS_ISSET(caller, RTS_SLOT_FREE));
+  KASSERT(!RTS_ISSET(caller, RTS_VMREQUEST));
+  KASSERT(caller->p_vmrequest.saved.reqmsg.m_source == caller->p_endpoint);
+
+  /*
+  kprintf_stub("KERNEL_CALL restart from %s / %d rts 0x%08x misc 0x%08x\n", //
+  MODIFIED caller->p_name, caller->p_endpoint, caller->p_rts_flags,
+  caller->p_misc_flags);
+   */
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /* re-execute the kernel call, with MF_KCALL_RESUME still set so
    * the call knows this is a retry.
    */
@@ -1132,8 +1266,12 @@ int sched_proc(struct proc *p, int priority, int quantum, int cpu, int niced) {
  *===========================================================================*/
 int add_ipc_filter(struct proc *rp, int type, vir_bytes address,
 <<<<<<< HEAD
+<<<<<<< HEAD
 	k_size_t length) // MODIFIED size_t
 	k_size_t length) // MODIFIED size_t
+=======
+                   k_size_t length)  // MODIFIED size_t
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
                    k_size_t length)  // MODIFIED size_t
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
@@ -1149,6 +1287,7 @@ int add_ipc_filter(struct proc *rp, int type, vir_bytes address,
   num_elements = length / sizeof(ipc_filter_el_t);
   if (num_elements <= 0 || num_elements > IPCF_MAX_ELEMENTS) return E2BIG;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	/* Allocate a new IPC filter slot. */
 	IPCF_POOL_ALLOCATE_SLOT(type, &ipcf);
@@ -1198,6 +1337,29 @@ int add_ipc_filter(struct proc *rp, int type, vir_bytes address,
   *ipcfp = ipcf;
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
+=======
+  /* Allocate a new IPC filter slot. */
+  IPCF_POOL_ALLOCATE_SLOT(type, &ipcf);
+  if (ipcf == NULL)  // MODIFIED (NULL)
+    return ENOMEM;
+
+  /* Fill details. */
+  ipcf->num_elements = num_elements;
+  ipcf->next = NULL;  // MODIFIED (NULL)
+  r = data_copy(rp->p_endpoint, address, KERNEL, (vir_bytes)ipcf->elements,
+                length);
+  if (r == OK) r = check_ipc_filter(ipcf, TRUE /*fill_flags*/);
+  if (r != OK) {
+    IPCF_POOL_FREE_SLOT(ipcf);
+    return r;
+  }
+
+  /* Add the new filter at the end of the IPC filter chain. */
+  for (ipcfp = &priv(rp)->s_ipcf; *ipcfp != NULL;  // MODIFIED (NULL)
+       ipcfp = &(*ipcfp)->next);
+  *ipcfp = ipcf;
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   return OK;
 }
 
@@ -1207,6 +1369,7 @@ int add_ipc_filter(struct proc *rp, int type, vir_bytes address,
 void clear_ipc_filters(struct proc *rp) {
   ipc_filter_t *curr_ipcf, *ipcf;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 	ipcf = priv(rp)->s_ipcf;
 	while (ipcf != NULL) { // MODIFIED (NULL)
@@ -1238,6 +1401,17 @@ void clear_ipc_filters(struct proc *rp) {
 
   priv(rp)->s_ipcf = NULL;  // MODIFIED (NULL)
 
+=======
+  ipcf = priv(rp)->s_ipcf;
+  while (ipcf != NULL) {  // MODIFIED (NULL)
+    curr_ipcf = ipcf;
+    ipcf = ipcf->next;
+    IPCF_POOL_FREE_SLOT(curr_ipcf);
+  }
+
+  priv(rp)->s_ipcf = NULL;  // MODIFIED (NULL)
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /* VM is a special case here: since the cleared IPC filter may have
    * blocked memory handling requests, we may now have to tell VM that
    * there are "new" requests pending.
@@ -1245,6 +1419,9 @@ void clear_ipc_filters(struct proc *rp) {
   if (rp->p_endpoint == VM_PROC_NR && vmrequest != NULL)  // MODIFIED (NULL)
     if (send_sig(VM_PROC_NR, SIGKMEM) != OK)  // SIGKMEM may be undefined
       panic("send_sig failed");
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 
@@ -1256,9 +1433,14 @@ int check_ipc_filter(ipc_filter_t *ipcf, int fill_flags) {
   int i, num_elements, flags;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if (ipcf == NULL) // MODIFIED (NULL)
 	if (ipcf == NULL) // MODIFIED (NULL)
 		return OK;
+=======
+  if (ipcf == NULL)  // MODIFIED (NULL)
+    return OK;
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   if (ipcf == NULL)  // MODIFIED (NULL)
     return OK;
@@ -1290,6 +1472,7 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e, vir_bytes m_src_v,
   message m_buff;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	ipcf = priv(rp)->s_ipcf;
 	if (ipcf == NULL) // MODIFIED (NULL)
 	if (ipcf == NULL) // MODIFIED (NULL)
@@ -1308,6 +1491,15 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e, vir_bytes m_src_v,
     KASSERT(m_src_v != 0);
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
+=======
+  ipcf = priv(rp)->s_ipcf;
+  if (ipcf == NULL)  // MODIFIED (NULL)
+    return TRUE;     /* no IPC filters, always allow */
+
+  if (m_src_p == NULL) {  // MODIFIED (NULL)
+    KASSERT(m_src_v != 0);
+
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
     /* Should we copy in the message type? */
     get_mtype = FALSE;
     do {
@@ -1323,6 +1515,7 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e, vir_bytes m_src_v,
     } while (ipcf);
     ipcf = priv(rp)->s_ipcf; /* reset to start */
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 		/* If so, copy it in from the process. */
 		if (get_mtype) {
@@ -1347,10 +1540,23 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e, vir_bytes m_src_v,
       if (r != OK) {
         /* allow for now, this will fail later anyway */
 #if DEBUG_DUMPIPCF
+=======
+    /* If so, copy it in from the process. */
+    if (get_mtype) {
+      /* FIXME: offsetof may be undefined */
+      r = data_copy(src_e, m_src_v + K_OFFSETOF(message, m_type), KERNEL,
+                    (vir_bytes)&m_buff.m_type, sizeof(m_buff.m_type));
+      if (r != OK) {
+        /* allow for now, this will fail later anyway */
+#if DEBUG_DUMPIPCF
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
         kprintf_stub(
             "KERNEL: allow_ipc_filtered_msg: data "  // MODIFIED
             "copy error %d, allowing message...\n",
             r);
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 #endif
         return TRUE;
@@ -1401,10 +1607,16 @@ int allow_ipc_filtered_memreq(struct proc *src_rp, struct proc *dst_rp) {
   vmp = proc_addr(VM_PROC_NR);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	/* If VM has no filter in place, all requests should go through. */
 	if (priv(vmp)->s_ipcf == NULL) // MODIFIED (NULL)
 	if (priv(vmp)->s_ipcf == NULL) // MODIFIED (NULL)
 		return TRUE;
+=======
+  /* If VM has no filter in place, all requests should go through. */
+  if (priv(vmp)->s_ipcf == NULL)  // MODIFIED (NULL)
+    return TRUE;
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   /* If VM has no filter in place, all requests should go through. */
   if (priv(vmp)->s_ipcf == NULL)  // MODIFIED (NULL)
@@ -1444,6 +1656,7 @@ int priv_add_irq(struct proc *rp, int irq) {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	i= priv->s_nr_irq;
 	if (i >= NR_IRQ) {
 		kprintf_stub("do_privctl: %d already has %d irq's.\n", // MODIFIED
@@ -1455,6 +1668,8 @@ int priv_add_irq(struct proc *rp, int irq) {
 	priv->s_nr_irq++;
 	return OK;
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   i = priv->s_nr_irq;
   if (i >= NR_IRQ) {
     kprintf_stub("do_privctl: %d already has %d irq's.\n",  // MODIFIED
@@ -1464,6 +1679,9 @@ int priv_add_irq(struct proc *rp, int irq) {
   priv->s_irq_tab[i] = irq;
   priv->s_nr_irq++;
   return OK;
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }
 
@@ -1483,6 +1701,7 @@ int priv_add_io(struct proc *rp, struct io_range *ior) {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	i= priv->s_nr_io_range;
 	if (i >= NR_IO_RANGE) {
 		kprintf_stub("do_privctl: %d already has %d i/o ranges.\n", // MODIFIED
@@ -1491,12 +1710,17 @@ int priv_add_io(struct proc *rp, struct io_range *ior) {
 		return ENOMEM;
 	}
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   i = priv->s_nr_io_range;
   if (i >= NR_IO_RANGE) {
     kprintf_stub("do_privctl: %d already has %d i/o ranges.\n",  // MODIFIED
                  rp->p_endpoint, i);
     return ENOMEM;
   }
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
   priv->s_io_tab[i] = *ior;
@@ -1521,6 +1745,7 @@ int priv_add_mem(struct proc *rp, struct minix_mem_range *memr) {
   }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	i= priv->s_nr_mem_range;
 	if (i >= NR_MEM_RANGE) {
 		kprintf_stub("do_privctl: %d already has %d mem ranges.\n", // MODIFIED
@@ -1532,6 +1757,8 @@ int priv_add_mem(struct proc *rp, struct minix_mem_range *memr) {
 	priv->s_nr_mem_range++;
 	return OK;
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   i = priv->s_nr_mem_range;
   if (i >= NR_MEM_RANGE) {
     kprintf_stub("do_privctl: %d already has %d mem ranges.\n",  // MODIFIED
@@ -1541,5 +1768,8 @@ int priv_add_mem(struct proc *rp, struct minix_mem_range *memr) {
   priv->s_mem_tab[i] = *memr;
   priv->s_nr_mem_range++;
   return OK;
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 }

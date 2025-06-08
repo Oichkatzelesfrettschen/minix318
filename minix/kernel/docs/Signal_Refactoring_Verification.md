@@ -164,6 +164,7 @@ To address race conditions identified in the signal handling subsystem (primaril
 
 ### 1. Spinlock Definition (`minix/kernel/k_spinlock.h` and `minix/kernel/k_spinlock_irq.h`)
 <<<<<<< HEAD
+<<<<<<< HEAD
 - The basic spinlock `simple_spinlock_t` is defined in `minix/kernel/k_spinlock.h`.
 - A new header file `minix/kernel/k_spinlock_irq.h` defines `spinlock_irq_t`. This wraps `simple_spinlock_t` and integrates local CPU interrupt disabling/enabling using `disable_interrupts()` and `restore_interrupts()` from `kernel/protect.h`.
 - It provides inline functions:
@@ -172,6 +173,8 @@ To address race conditions identified in the signal handling subsystem (primaril
     - `spin_unlock_irqrestore()`: Releases the spinlock and then restores the saved interrupt state.
 - The underlying `simple_spinlock_t` relies on GCC's atomic builtins for its core operations. Its `simple_spin_lock` function was further enhanced to include a call to `arch_pause()` (defined in architecture-specific headers like `arch/i386/include/arch_cpu.h` for x86 via `asm volatile("pause");`) within its busy-wait loop. This reduces CPU power consumption and bus contention during lock contention on supported architectures, providing a form of adaptive spinning. These features ensure atomicity, appropriate memory barriers for SMP safety, and prevent deadlocks with interrupt handlers on the same CPU.
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 - The basic spinlock `simple_spinlock_t` is defined in `minix/kernel/k_spinlock.h`. It now includes members for basic statistics: `acquisitions` (number of times the lock was acquired) and `contentions` (number of times a thread tried to acquire the lock but found it already held).
 - `simple_spin_init()` initializes these statistics to zero.
 - `simple_spin_lock()` updates these statistics. It was also enhanced to include a call to `arch_pause()` (defined in architecture-specific headers like `arch/i386/include/arch_cpu.h` for x86 via `asm volatile("pause");`) within its busy-wait loop. If spinning exceeds `MAX_SPIN_THRESHOLD`, a `kernel_yield()` stub (currently also calling `arch_pause()`) is invoked to prevent CPU monopolization and allow other threads to run. This provides adaptive spinning and basic contention monitoring.
@@ -181,6 +184,9 @@ To address race conditions identified in the signal handling subsystem (primaril
     - `spin_lock_irqsave()`: Disables local CPU interrupts (saving prior state) and then acquires the spinlock.
     - `spin_unlock_irqrestore()`: Releases the spinlock and then restores the saved interrupt state.
 - These features ensure atomicity, appropriate memory barriers for SMP safety, and prevent deadlocks with interrupt handlers on the same CPU, while also providing insights into lock behavior.
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 
 ### 2. Integration with Process Structure

@@ -29,6 +29,7 @@
  * This function is called by a signal manager (typically PM) to indicate that
  * it has finished processing signals for a given target process.
 <<<<<<< HEAD
+<<<<<<< HEAD
  * It checks if new signals have arrived for the target process (RTS_SIGNALED is set).
  * If no new signals have arrived, it clears the RTS_SIG_PENDING flag, indicating
  * the process is no longer considered to be actively undergoing signal processing by PM.
@@ -39,6 +40,8 @@
 int do_endksig(struct proc * caller, message * m_ptr)
 {
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
  * It checks if new signals have arrived for the target process (RTS_SIGNALED is
  * set). If no new signals have arrived, it clears the RTS_SIG_PENDING flag,
  * indicating the process is no longer considered to be actively undergoing
@@ -48,6 +51,9 @@ int do_endksig(struct proc * caller, message * m_ptr)
  * the target process's p_sig_lock.
  */
 int do_endksig(struct proc *caller, message *m_ptr) {
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   register struct proc *rp;
   int proc_nr;
@@ -57,9 +63,14 @@ int do_endksig(struct proc *caller, message *m_ptr) {
    * process is already dead its flags will be reset.
    */
 <<<<<<< HEAD
+<<<<<<< HEAD
   if(!isokendpt(m_ptr->m_sigcalls.endpt, &proc_nr))
 	return EINVAL; // EINVAL might be undefined
 	return EINVAL; // EINVAL might be undefined
+=======
+  if (!isokendpt(m_ptr->m_sigcalls.endpt, &proc_nr))
+    return EINVAL;  // EINVAL might be undefined
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   if (!isokendpt(m_ptr->m_sigcalls.endpt, &proc_nr))
     return EINVAL;  // EINVAL might be undefined
@@ -123,14 +134,20 @@ int do_endksig(struct proc *caller, message *m_ptr) {
 
   /* The signal manager has finished one kernel signal. Is the process ready? */
 <<<<<<< HEAD
+<<<<<<< HEAD
   /* If no new signal has arrived (RTS_SIGNALED is clear), then clear SIG_PENDING. */
   if (!RTS_ISSET(rp, RTS_SIGNALED)) {
 	RTS_UNSET(rp, RTS_SIG_PENDING);	/* remove pending flag */
 =======
+=======
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   /* If no new signal has arrived (RTS_SIGNALED is clear), then clear
    * SIG_PENDING. */
   if (!RTS_ISSET(rp, RTS_SIGNALED)) {
     RTS_UNSET(rp, RTS_SIG_PENDING); /* remove pending flag */
+<<<<<<< HEAD
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
+=======
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
   }
   /* If RTS_SIGNALED is set, it means a new signal arrived after do_getksig
@@ -140,7 +157,11 @@ int do_endksig(struct proc *caller, message *m_ptr) {
    */
   spin_unlock_irqrestore(&rp->p_sig_lock, flags);
 <<<<<<< HEAD
+<<<<<<< HEAD
   return(OK);
+=======
+  return (OK);
+>>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
 =======
   return (OK);
 >>>>>>> acfb8ad15 (feat: Dev tools, advanced spinlocks, IPC KASSERTs, docs & quality)
