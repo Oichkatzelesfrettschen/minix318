@@ -1,3 +1,32 @@
+/**
+ * @file exception.c
+ * @brief ARM exception handler for the MINIX kernel
+ * 
+ * This file implements exception handling for ARM architecture in MINIX kernel.
+ * It handles various types of exceptions including data aborts, prefetch aborts,
+ * and other ARM-specific exceptions. User process exceptions are converted to
+ * signals, while kernel exceptions cause system panics.
+ * 
+ * Exception types handled:
+ * - Reset
+ * - Undefined instruction
+ * - Supervisor call (SVC)
+ * - Prefetch abort (instruction fetch fault)
+ * - Data abort (data access fault)
+ * - Hypervisor call
+ * - Interrupt/Fast interrupt
+ * 
+ * The handler distinguishes between nested (kernel-level) and non-nested 
+ * (user-level) exceptions, applying appropriate recovery mechanisms or
+ * signaling processes as needed.
+ * 
+ * Key features:
+ * - Page fault handling with VM integration
+ * - Stack trace generation for debugging
+ * - Special handling for kernel copy operations
+ * - FPU exception management
+ * - Support for both user and kernel space exceptions
+ */
 /* This file contains a simple exception handler.  Exceptions in user
  * processes are converted to signals. Exceptions in a kernel task cause
  * a panic.

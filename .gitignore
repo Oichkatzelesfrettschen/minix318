@@ -51,3 +51,58 @@ external/bsd/llvm/dist/clang/test/CodeGenCXX/microsoft-abi-vtables-multiple-nonv
 external/bsd/llvm/dist/llvm/test/Verifier/bitcast-address-space-through-constant-inttoptr-inside-gep-i
 lib/libc/compat__*
 .gdbinit
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+build/
+dist/
+obj/
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Core dumps
+core
+*.core
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Configuration files that might contain sensitive data
+.env
+.env.local
+.env.*.local
+
+# Dependencies (if using package managers)
+node_modules/
+vendor/
+
+# MINIX specific (adjust as needed)
+*.img
+*.iso
+bootdisk

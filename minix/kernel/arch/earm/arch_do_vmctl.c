@@ -1,3 +1,40 @@
+/**
+ * @file arch_do_vmctl.c
+ * @brief ARM-specific virtual memory control operations for the MINIX kernel
+ *
+ * This file implements the SYS_VMCTL kernel call for ARM architecture,
+ * providing virtual memory management functionality including page table
+ * management and TLB operations.
+ */
+
+/**
+ * @brief Set the Translation Table Base Register (TTBR) for a process
+ *
+ * Updates the process's page table base register and virtual address mapping.
+ * If the process is currently running, immediately updates the hardware TTBR0.
+ * For the VM process, enables paging. Clears the VMINHIBIT flag to allow
+ * the process to run with virtual memory enabled.
+ *
+ * @param p Pointer to the process structure
+ * @param ttbr Physical address of the translation table base
+ * @param v Virtual address pointer to the translation table
+ */
+
+/**
+ * @brief ARM-specific virtual memory control handler
+ *
+ * Handles VM control operations for ARM architecture including:
+ * - VMCTL_GET_PDBR: Retrieves the process's page directory base register (TTBR)
+ * - VMCTL_SETADDRSPACE: Sets up new address space by configuring TTBR
+ * - VMCTL_FLUSHTLB: Flushes the Translation Lookaside Buffer
+ *
+ * @param m_ptr Pointer to the request message containing operation parameters
+ * @param p Pointer to the target process structure
+ * @return OK on success, EINVAL for unsupported parameters
+ *
+ * @note Uses SVMCTL_PARAM to determine the operation type
+ * @note Returns the requested value in SVMCTL_VALUE for GET operations
+ */
 /* The kernel call implemented in this file:
  *   m_type:	SYS_VMCTL
  *

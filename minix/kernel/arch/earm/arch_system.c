@@ -1,3 +1,28 @@
+/**
+ * @file arch_system.c
+ * @brief ARM architecture-specific system functions for the MINIX kernel
+ * 
+ * This file contains ARM-specific implementations of system-dependent functions
+ * used throughout the kernel. It handles processor initialization, context
+ * switching, floating-point unit management, and other low-level ARM operations.
+ * 
+ * Key functionality includes:
+ * - Process context management and switching
+ * - ARM processor identification and initialization
+ * - Performance monitoring unit (PMU) configuration
+ * - Memory management unit (MMU) address space switching
+ * - System call handling for ARM architecture
+ * - Serial debugging interface initialization
+ * 
+ * The file is part of the ARM port of MINIX and provides the hardware
+ * abstraction layer between the generic kernel and ARM-specific features.
+ * 
+ * @note This implementation includes stubs for FPU operations as floating-point
+ *       support may not be available on all target ARM platforms.
+ * 
+ * @warning Some functions contain duplicate lines that should be reviewed
+ *          and corrected (marked with MODIFIED comments).
+ */
 /* system dependent functions for use inside the whole kernel. */
 
 #include "kernel/kernel.h"
