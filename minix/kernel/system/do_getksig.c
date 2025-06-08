@@ -41,6 +41,7 @@
 int do_getksig(struct proc *caller, message *m_ptr) {
   register struct proc *rp;
   int flags; /* For spin_lock_irqsave */
+  int flags; /* For spin_lock_irqsave */
 
   /* Find the next process with pending signals. */
   for (rp = BEG_USER_ADDR; rp < END_PROC_ADDR; rp++) {

@@ -4,6 +4,7 @@
  * The parameters for this kernel call are:
  * 	m_sigcalls.endpt	# process to call signal handler
  *	m_sigcalls.sigctx	# pointer to userspace sigmsg structure
+ *	m_sigcalls.sigctx	# pointer to userspace sigmsg structure
  *
  */
 
@@ -44,6 +45,7 @@ int do_sigsend(struct proc * caller, message * m_ptr)
   reg_t new_fp;
 #endif
   vir_bytes userspace_sigmsg_ptr = (vir_bytes)m_ptr->m_sigcalls.sigctx;
+  vir_bytes userspace_sigmsg_ptr = (vir_bytes)m_ptr->m_sigcalls.sigctx;
 
   if (!isokendpt(m_ptr->m_sigcalls.endpt, &proc_nr)) return EINVAL;
   if (iskerneln(proc_nr)) return EPERM;
@@ -83,7 +85,10 @@ int do_sigsend(struct proc * caller, message * m_ptr)
 
   /* Compute the user stack pointer where sigframe will start. */
   // FIXME: smsg.sm_stkptr will be problematic
+  // FIXME: smsg.sm_stkptr will be problematic
   smsg.sm_stkptr = arch_get_sp(rp);
+  frp = (struct sigframe_sigcontext *) arch_get_sp(rp) - 1;
+  ksm.sm_stkptr = (vir_bytes)frp; /* Kernel determines the actual user stack ptr for the frame */
   frp = (struct sigframe_sigcontext *) arch_get_sp(rp) - 1;
   ksm.sm_stkptr = (vir_bytes)frp; /* Kernel determines the actual user stack ptr for the frame */
 
@@ -109,6 +114,7 @@ int do_sigsend(struct proc * caller, message * m_ptr)
   fr.sf_sc.sc_cs = rp->p_reg.cs;
   fr.sf_sc.sc_eflags = rp->p_reg.psw;
   fr.sf_sc.sc_esp = rp->p_reg.sp; /* This is the user SP *before* pushing the frame */
+  fr.sf_sc.sc_esp = rp->p_reg.sp; /* This is the user SP *before* pushing the frame */
   fr.sf_sc.sc_ss = rp->p_reg.ss;
 
   fr.sf_fp = rp->p_reg.fp; /* Old frame pointer, for completeness in sigframe */
@@ -118,6 +124,14 @@ int do_sigsend(struct proc * caller, message * m_ptr)
   fr.sf_ra_sigreturn = ksm.sm_sigreturn; /* Userspace _sigreturn address */
   fr.sf_ra = rp->p_reg.pc;      /* Return address after signal handler (current PC) */
 
+  fr.sf_fp = rp->p_reg.fp; /* Old frame pointer, for completeness in sigframe */
+  fr.sf_signum = ksm.sm_signo; /* Signal number */
+  new_fp = (reg_t) &frp->sf_fp; /* New frame ptr will point to sf_fp in the frame on stack */
+  fr.sf_scpcopy = fr.sf_scp;    /* Pointer to k_sigcontext on stack */
+  fr.sf_ra_sigreturn = ksm.sm_sigreturn; /* Userspace _sigreturn address */
+  fr.sf_ra = rp->p_reg.pc;      /* Return address after signal handler (current PC) */
+
+  fr.sf_sc.sc_trap_style = rp->p_seg.p_kern_trap_style; /* Save how kernel was entered */
   fr.sf_sc.sc_trap_style = rp->p_seg.p_kern_trap_style; /* Save how kernel was entered */
 
   if (fr.sf_sc.sc_trap_style == KTS_NONE) {
@@ -148,6 +162,13 @@ int do_sigsend(struct proc * caller, message * m_ptr)
   fr.sf_sc.sc_r8 = rp->p_reg.r8;
   fr.sf_sc.sc_r9 = rp->p_reg.r9;
   fr.sf_sc.sc_r10 = rp->p_reg.r10;
+  fr.sf_sc.sc_r11 = rp->p_reg.fp;   /* R11 is usually Frame Pointer */
+  fr.sf_sc.sc_r12 = rp->p_reg.r12;  /* R12 is IP */
+  fr.sf_sc.sc_usr_sp = rp->p_reg.sp;/* This is the user SP *before* pushing the frame */
+  fr.sf_sc.sc_usr_lr = rp->p_reg.lr;/* User mode Link Register */
+  fr.sf_sc.sc_pc = rp->p_reg.pc;    /* PC to return to after signal (current PC) */
+  fr.sf_sc.sc_trap_style = rp->p_seg.p_kern_trap_style; /* Save how kernel was entered */
+  /* ARM FPU state would be handled here if supported */
   fr.sf_sc.sc_r11 = rp->p_reg.fp;   /* R11 is usually Frame Pointer */
   fr.sf_sc.sc_r12 = rp->p_reg.r12;  /* R12 is IP */
   fr.sf_sc.sc_usr_sp = rp->p_reg.sp;/* This is the user SP *before* pushing the frame */
@@ -203,6 +224,8 @@ int do_sigsend(struct proc * caller, message * m_ptr)
   rp->p_misc_flags &= ~MF_FPU_INITIALIZED;
 
   if(!RTS_ISSET(rp, RTS_PROC_STOP)) {
+	kprintf_stub("system: warning: sigsend a running process\n"); // MODIFIED
+	kprintf_stub("caller stack: "); // MODIFIED
 	kprintf_stub("system: warning: sigsend a running process\n"); // MODIFIED
 	kprintf_stub("caller stack: "); // MODIFIED
 	proc_stacktrace(caller);

@@ -1,10 +1,54 @@
-#!/bin/bash
+#!/usr/bin/env sh
+# setup.sh - environment setup for MINIX libc exploration
+# Installs utilities for debugging, reverse engineering, and analysis.
+# This script is shell-agnostic and uses POSIX sh features only.
+
 set -e
 
-echo "Updating package lists..."
-sudo apt-get update
+# Ensure noninteractive apt operations
+export DEBIAN_FRONTEND=noninteractive
 
-echo "Installing Doxygen, Graphviz, clang-format, cppcheck..."
-sudo apt-get install -y doxygen graphviz clang-format cppcheck
+# Update package index
+apt-get update
 
-echo "Development tools setup complete."
+# Install core compilation and debugging utilities
+apt-get install -y \
+	build-essential \
+	clang \
+	clang-tools \
+	clang-format \
+	clang-tidy \
+	binutils \
+	gdb \
+	gdb-multiarch \
+	lldb \
+	strace \
+	ltrace \
+	valgrind \
+	radare2 \
+	afl \
+	cscope \
+	universal-ctags \
+	graphviz \
+	doxygen \
+	shfmt \
+	jq \
+	tree
+
+# Install virtualization and cross-development tools
+apt-get install -y \
+	qemu-system-x86 \
+	qemu-system-arm \
+	gcc-arm-linux-gnueabihf
+
+# Install auxiliary utilities for scripting and performance analysis
+apt-get install -y \
+	python3 \
+	python3-pip \
+	python3-venv \
+	cmake \
+	perf \
+	lsof
+
+# Clean up apt cache to reduce image size
+apt-get clean

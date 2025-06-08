@@ -40,6 +40,7 @@ int do_endksig(struct proc *caller, message *m_ptr) {
   register struct proc *rp;
   int proc_nr;
   int flags; /* For spin_lock_irqsave */
+  int flags; /* For spin_lock_irqsave */
 
   /* Get process pointer and verify that it had signals pending. If the
    * process is already dead its flags will be reset.

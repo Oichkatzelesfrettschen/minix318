@@ -160,6 +160,7 @@ struct proc {
   int p_schedules;
 #endif
 } __k_cacheline_aligned;
+} __k_cacheline_aligned;
 
 #endif /* __ASSEMBLY__ */
 

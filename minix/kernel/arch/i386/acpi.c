@@ -1,8 +1,17 @@
 // #include <string.h> // Replaced
+// #include <string.h> // Replaced
 
 #include "acpi.h"
 #include "arch_proto.h"
 
+// Added kernel headers
+#include <minix/kernel_types.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
+
+
+typedef int ((* acpi_read_t)(phys_bytes addr, void * buff, k_size_t size)); // MODIFIED size_t
 // Added kernel headers
 #include <minix/kernel_types.h>
 #include <klib/include/kprintf.h>
@@ -40,6 +49,7 @@ static struct acpi_rsdt {
 static struct {
 	char	signature [ACPI_SDT_SIGNATURE_LEN + 1];
 	k_size_t	length; // MODIFIED size_t
+	k_size_t	length; // MODIFIED size_t
 } sdt_trans[MAX_RSDT];
 
 static int sdt_count;
@@ -49,8 +59,10 @@ static u16_t slp_typa = 0;
 static u16_t slp_typb = 0;
 
 static int acpi_check_csum(struct acpi_sdt_header * tb, k_size_t size) // MODIFIED size_t
+static int acpi_check_csum(struct acpi_sdt_header * tb, k_size_t size) // MODIFIED size_t
 {
 	u8_t total = 0;
+	k_size_t i; // MODIFIED int to k_size_t for loop consistency with size
 	k_size_t i; // MODIFIED int to k_size_t for loop consistency with size
 	for (i = 0; i < size; i++)
 		total += ((unsigned char *)tb)[i];
@@ -73,8 +85,10 @@ static u32_t acpi_phys2vir(u32_t p)
 }
 
 static int acpi_phys_copy(phys_bytes phys, void *target, k_size_t len) // MODIFIED size_t
+static int acpi_phys_copy(phys_bytes phys, void *target, k_size_t len) // MODIFIED size_t
 {
 	if(!vm_running) {
+		kmemcpy(target, (void *) phys, len); // MODIFIED
 		kmemcpy(target, (void *) phys, len); // MODIFIED
 		return 0;
 	}
@@ -84,6 +98,7 @@ static int acpi_phys_copy(phys_bytes phys, void *target, k_size_t len) // MODIFI
 static int acpi_read_sdt_at(phys_bytes addr,
 				struct acpi_sdt_header * tb,
 				k_size_t size, // MODIFIED size_t
+				k_size_t size, // MODIFIED size_t
 				const char * name)
 {
 	struct acpi_sdt_header hdr;
@@ -91,6 +106,7 @@ static int acpi_read_sdt_at(phys_bytes addr,
 	/* if 0 is supplied, we only return the size of the table */
 	if (tb == 0) { // NULL might be undefined
 		if (read_func(addr, &hdr, sizeof(struct acpi_sdt_header))) {
+			kprintf_stub("ERROR acpi cannot read %s header\n", name); // MODIFIED
 			kprintf_stub("ERROR acpi cannot read %s header\n", name); // MODIFIED
 			return -1;
 		}
@@ -100,24 +116,31 @@ static int acpi_read_sdt_at(phys_bytes addr,
 
 	if (read_func(addr, tb, sizeof(struct acpi_sdt_header))) {
 		kprintf_stub("ERROR acpi cannot read %s header\n", name); // MODIFIED
+		kprintf_stub("ERROR acpi cannot read %s header\n", name); // MODIFIED
 		return -1;
 	}
 
 	if (acpi_check_signature(tb->signature, name)) {
+		kprintf_stub("ERROR acpi %s signature does not match\n", name); // MODIFIED
 		kprintf_stub("ERROR acpi %s signature does not match\n", name); // MODIFIED
 		return -1;
 	}
 
 	if (size < tb->length) {
 		kprintf_stub("ERROR acpi buffer too small for %s\n", name); // MODIFIED
+		kprintf_stub("ERROR acpi buffer too small for %s\n", name); // MODIFIED
 		return -1;
 	}
 
 	if (read_func(addr, tb, size)) { // size was k_size_t, read_func expects k_size_t
 		kprintf_stub("ERROR acpi cannot read %s\n", name); // MODIFIED
+	if (read_func(addr, tb, size)) { // size was k_size_t, read_func expects k_size_t
+		kprintf_stub("ERROR acpi cannot read %s\n", name); // MODIFIED
 		return -1;
 	}
 
+	if (acpi_check_csum(tb, tb->length)) { // tb->length is u32_t, acpi_check_csum expects k_size_t
+		kprintf_stub("ERROR acpi %s checksum does not match\n", name); // MODIFIED
 	if (acpi_check_csum(tb, tb->length)) { // tb->length is u32_t, acpi_check_csum expects k_size_t
 		kprintf_stub("ERROR acpi %s checksum does not match\n", name); // MODIFIED
 		return -1;
@@ -140,6 +163,7 @@ phys_bytes acpi_get_table_base(const char * name)
 	return (phys_bytes) 0; // NULL might be undefined
 }
 
+k_size_t acpi_get_table_length(const char * name) // MODIFIED size_t
 k_size_t acpi_get_table_length(const char * name) // MODIFIED size_t
 {
 	int i;
@@ -325,6 +349,7 @@ void acpi_init(void)
 
 	if (!get_acpi_rsdp()) {
 		kprintf_stub("WARNING : Cannot configure ACPI\n"); // MODIFIED
+		kprintf_stub("WARNING : Cannot configure ACPI\n"); // MODIFIED
 		return;
 	}
 	
@@ -337,6 +362,7 @@ void acpi_init(void)
 		struct acpi_sdt_header hdr;
 		int j;
 		if (read_func(rsdt.data[i], &hdr, sizeof(struct acpi_sdt_header))) {
+			kprintf_stub("ERROR acpi cannot read header at 0x%x\n", // MODIFIED
 			kprintf_stub("ERROR acpi cannot read header at 0x%x\n", // MODIFIED
 								rsdt.data[i]);
 			return;

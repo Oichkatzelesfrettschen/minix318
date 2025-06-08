@@ -599,6 +599,7 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr) {
           sig_nr);
 
   /* Lookup process and signal manager. */
+  /* Lookup process and signal manager. */
   rp = proc_addr(proc_nr);
 
   /* KASSERT: Ensure the target process pointer is not NULL.

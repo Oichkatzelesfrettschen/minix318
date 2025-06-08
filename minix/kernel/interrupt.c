@@ -1,3 +1,121 @@
+/**
+ * @file interrupt.c
+ * @brief Minix hardware interrupt system management
+ * 
+ * This module provides functionality for managing hardware interrupt handlers
+ * in the Minix operating system. It maintains a registry of interrupt handlers
+ * and provides mechanisms for registering, unregistering, and handling interrupts.
+ * 
+ * The system supports multiple handlers per IRQ line through a linked list
+ * structure, with each handler having a unique ID bit for tracking active states.
+ * 
+ * Key Features:
+ * - Dynamic registration/deregistration of interrupt handlers
+ * - Support for shared IRQ lines with multiple handlers
+ * - Spurious interrupt detection and reporting
+ * - Hardware interrupt masking/unmasking coordination
+ * - Active handler tracking via bitmask system
+ * 
+ * @author Minix Development Team
+ * @version 3.1.8
+ */
+
+/**
+ * @brief Array of IRQ handler lists, one per supported interrupt vector
+ * 
+ * Each element points to the head of a linked list of interrupt handlers
+ * for the corresponding IRQ line. NULL indicates no handlers registered.
+ */
+
+/**
+ * @brief Register an interrupt handler for a specific IRQ line
+ * 
+ * Adds a new interrupt handler to the linked list for the specified IRQ.
+ * Automatically assigns a unique ID bit to the handler and enables the
+ * hardware interrupt line if this is the first handler.
+ * 
+ * @param hook Pointer to the IRQ hook structure to register
+ * @param irq IRQ number (must be 0 <= irq < NR_IRQ_VECTORS)
+ * @param handler Function pointer to the interrupt handler routine
+ * 
+ * @pre hook must point to valid irq_hook_t structure
+ * @pre irq must be valid IRQ number within supported range
+ * @pre handler must be valid function pointer
+ * 
+ * @post Handler is added to IRQ list with unique ID
+ * @post Hardware IRQ line is enabled if first handler
+ * 
+ * @panic If IRQ number is out of valid range
+ * @panic If too many handlers registered for single IRQ (ID overflow)
+ */
+
+/**
+ * @brief Unregister an interrupt handler from its IRQ line
+ * 
+ * Removes the specified handler from the IRQ handler list and disables
+ * the hardware interrupt line if no other handlers remain registered.
+ * Also clears any active state for the handler.
+ * 
+ * @param hook Pointer to the IRQ hook structure to remove
+ * 
+ * @pre hook must point to previously registered irq_hook_t
+ * @pre hook->irq must be valid IRQ number
+ * 
+ * @post Handler removed from IRQ list
+ * @post Hardware IRQ masked if no handlers remain
+ * @post Hardware IRQ unmasked if other inactive handlers exist
+ * 
+ * @panic If IRQ number in hook is out of valid range
+ */
+
+/**
+ * @brief Handle a hardware interrupt for the specified IRQ line
+ * 
+ * Called by system-dependent code when a hardware interrupt occurs.
+ * Iterates through all registered handlers for the IRQ, marking each
+ * active and calling their handler functions. Manages hardware interrupt
+ * masking to prevent spurious interrupts during processing.
+ * 
+ * @param irq IRQ number of the interrupt to handle
+ * 
+ * @pre irq must be valid IRQ number (0 <= irq < NR_IRQ_VECTORS)
+ * 
+ * @post All registered handlers called with appropriate ID marking
+ * @post Hardware IRQ unmasked only if all handlers completed successfully
+ * @post Spurious interrupt logged if no handlers registered
+ * 
+ * @note Spurious interrupts are tracked and reported periodically
+ * @note IRQ remains masked after spurious interrupt detection
+ */
+
+/**
+ * @brief Enable interrupt processing for a specific handler
+ * 
+ * Clears the active bit for the specified handler and unmasks the
+ * hardware IRQ line if no other handlers remain active.
+ * 
+ * @param hook Pointer to the IRQ hook to enable
+ * 
+ * @pre hook must point to valid registered irq_hook_t
+ * 
+ * @post Handler's active bit cleared in irq_actids
+ * @post Hardware IRQ unmasked if no active handlers remain
+ */
+
+/**
+ * @brief Disable interrupt processing for a specific handler
+ * 
+ * Sets the active bit for the specified handler and masks the
+ * hardware IRQ line to prevent further interrupts.
+ * 
+ * @param hook Pointer to the IRQ hook to disable
+ * @return int TRUE if interrupt was previously enabled, 0 if already disabled
+ * 
+ * @pre hook must point to valid registered irq_hook_t
+ * 
+ * @post Handler's active bit set in irq_actids
+ * @post Hardware IRQ masked
+ */
 /*
  *   The Minix hardware interrupt system.
  *   
