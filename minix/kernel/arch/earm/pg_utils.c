@@ -1,7 +1,7 @@
 #include <minix/cpufeature.h> // Kept for now
 #include <minix/cpufeature.h> // Kept for now
 
-#include <minix/type.h>    // Kept for now (appears twice, will be one)
+// #include <minix/type.h>    // Kept for now (appears twice, will be one) -> Removed duplicate
 // #include <assert.h>       // Replaced
 #include "kernel/kernel.h"
 #include "arch_proto.h"

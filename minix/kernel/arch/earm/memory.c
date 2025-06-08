@@ -2,8 +2,7 @@
 #include "kernel/proc.h"
 #include "kernel/vm.h"
 
-#include <machine/vm.h> // Kept, appears twice, will be one after cleaning
-
+// #include <machine/vm.h> // Kept, appears twice, will be one after cleaning -> Removed duplicate
 #include <minix/type.h>    // Kept for now
 #include <minix/board.h>   // Kept for now
 // #include <minix/syslib.h> // Removed

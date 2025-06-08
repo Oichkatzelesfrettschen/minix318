@@ -318,7 +318,6 @@ int verify_grant(
 	if (sfinfo != NULL && (sfinfo->try = !!(g.cp_flags & CPF_TRY))) { // MODIFIED (NULL)
 	if (sfinfo != NULL && (sfinfo->try = !!(g.cp_flags & CPF_TRY))) { // MODIFIED (NULL)
 		sfinfo->endpt = granter;
-		/* FIXME: offsetof may be undefined */
 		sfinfo->addr = priv(granter_proc)->s_grant_table +
 		    sizeof(g) * grant_idx + K_OFFSETOF(cp_grant_t, cp_faulted);
 		    sizeof(g) * grant_idx + K_OFFSETOF(cp_grant_t, cp_faulted);
