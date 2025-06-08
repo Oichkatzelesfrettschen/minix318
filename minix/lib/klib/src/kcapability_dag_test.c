@@ -386,12 +386,12 @@ void kcapability_dag_run_mathematical_tests(void) {
 #endif
 
 /**
-* @brief Test basic DAG creation and mathematical property verification.
-*
-* This test verifies that DAG creation establishes the correct mathematical
-* foundations (an empty, valid DAG) for subsequent operations.
-* It acts as a proof that the axioms of an empty graph hold.
-*/
+ * @brief Test basic DAG creation and mathematical property verification.
+ *
+ * This test verifies that DAG creation establishes the correct mathematical
+ * foundations (an empty, valid DAG) for subsequent operations.
+ * It acts as a proof that the axioms of an empty graph hold.
+ */
 void test_capability_dag_creation(void) {
   kprintf("Testing capability DAG creation...\n");
 
