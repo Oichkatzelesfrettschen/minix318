@@ -74,6 +74,10 @@
 #include <klib/include/kprintf.h>
 #include <minix/kernel_types.h>
 #include <sys/kassert.h>
+#include <minix/profile.h> // For k_prof_init()
+#ifdef CONFIG_MDLM
+#include <minix/mdlm_cap_dag.h> // For mdlm_cap_dag_init
+#endif
 
 // Includes for Capability DAG
 #include "../lib/klib/include/klib.h" // For kprintf_stub, kpanic, and kcapability_dag_run_mathematical_tests
@@ -249,6 +253,8 @@ void kmain(kinfo_t *local_cbi)
 
   cstart();
 
+  k_prof_init(); // Initialize kernel profiling framework
+
   // Initialize the chosen Big Kernel Lock implementation
   // (e.g., CLH BKL, if selected over older spinlock BKL)
   // This needs to be done before the first BKL_LOCK() call.
@@ -266,8 +272,12 @@ void kmain(kinfo_t *local_cbi)
    * for proc_addr() and proc_nr() macros. Do the same for the table with
    * privilege structures for the system processes and the ipc filter pool.
    */
-  proc_init();
+  proc_init(); // This now calls init_proc_capabilities for each process
   IPCF_POOL_INIT();
+
+#ifdef CONFIG_MDLM
+  mdlm_cap_dag_init(); // Initialize MDLM Capability DAG component
+#endif
 
    if(NR_BOOT_MODULES != kinfo.mbi.mi_mods_count)
    	panic("expecting %d boot processes/modules, found %d",

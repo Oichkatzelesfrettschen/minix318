@@ -2791,6 +2791,8 @@ int ipc_minix_kerninfo(struct minix_kerninfo **);
 #define ipc_send	_ipc_send
 #define ipc_sendnb	_ipc_sendnb
 #define ipc_senda	_ipc_senda
+/* New capability-based IPC call */
+int ipc_send_cap(int cap_idx, message *msg_ptr);
 
 #define do_kernel_call	_do_kernel_call
 

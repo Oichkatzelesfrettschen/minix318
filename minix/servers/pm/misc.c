@@ -395,6 +395,32 @@ int do_svrctl(void)
 }
 
 /*===========================================================================*
+ *				do_getpid_cap				     *
+ *===========================================================================*/
+int do_getpid_cap(void)
+{
+    /* This function handles the PM_GETPID_CAP message.
+     * The caller's process slot 'who_p' and mproc entry 'mp' are already set
+     * by the main loop.
+     * We need to return the caller's PID.
+     * PM's main loop will take care of sending the reply based on what's
+     * set in mp->mp_reply.
+     */
+
+    // Define a reply type if not already defined, e.g., PM_PID_REPLY
+    // For now, let's assume a generic success reply type (like OK or a specific one)
+    // and put the PID in a standard message field.
+    // Using m1_i1 as a common field for returning an integer value.
+    // The message type could indicate what m1_i1 means.
+    // Let's use a new reply type PM_PID_REPLY to be specific.
+    // (PM_PID_REPLY should be defined in a header like com.h or callnr.h for PM replies)
+    mp->mp_reply.m_type = PM_PID_REPLY;
+    mp->mp_reply.m1_i1 = mp->mp_pid; // Store the caller's PID in field m1_i1
+
+    return OK;
+}
+
+/*===========================================================================*
  *				do_getrusage				     *
  *===========================================================================*/
 int

@@ -32,6 +32,7 @@
 #ifdef CONFIG_SMP
 #include <minix/clhlock.h> /* For clh_proc_state_t and clhlock_t */
 #endif
+#include <minix/capability.h> /* For capability_t and MAX_CAPABILITIES_PER_PROC */
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,8 +58,9 @@ struct proc {
     clh_proc_state_t      p_clh_state;     /**< CLH lock state for p_lock if CLH is active */
     bitchunk_t            p_cpu_mask[BITMAP_CHUNKS(CONFIG_MAX_CPUS)];
     bitchunk_t            p_stale_tlb[BITMAP_CHUNKS(CONFIG_MAX_CPUS)];
-
 #endif
+    /* Capability table for this process */
+    capability_t          p_capabilities[MAX_CAPABILITIES_PER_PROC];
 
     /** Scheduling/accounting statistics. */
     struct {

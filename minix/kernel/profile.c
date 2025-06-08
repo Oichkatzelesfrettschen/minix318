@@ -1,163 +1,71 @@
-/*
- * This file contains several functions and variables used for statistical
- * system profiling, in particular the interrupt handler for profiling clock.
- *
- * Changes:
- *   14 Aug, 2006   Created, (Rogier Meurs)
- */
+#include <minix/profile.h>
+#include <minix/sys_config.h> // For CONFIG_PROFILING
+#include <minix/types.h>
+#include <klib/include/kprintf.h> // For kprintf (assuming kprintf_stub is for very early prints)
+#include <limits.h> // For ULLONG_MAX
 
-#include "kernel/kernel.h"
+#ifdef CONFIG_PROFILING
 
-#if SPROFILE
+// Define the profiling data table
+struct prof_point_data kernel_prof_data[PROF_ID_COUNT];
 
-// #include <string.h> // Replaced
+// X-Macro to generate names for printout
+#define X(name) #name,
+static const char *prof_point_names[] = {
+    PROF_POINTS_LIST
+    /* PROF_ID_COUNT is the total number of points, so no name for it */
+};
+#undef X
 
-// Added kernel headers
-#include <minix/kernel_types.h>
-#include <klib/include/kprintf.h>
-#include <klib/include/kstring.h>
-#include <klib/include/kmemory.h>
+// Architecture-specific rdtsc implementation (x86 example)
+// This should ideally be in an arch-specific file and declared in an arch header.
+#if defined(__i386__) || defined(__x86_64__)
+u64_t arch_rdtsc(void) {
+    u32_t lo, hi;
+    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
+    return ((u64_t)hi << 32) | lo;
+}
+#else
+// Fallback or error for non-x86 architectures if TSC is not available
+u64_t arch_rdtsc(void) {
+    kprintf("Warning: arch_rdtsc() not implemented for this architecture. Profiling data will be zero.\n");
+    return 0;
+}
+#endif
 
-#include "watchdog.h"
-
-char sprof_sample_buffer[SAMPLE_BUFFER_SIZE];
-
-/* Function prototype for the profiling clock handler. */ 
-static int profile_clock_handler(irq_hook_t *hook);
-
-/* A hook for the profiling clock interrupt handler. */
-static irq_hook_t profile_clock_hook;
-
-/*===========================================================================*
- *			init_profile_clock				     *
- *===========================================================================*/
-void init_profile_clock(u32_t freq)
-{
-  int irq;
-
-  if((irq = arch_init_profile_clock(freq)) >= 0) {
-	/* Register interrupt handler for statistical system profiling.  */
-	profile_clock_hook.proc_nr_e = CLOCK;
-	put_irq_handler(&profile_clock_hook, irq, profile_clock_handler);
-	enable_irq(&profile_clock_hook);
-  }
+void k_prof_init(void) {
+    for (int i = 0; i < PROF_ID_COUNT; i++) {
+        if (i < (sizeof(prof_point_names) / sizeof(prof_point_names[0]))) { // Check bounds for safety
+             kernel_prof_data[i].name = prof_point_names[i];
+        } else {
+             kernel_prof_data[i].name = "PROF_ID_UNKNOWN"; // Should not happen if list is correct
+        }
+        kernel_prof_data[i].total_cycles = 0;
+        kernel_prof_data[i].entry_cycles = 0;
+        kernel_prof_data[i].count = 0;
+        kernel_prof_data[i].min_cycles = ULLONG_MAX;
+        kernel_prof_data[i].max_cycles = 0;
+    }
+    kprintf("Kernel profiling initialized (%d points).\n", PROF_ID_COUNT);
 }
 
-/*===========================================================================*
- *			profile_clock_stop				     *
- *===========================================================================*/
-void stop_profile_clock(void)
-{
-  arch_stop_profile_clock();
-
-  /* Unregister interrupt handler. */
-  disable_irq(&profile_clock_hook);
-  rm_irq_handler(&profile_clock_hook);
+void k_prof_print(void) {
+    kprintf("--- Kernel Profile Data ---\n");
+    for (int i = 0; i < PROF_ID_COUNT; i++) {
+        if (kernel_prof_data[i].count > 0) {
+            u64_t avg_cycles = kernel_prof_data[i].total_cycles / kernel_prof_data[i].count;
+            kprintf("%-20s: Cnt=%llu, Avg=%llu, Min=%llu, Max=%llu, Tot=%llu cyc\n",
+                      kernel_prof_data[i].name ? kernel_prof_data[i].name : "INVALID_PROF_NAME",
+                      kernel_prof_data[i].count,
+                      avg_cycles,
+                      (kernel_prof_data[i].min_cycles == ULLONG_MAX) ? 0 : kernel_prof_data[i].min_cycles,
+                      kernel_prof_data[i].max_cycles,
+                      kernel_prof_data[i].total_cycles);
+        } else {
+            kprintf("%-20s: No data.\n", kernel_prof_data[i].name ? kernel_prof_data[i].name : "INVALID_PROF_NAME");
+        }
+    }
+    kprintf("---------------------------\n");
 }
 
-static void sprof_save_sample(struct proc * p, void * pc)
-{
-	struct sprof_sample *s;
-
-	s = (struct sprof_sample *) (sprof_sample_buffer + sprof_info.mem_used);
-
-	s->proc = p->p_endpoint;
-	s->pc = pc;
-
-	sprof_info.mem_used += sizeof(struct sprof_sample);
-}
-
-static void sprof_save_proc(struct proc * p)
-{
-	struct sprof_proc * s;
-
-	s = (struct sprof_proc *) (sprof_sample_buffer + sprof_info.mem_used);
-
-	s->proc = p->p_endpoint;
-	(void)kstrlcpy(s->name, p->p_name, sizeof(s->name)); /* FIXME: strcpy(dst,src) replaced. Validate size argument for kstrlcpy. sizeof(dst) is a guess. */ // MODIFIED
-	sprof_info.mem_used += sizeof(struct sprof_proc);
-}
-
-static void profile_sample(struct proc * p, void * pc)
-{
-/* This executes on every tick of the CMOS timer. */
-
-  /* Are we profiling, and profiling memory not full? */
-  if (!sprofiling || sprof_info.mem_used == -1)
-	  return;
-
-  /* Check if enough memory available before writing sample. */
-  if (sprof_info.mem_used + sizeof(sprof_info) +
-		  2*sizeof(struct sprof_sample) +
-		  2*sizeof(struct sprof_sample) > sprof_mem_size) {
-	sprof_info.mem_used = -1;
-	return;
-  }
-
-  /* Runnable system process? */
-  if (p->p_endpoint == IDLE)
-	sprof_info.idle_samples++;
-  else if (p->p_endpoint == KERNEL ||
-		(priv(p)->s_flags & SYS_PROC && proc_is_runnable(p))) {
-
-	if (!(p->p_misc_flags & MF_SPROF_SEEN)) {
-		p->p_misc_flags |= MF_SPROF_SEEN;
-		sprof_save_proc(p);
-	}
-
-	sprof_save_sample(p, pc);
-	sprof_info.system_samples++;
-  } else {
-	/* User process. */
-	sprof_info.user_samples++;
-  }
-  
-  sprof_info.total_samples++;
-}
-
-/*===========================================================================*
- *			profile_clock_handler                           *
- *===========================================================================*/
-static int profile_clock_handler(irq_hook_t *hook)
-{
-  struct proc * p;
-  p = get_cpulocal_var(proc_ptr);
-
-  profile_sample(p, (void *) p->p_reg.pc);
-
-  /* Acknowledge interrupt if necessary. */
-  arch_ack_profile_clock();
-
-  return(1);                                    /* reenable interrupts */
-}
-
-void nmi_sprofile_handler(struct nmi_frame * frame)
-{
-	struct proc * p = get_cpulocal_var(proc_ptr);
-	/*
-	 * test if the kernel was interrupted. If so, save first a sample fo
-	 * kernel and than for the current process, otherwise save just the
-	 * process
-	 */
-	if (nmi_in_kernel(frame)) {
-		struct proc *kern;
-
-		/*
-		 * if we sample kernel, check if IDLE is scheduled. If so,
-		 * account for idle time rather than taking kernel sample
-		 */
-		if (p->p_endpoint == IDLE) {
-			sprof_info.idle_samples++;
-			sprof_info.total_samples++;
-			return;
-		}
-
-		kern = proc_addr(KERNEL);
-
-		profile_sample(kern, (void *) frame->pc);
-	}
-	else
-		profile_sample(p, (void *) frame->pc);
-}
-
-#endif /* SPROFILE */
+#endif /* CONFIG_PROFILING */
