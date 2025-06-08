@@ -1,6 +1,9 @@
 // minix/kernel/system.c
 
 // Keep existing includes from the original system.c
+// minix/kernel/system.c
+
+// Keep existing includes from the original system.c
 #include "kernel/system.h"
 #include "kernel/clock.h"
 #include "kernel/vm.h"
@@ -28,6 +31,226 @@ static int (*call_vec[NR_SYS_CALLS])(struct proc *caller, message *m_ptr);
             call_nr);                                                          \
     call_vec[idx] = handler;                                                   \
   } while (0)
+// Include for new system call numbers and handlers
+#include "capability/capability_syscalls.h" // For do_math_open etc. (path adjusted)
+#include <minix/callnr.h> // For NR_SYSCALLS and new SYS_ defines
+
+// Prototypes for handlers not defined in capability_syscalls.h yet
+// These are based on the map() calls in the user feedback.
+// Stubs will be needed for these in later steps if not already implemented.
+int do_nosys(struct proc *caller, message *m_ptr);
+// For existing calls not shown in feedback's map, but present in original
+// system_init
+int do_fork(struct proc *caller, message *m_ptr);
+int do_exec(struct proc *caller, message *m_ptr);
+int do_exit(struct proc *caller, message *m_ptr);
+int do_clear(struct proc *caller, message *m_ptr);
+int do_privctl(struct proc *caller, message *m_ptr);
+int do_trace(struct proc *caller, message *m_ptr);
+int do_setgrant(struct proc *caller, message *m_ptr);
+int do_runctl(struct proc *caller, message *m_ptr);
+int do_update(struct proc *caller, message *m_ptr);
+int do_statectl(struct proc *caller, message *m_ptr);
+int do_kill(struct proc *caller, message *m_ptr);
+int do_getksig(struct proc *caller, message *m_ptr);
+int do_endksig(struct proc *caller, message *m_ptr);
+int do_sigsend(struct proc *caller, message *m_ptr);
+int do_sigreturn(struct proc *caller, message *m_ptr);
+int do_irqctl(struct proc *caller, message *m_ptr);
+#if defined(__i386__)
+int do_devio(struct proc *caller, message *m_ptr);
+int do_vdevio(struct proc *caller, message *m_ptr);
+#endif
+int do_memset(struct proc *caller, message *m_ptr);
+int do_vmctl(struct proc *caller, message *m_ptr);
+int do_umap(struct proc *caller, message *m_ptr);
+int do_umap_remote(struct proc *caller, message *m_ptr);
+int do_vumap(struct proc *caller, message *m_ptr);
+int do_vircopy(struct proc *caller,
+               message *m_ptr); // Assuming do_copy is do_vircopy
+int do_copy(struct proc *caller, message *m_ptr); // For physcopy if different
+int do_safecopy_from(struct proc *caller, message *m_ptr);
+int do_safecopy_to(struct proc *caller, message *m_ptr);
+int do_vsafecopy(struct proc *caller, message *m_ptr);
+int do_safememset(struct proc *caller, message *m_ptr);
+int do_times(struct proc *caller, message *m_ptr);
+int do_setalarm(struct proc *caller, message *m_ptr);
+int do_stime(struct proc *caller, message *m_ptr);
+int do_settime(struct proc *caller, message *m_ptr);
+int do_vtimer(struct proc *caller, message *m_ptr);
+int do_abort(struct proc *caller, message *m_ptr);
+int do_getinfo(struct proc *caller, message *m_ptr);
+int do_diagctl(struct proc *caller, message *m_ptr);
+int do_sprofile(struct proc *caller, message *m_ptr);
+#if defined(__arm__)
+int do_padconf(struct proc *caller, message *m_ptr);
+#endif
+#if defined(__i386__)
+int do_readbios(struct proc *caller, message *m_ptr);
+int do_iopenable(struct proc *caller, message *m_ptr);
+int do_sdevio(struct proc *caller, message *m_ptr);
+#endif
+int do_setmcontext(struct proc *caller, message *m_ptr);
+int do_getmcontext(struct proc *caller, message *m_ptr);
+int do_schedule(struct proc *caller, message *m_ptr);
+int do_schedctl(struct proc *caller, message *m_ptr);
+
+// Stubs for new handlers mentioned in feedback's map that are not yet defined
+// These would be implemented in math_syscalls.c or math_syscalls_extended.c
+// int do_math_write(struct proc *caller, message *m_ptr); // Now in
+// math_syscalls_extended.c int do_math_close(struct proc *caller, message
+// *m_ptr); // Now in math_syscalls_extended.c int do_math_open_cached(struct
+// proc *caller, message *m_ptr); // Now in math_syscalls_extended.c int
+// do_math_open_batch(struct proc *caller, message *m_ptr); // Now in
+// math_syscalls_extended.c int do_cap_derive(struct proc *caller, message
+// *m_ptr); // Now in math_syscalls_extended.c int do_cap_restrict(struct proc
+// *caller, message *m_ptr); // Now in math_syscalls_extended.c int
+// do_cap_revoke(struct proc *caller, message *m_ptr); // Now in
+// math_syscalls_extended.c int do_cap_delegate(struct proc *caller, message
+// *m_ptr); // Now in math_syscalls_extended.c
+
+// Default handler for unimplemented calls
+int do_nosys(struct proc *caller, message *m_ptr) {
+  kprintf_stub("SYSTEM: call %d from %d generated error %d (do_nosys)\n",
+               m_ptr->m_type, m_ptr->m_source, ENOSYS);
+  (void)caller; // Suppress unused warning if KASSERT is off
+  KASSERT(caller && proc_ptr_ok(caller));
+  return ENOSYS;
+}
+
+/* System call handler table - as per feedback */
+static struct {
+  int (*handler)(struct proc *caller, message *m_ptr);
+  const char *name;
+} sys_call_table[NR_SYSCALLS]; // NR_SYSCALLS from callnr.h (138)
+
+/* Helper macro for cleaner registration - as per feedback */
+#define map(nr, handler_func, name_str)                                        \
+  do {                                                                         \
+    if ((nr) >= 0 && (nr) < NR_SYSCALLS) {                                     \
+      sys_call_table[(nr)].handler = (handler_func);                           \
+      sys_call_table[(nr)].name = (name_str);                                  \
+    } else {                                                                   \
+      panic("System call number %d (name %s) exceeds NR_SYSCALLS (%d)", (nr),  \
+            (name_str), NR_SYSCALLS);                                          \
+    }                                                                          \
+  } while (0)
+
+/* system_init function, merging existing mappings with new ones */
+void system_init(void) {
+  int i;
+  struct priv *sp; // From original system_init
+
+  /* Initialize the system call table to safe defaults */
+  for (i = 0; i < NR_SYSCALLS; i++) {
+    sys_call_table[i].handler = do_nosys;
+    sys_call_table[i].name = "NOSYS";
+  }
+
+  /* IRQ hooks - from original system_init */
+  for (i = 0; i < NR_IRQ_HOOKS; i++)
+    irq_hooks[i].proc_nr_e = NONE;
+
+  /* Alarm timers - from original system_init */
+  for (sp = BEG_PRIV_ADDR; sp < END_PRIV_ADDR; sp++)
+    tmr_inittimer(&sp->s_alarm_timer);
+
+  /* Map existing MINIX system calls - from original system_init */
+  /* Note: KERNEL_CALL offset is not used with the new map macro */
+  map(SYS_FORK, do_fork, "SYS_FORK");
+  map(SYS_EXEC, do_exec, "SYS_EXEC");
+  map(SYS_CLEAR, do_clear, "SYS_CLEAR");
+  map(SYS_EXIT, do_exit, "SYS_EXIT");
+  map(SYS_PRIVCTL, do_privctl, "SYS_PRIVCTL");
+  map(SYS_TRACE, do_trace, "SYS_TRACE");
+  map(SYS_SETGRANT, do_setgrant, "SYS_SETGRANT");
+  map(SYS_RUNCTL, do_runctl, "SYS_RUNCTL");
+  map(SYS_UPDATE, do_update, "SYS_UPDATE");
+  map(SYS_STATECTL, do_statectl, "SYS_STATECTL");
+
+  map(SYS_KILL, do_kill, "SYS_KILL");
+  map(SYS_GETKSIG, do_getksig, "SYS_GETKSIG");
+  map(SYS_ENDKSIG, do_endksig, "SYS_ENDKSIG");
+  map(SYS_SIGSEND, do_sigsend, "SYS_SIGSEND");
+  map(SYS_SIGRETURN, do_sigreturn, "SYS_SIGRETURN");
+
+  map(SYS_IRQCTL, do_irqctl, "SYS_IRQCTL");
+#if defined(__i386__)
+  map(SYS_DEVIO, do_devio, "SYS_DEVIO");
+  map(SYS_VDEVIO, do_vdevio, "SYS_VDEVIO");
+#endif
+
+  map(SYS_MEMSET, do_memset, "SYS_MEMSET");
+  map(SYS_VMCTL, do_vmctl, "SYS_VMCTL");
+
+  map(SYS_UMAP, do_umap, "SYS_UMAP");
+  map(SYS_UMAP_REMOTE, do_umap_remote, "SYS_UMAP_REMOTE");
+  map(SYS_VUMAP, do_vumap, "SYS_VUMAP");
+  map(SYS_VIRCOPY, do_vircopy,
+      "SYS_VIRCOPY"); // Assumed do_vircopy is do_copy from original
+  map(SYS_PHYSCOPY, do_copy, "SYS_PHYSCOPY"); // Or map to do_copy if distinct
+  map(SYS_SAFECOPYFROM, do_safecopy_from, "SYS_SAFECOPYFROM");
+  map(SYS_SAFECOPYTO, do_safecopy_to, "SYS_SAFECOPYTO");
+  map(SYS_VSAFECOPY, do_vsafecopy, "SYS_VSAFECOPY");
+  map(SYS_SAFEMEMSET, do_safememset, "SYS_SAFEMEMSET");
+
+  map(SYS_TIMES, do_times, "SYS_TIMES");
+  map(SYS_SETALARM, do_setalarm, "SYS_SETALARM");
+  map(SYS_STIME, do_stime, "SYS_STIME");
+  map(SYS_SETTIME, do_settime, "SYS_SETTIME");
+  map(SYS_VTIMER, do_vtimer, "SYS_VTIMER");
+
+  map(SYS_ABORT, do_abort, "SYS_ABORT");
+  map(SYS_GETINFO, do_getinfo, "SYS_GETINFO");
+  map(SYS_DIAGCTL, do_diagctl, "SYS_DIAGCTL");
+
+  map(SYS_SPROF, do_sprofile, "SYS_SPROF");
+
+#if defined(__arm__)
+  map(SYS_PADCONF, do_padconf, "SYS_PADCONF");
+#endif
+#if defined(__i386__)
+  map(SYS_READBIOS, do_readbios, "SYS_READBIOS");
+  map(SYS_IOPENABLE, do_iopenable, "SYS_IOPENABLE");
+  map(SYS_SDEVIO, do_sdevio, "SYS_SDEVIO");
+#endif
+
+  map(SYS_SETMCONTEXT, do_setmcontext, "SYS_SETMCONTEXT");
+  map(SYS_GETMCONTEXT, do_getmcontext, "SYS_GETMCONTEXT");
+
+  map(SYS_SCHEDULE, do_schedule, "SYS_SCHEDULE");
+  map(SYS_SCHEDCTL, do_schedctl, "SYS_SCHEDCTL");
+
+  /* Map mathematical POSIX system calls - as per feedback */
+  map(SYS_MATH_OPEN, do_math_open, "MATH_OPEN");
+  map(SYS_MATH_READ, do_math_read, "MATH_READ");
+  map(SYS_MATH_WRITE, do_math_write, "MATH_WRITE"); // Uncommented
+  map(SYS_MATH_CLOSE, do_math_close, "MATH_CLOSE"); // Uncommented
+  map(SYS_MATH_OPEN_CACHED, do_math_open_cached,
+      "MATH_OPEN_CACHED"); // Uncommented
+  map(SYS_MATH_OPEN_BATCH, do_math_open_batch, "MATH_OPEN_BATCH");
+
+  /* Map capability management calls - as per feedback */
+  map(SYS_CAP_DERIVE, do_cap_derive, "CAP_DERIVE");
+  map(SYS_CAP_RESTRICT, do_cap_restrict, "CAP_RESTRICT");
+  map(SYS_CAP_REVOKE, do_cap_revoke, "CAP_REVOKE");
+  map(SYS_CAP_DELEGATE, do_cap_delegate, "CAP_DELEGATE");
+  map(SYS_CAPABILITY_QUERY, do_capability_query, "CAP_QUERY");
+
+  kprintf("Mathematical capability system initialized\n");
+  kprintf("Registered %d new system calls\n", 11); // Updated count
+}
+
+/* Main system call dispatcher - as per feedback */
+/* This replaces the old kernel_call_dispatch and kernel_call logic */
+/* The original kernel_call took (message *m_user, struct proc *caller) */
+/* The feedback's do_system_call takes (struct proc *caller, message *m_ptr) */
+/* This implies that the message copy from user already happened. */
+/* The original system.c had kernel_call which did this copy. We need to ensure
+ * this flow. */
+
+// Retain the original kernel_call structure that handles message copying from
+// user and then calls the new do_system_call dispatcher.
 
 /**
  * @brief Finalize a kernel call: handle VMSUSPEND or reply to user.
