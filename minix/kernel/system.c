@@ -36,6 +36,7 @@
 #include "kernel/vm.h"
 #include "kernel/clock.h"
 // #include <stdlib.h>    // Removed
+// #include <stddef.h>    // Removed (NULL, offsetof might be problematic)
 // #include <assert.h>    // Replaced
 // #include <signal.h>    // Replaced
 // #include <unistd.h>    // Removed
@@ -48,7 +49,6 @@
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
-/* k_spinlock_irq.h is included via kernel.h -> proc.h */
 
 
 /* Declaration of the call vector that defines the mapping of system calls
@@ -62,6 +62,7 @@ static int (*call_vec[NR_SYS_CALLS])(struct proc * caller, message *m_ptr);
 #define map(call_nr, handler) 					\
     {	int call_index = call_nr-KERNEL_CALL; 				\
 	KASSERT(call_index >= 0 && call_index < NR_SYS_CALLS);			\
+	KASSERT(call_index >= 0 && call_index < NR_SYS_CALLS);			\
     call_vec[call_index] = (handler)  ; }
 
 static void kernel_call_finish(struct proc * caller, message *msg, int result)
@@ -71,6 +72,8 @@ static void kernel_call_finish(struct proc * caller, message *msg, int result)
 	   * until VM tells us it's allowed. VM has been notified
 	   * and we must wait for its reply to restart the call.
 	   */
+	  KASSERT(RTS_ISSET(caller, RTS_VMREQUEST));
+	  KASSERT(caller->p_vmrequest.type == VMSTYPE_KERNELCALL);
 	  KASSERT(RTS_ISSET(caller, RTS_VMREQUEST));
 	  KASSERT(caller->p_vmrequest.type == VMSTYPE_KERNELCALL);
 	  caller->p_vmrequest.saved.reqmsg = *msg;
@@ -90,10 +93,12 @@ static void kernel_call_finish(struct proc * caller, message *msg, int result)
 #endif
 		  if (copy_msg_to_user(msg, (message *)caller->p_delivermsg_vir)) {
 			  kprintf_stub("WARNING wrong user pointer 0x%08x from " // MODIFIED
+			  kprintf_stub("WARNING wrong user pointer 0x%08x from " // MODIFIED
 					  "process %s / %d\n",
 					  caller->p_delivermsg_vir,
 					  caller->p_name,
 					  caller->p_endpoint);
+			  cause_sig(proc_nr(caller), SIGSEGV); // SIGSEGV may be undefined
 			  cause_sig(proc_nr(caller), SIGSEGV); // SIGSEGV may be undefined
 		  }
 	  }
@@ -113,10 +118,12 @@ static int kernel_call_dispatch(struct proc * caller, message *msg)
   /* See if the caller made a valid request and try to handle it. */
   if (call_nr < 0 || call_nr >= NR_SYS_CALLS) {	/* check call number */
 	  kprintf_stub("SYSTEM: illegal request %d from %d.\n", // MODIFIED
+	  kprintf_stub("SYSTEM: illegal request %d from %d.\n", // MODIFIED
 			  call_nr,msg->m_source);
 	  result = EBADREQUEST;			/* illegal message type */
   }
   else if (!GET_BIT(priv(caller)->s_k_call_mask, call_nr)) {
+	  kprintf_stub("SYSTEM: denied request %d from %d.\n", // MODIFIED
 	  kprintf_stub("SYSTEM: denied request %d from %d.\n", // MODIFIED
 			  call_nr,msg->m_source);
 	  result = ECALLDENIED;			/* illegal message type */
@@ -125,6 +132,7 @@ static int kernel_call_dispatch(struct proc * caller, message *msg)
 	  if (call_vec[call_nr])
 		  result = (*call_vec[call_nr])(caller, msg);
 	  else {
+		  kprintf_stub("Unused kernel call %d from %d\n", // MODIFIED
 		  kprintf_stub("Unused kernel call %d from %d\n", // MODIFIED
 				  call_nr, caller->p_endpoint);
 		  result = EBADREQUEST;
@@ -158,7 +166,9 @@ void kernel_call(message *m_user, struct proc * caller)
   }
   else {
 	  kprintf_stub("WARNING wrong user pointer 0x%08x from process %s / %d\n", // MODIFIED
+	  kprintf_stub("WARNING wrong user pointer 0x%08x from process %s / %d\n", // MODIFIED
 			  m_user, caller->p_name, caller->p_endpoint);
+	  cause_sig(proc_nr(caller), SIGSEGV); // SIGSEGV may be undefined
 	  cause_sig(proc_nr(caller), SIGSEGV); // SIGSEGV may be undefined
 	  return;
   }
@@ -194,6 +204,7 @@ void system_init(void)
    * if an illegal call number is used. The ordering is not important here.
    */
   for (i=0; i<NR_SYS_CALLS; i++) {
+      call_vec[i] = NULL; // MODIFIED (NULL)
       call_vec[i] = NULL; // MODIFIED (NULL)
   }
 
@@ -397,32 +408,9 @@ int send_sig(endpoint_t ep, int sig_nr)
 	return EINVAL;
 
   rp = proc_addr(proc_nr);
-
-  /* KASSERT: Ensure the target process pointer is not NULL.
-   * A NULL rp would lead to a kernel panic when dereferenced. This indicates
-   * a serious issue with endpoint to process mapping or process table corruption.
-   */
-  KASSERT(rp != NULL, "send_sig: null process pointer for endpoint %d", ep);
-  /* KASSERT: Check for process table corruption using a magic number.
-   * If p_magic is not PMAGIC, the process structure might be corrupted or
-   * the pointer rp might be invalid, potentially leading to memory errors.
-   */
-  KASSERT(rp->p_magic == PMAGIC, "send_sig: corrupted process structure for endpoint %d, proc_nr %d", ep, proc_nr);
-
-  privp = priv(rp);
-  /* KASSERT: Ensure the privilege structure for the process is not NULL.
-   * The privilege structure holds signal management information. A NULL value
-   * indicates a problem with process initialization or state.
-   */
-  KASSERT(privp != NULL, "send_sig: null privilege structure for endpoint %d, proc_nr %d", ep, proc_nr);
-  if(!privp) return ENOENT;
-
-  /* Note: Modification of s_sig_pending was removed from send_sig.
-   * The caller (cause_sig) now handles this under p_sig_lock for the
-   * self-managed case. For external signal managers, p_pending is used,
-   * also managed by cause_sig under p_sig_lock.
-   * send_sig's role is purely notification.
-   */
+  priv = priv(rp);
+  if(!priv) return ENOENT;
+  /* FIXME: sigaddset was here */ // sigaddset(&priv->s_sig_pending, sig_nr);
   mini_notify(proc_addr(SYSTEM), rp->p_endpoint);
 
   return OK;
@@ -483,6 +471,7 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr)
   /* If the target is the signal manager of itself, send the signal directly. */
   if(rp->p_endpoint == sig_mgr) {
        if(0 /* FIXME: SIGS_IS_LETHAL(sig_nr) was here */) { // SIGS_IS_LETHAL may be undefined
+       if(0 /* FIXME: SIGS_IS_LETHAL(sig_nr) was here */) { // SIGS_IS_LETHAL may be undefined
            /* If the signal is lethal, see if a backup signal manager exists. */
            sig_mgr = priv(rp)->s_bak_sig_mgr;
            if(sig_mgr != NONE && isokendpt(sig_mgr, &sig_mgr_proc_nr)) {
@@ -505,37 +494,25 @@ void cause_sig(proc_nr_t proc_nr, int sig_nr)
            panic("cause_sig: sig manager %d gets lethal signal %d for itself",
 	   	rp->p_endpoint, sig_nr);
        }
-       flags = spin_lock_irqsave(&rp->p_sig_lock);
-       /* FIXME: sigaddset was here */ // k_sigaddset(&priv(rp)->s_sig_pending, sig_nr);
-       s = send_sig(rp->p_endpoint, SIGKSIGSM); // SIGKSIGSM may be undefined
-       spin_unlock_irqrestore(&rp->p_sig_lock, flags);
-       if(OK != s)
+       /* FIXME: sigaddset was here */ // sigaddset(&priv(rp)->s_sig_pending, sig_nr);
+       if(OK != send_sig(rp->p_endpoint, SIGKSIGSM)) // SIGKSIGSM may be undefined
        	panic("send_sig failed");
        return;
   }
 
-  /* External Manager Path */
-  flags = spin_lock_irqsave(&rp->p_sig_lock);
-  s = k_sigismember(&rp->p_pending, sig_nr);
+  s = 0; /* FIXME: sigismember was here */ // sigismember(&rp->p_pending, sig_nr);
   /* Check if the signal is already pending. Process it otherwise. */
   if (!s) {
-      k_sigaddset(&rp->p_pending, sig_nr);
+      /* FIXME: sigaddset was here */ // sigaddset(&rp->p_pending, sig_nr);
       if (! (RTS_ISSET(rp, RTS_SIGNALED))) {		/* other pending */
 	  /* The RTS_SET macro itself should be SMP-safe or be called
 	   * while holding the appropriate lock.
 	   */
 	  RTS_SET(rp, RTS_SIGNALED | RTS_SIG_PENDING);
-          /* send_sig itself doesn't modify shared process state directly here,
-           * but it's part of the signal delivery mechanism initiated while holding the lock.
-           */
-          int send_result = send_sig(sig_mgr, SIGKSIG); // SIGKSIG may be undefined
-          if(OK != send_result) {
-            spin_unlock_irqrestore(&rp->p_sig_lock, flags); // Unlock before panic
-		    panic("send_sig failed");
-          }
+          if(OK != send_sig(sig_mgr, SIGKSIG)) // SIGKSIG may be undefined
+	  	panic("send_sig failed");
       }
   }
-  spin_unlock_irqrestore(&rp->p_sig_lock, flags);
 }
 
 /*===========================================================================*
@@ -550,6 +527,7 @@ void sig_delay_done(struct proc *rp)
 
   rp->p_misc_flags &= ~MF_SIG_DELAY;
 
+  cause_sig(proc_nr(rp), SIGSNDELAY); // SIGSNDELAY may be undefined
   cause_sig(proc_nr(rp), SIGSNDELAY); // SIGSNDELAY may be undefined
 }
 
@@ -568,6 +546,7 @@ void send_diag_sig(void)
 	if (privp->s_proc_nr != NONE && privp->s_diag_sig == TRUE) {
 		ep = proc_addr(privp->s_proc_nr)->p_endpoint;
 		send_sig(ep, SIGKMESS); // SIGKMESS may be undefined
+		send_sig(ep, SIGKMESS); // SIGKMESS may be undefined
 	}
   }
 }
@@ -582,6 +561,7 @@ static void clear_memreq(struct proc *rp)
   if (!RTS_ISSET(rp, RTS_VMREQUEST))
 	return; /* nothing to do */
 
+  for (rpp = &vmrequest; *rpp != NULL; // MODIFIED (NULL)
   for (rpp = &vmrequest; *rpp != NULL; // MODIFIED (NULL)
      rpp = &(*rpp)->p_vmrequest.nextrequestor) {
 	if (*rpp == rp) {
@@ -612,6 +592,7 @@ static void clear_ipc(
           if (*xpp == rc) {			/* process is on the queue */
               *xpp = (*xpp)->p_q_link;		/* replace by next process */
 #if DEBUG_ENABLE_IPC_WARNINGS
+	      kprintf_stub("endpoint %d / %s removed from queue at %d\n", // MODIFIED
 	      kprintf_stub("endpoint %d / %s removed from queue at %d\n", // MODIFIED
 	          rc->p_endpoint, rc->p_name, rc->p_sendto_e);
 #endif
@@ -705,9 +686,11 @@ void kernel_call_resume(struct proc *caller)
 
 	KASSERT(!RTS_ISSET(caller, RTS_SLOT_FREE));
 	KASSERT(!RTS_ISSET(caller, RTS_VMREQUEST));
+
 	KASSERT(caller->p_vmrequest.saved.reqmsg.m_source == caller->p_endpoint);
 
 	/*
+	kprintf_stub("KERNEL_CALL restart from %s / %d rts 0x%08x misc 0x%08x\n", // MODIFIED
 	kprintf_stub("KERNEL_CALL restart from %s / %d rts 0x%08x misc 0x%08x\n", // MODIFIED
 			caller->p_name, caller->p_endpoint,
 			caller->p_rts_flags, caller->p_misc_flags);
@@ -793,6 +776,7 @@ int sched_proc(struct proc *p, int priority, int quantum, int cpu, int niced)
  *===========================================================================*/
 int add_ipc_filter(struct proc *rp, int type, vir_bytes address,
 	k_size_t length) // MODIFIED size_t
+	k_size_t length) // MODIFIED size_t
 {
 	int num_elements, r;
 	ipc_filter_t *ipcf, **ipcfp;
@@ -811,10 +795,12 @@ int add_ipc_filter(struct proc *rp, int type, vir_bytes address,
 	/* Allocate a new IPC filter slot. */
 	IPCF_POOL_ALLOCATE_SLOT(type, &ipcf);
 	if (ipcf == NULL) // MODIFIED (NULL)
+	if (ipcf == NULL) // MODIFIED (NULL)
 		return ENOMEM;
 
 	/* Fill details. */
 	ipcf->num_elements = num_elements;
+	ipcf->next = NULL; // MODIFIED (NULL)
 	ipcf->next = NULL; // MODIFIED (NULL)
 	r = data_copy(rp->p_endpoint, address,
 		KERNEL, (vir_bytes)ipcf->elements, length);
@@ -826,6 +812,7 @@ int add_ipc_filter(struct proc *rp, int type, vir_bytes address,
 	}
 
 	/* Add the new filter at the end of the IPC filter chain. */
+	for (ipcfp = &priv(rp)->s_ipcf; *ipcfp != NULL; // MODIFIED (NULL)
 	for (ipcfp = &priv(rp)->s_ipcf; *ipcfp != NULL; // MODIFIED (NULL)
 	    ipcfp = &(*ipcfp)->next)
 		;
@@ -843,17 +830,21 @@ void clear_ipc_filters(struct proc *rp)
 
 	ipcf = priv(rp)->s_ipcf;
 	while (ipcf != NULL) { // MODIFIED (NULL)
+	while (ipcf != NULL) { // MODIFIED (NULL)
 		curr_ipcf = ipcf;
 		ipcf = ipcf->next;
 		IPCF_POOL_FREE_SLOT(curr_ipcf);
 	}
 
 	priv(rp)->s_ipcf = NULL; // MODIFIED (NULL)
+	priv(rp)->s_ipcf = NULL; // MODIFIED (NULL)
 
 	/* VM is a special case here: since the cleared IPC filter may have
 	 * blocked memory handling requests, we may now have to tell VM that
 	 * there are "new" requests pending.
 	 */
+	if (rp->p_endpoint == VM_PROC_NR && vmrequest != NULL) // MODIFIED (NULL)
+		if (send_sig(VM_PROC_NR, SIGKMEM) != OK) // SIGKMEM may be undefined
 	if (rp->p_endpoint == VM_PROC_NR && vmrequest != NULL) // MODIFIED (NULL)
 		if (send_sig(VM_PROC_NR, SIGKMEM) != OK) // SIGKMEM may be undefined
 			panic("send_sig failed");
@@ -867,6 +858,7 @@ int check_ipc_filter(ipc_filter_t *ipcf, int fill_flags)
 	ipc_filter_el_t *ipcf_el;
 	int i, num_elements, flags;
 
+	if (ipcf == NULL) // MODIFIED (NULL)
 	if (ipcf == NULL) // MODIFIED (NULL)
 		return OK;
 
@@ -899,8 +891,11 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e,
 
 	ipcf = priv(rp)->s_ipcf;
 	if (ipcf == NULL) // MODIFIED (NULL)
+	if (ipcf == NULL) // MODIFIED (NULL)
 		return TRUE; /* no IPC filters, always allow */
 
+	if (m_src_p == NULL) { // MODIFIED (NULL)
+		KASSERT(m_src_v != 0);
 	if (m_src_p == NULL) { // MODIFIED (NULL)
 		KASSERT(m_src_v != 0);
 
@@ -922,12 +917,15 @@ int allow_ipc_filtered_msg(struct proc *rp, endpoint_t src_e,
 		/* If so, copy it in from the process. */
 		if (get_mtype) {
 			/* FIXME: offsetof may be undefined */
+			/* FIXME: offsetof may be undefined */
 			r = data_copy(src_e,
+			    m_src_v + K_OFFSETOF(message, m_type), KERNEL,
 			    m_src_v + K_OFFSETOF(message, m_type), KERNEL,
 			    (vir_bytes)&m_buff.m_type, sizeof(m_buff.m_type));
 			if (r != OK) {
 				/* allow for now, this will fail later anyway */
 #if DEBUG_DUMPIPCF
+				kprintf_stub("KERNEL: allow_ipc_filtered_msg: data " // MODIFIED
 				kprintf_stub("KERNEL: allow_ipc_filtered_msg: data " // MODIFIED
 				    "copy error %d, allowing message...\n", r);
 #endif
@@ -981,6 +979,7 @@ int allow_ipc_filtered_memreq(struct proc *src_rp, struct proc *dst_rp)
 
 	/* If VM has no filter in place, all requests should go through. */
 	if (priv(vmp)->s_ipcf == NULL) // MODIFIED (NULL)
+	if (priv(vmp)->s_ipcf == NULL) // MODIFIED (NULL)
 		return TRUE;
 
 	/* VM obtains memory requests in response to a SIGKMEM signal, which
@@ -1021,6 +1020,7 @@ int priv_add_irq(struct proc *rp, int irq)
 	i= priv->s_nr_irq;
 	if (i >= NR_IRQ) {
 		kprintf_stub("do_privctl: %d already has %d irq's.\n", // MODIFIED
+		kprintf_stub("do_privctl: %d already has %d irq's.\n", // MODIFIED
 			rp->p_endpoint, i);
 		return ENOMEM;
 	}
@@ -1047,6 +1047,7 @@ int priv_add_io(struct proc *rp, struct io_range *ior)
 
 	i= priv->s_nr_io_range;
 	if (i >= NR_IO_RANGE) {
+		kprintf_stub("do_privctl: %d already has %d i/o ranges.\n", // MODIFIED
 		kprintf_stub("do_privctl: %d already has %d i/o ranges.\n", // MODIFIED
 			rp->p_endpoint, i);
 		return ENOMEM;
@@ -1076,6 +1077,7 @@ int priv_add_mem(struct proc *rp, struct minix_mem_range *memr)
 
 	i= priv->s_nr_mem_range;
 	if (i >= NR_MEM_RANGE) {
+		kprintf_stub("do_privctl: %d already has %d mem ranges.\n", // MODIFIED
 		kprintf_stub("do_privctl: %d already has %d mem ranges.\n", // MODIFIED
 			rp->p_endpoint, i);
 		return ENOMEM;

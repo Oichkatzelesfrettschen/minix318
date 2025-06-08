@@ -1,3 +1,40 @@
+/**
+ * @file arch_do_vmctl.c
+ * @brief ARM-specific virtual memory control operations for the MINIX kernel
+ *
+ * This file implements the SYS_VMCTL kernel call for ARM architecture,
+ * providing virtual memory management functionality including page table
+ * management and TLB operations.
+ */
+
+/**
+ * @brief Set the Translation Table Base Register (TTBR) for a process
+ *
+ * Updates the process's page table base register and virtual address mapping.
+ * If the process is currently running, immediately updates the hardware TTBR0.
+ * For the VM process, enables paging. Clears the VMINHIBIT flag to allow
+ * the process to run with virtual memory enabled.
+ *
+ * @param p Pointer to the process structure
+ * @param ttbr Physical address of the translation table base
+ * @param v Virtual address pointer to the translation table
+ */
+
+/**
+ * @brief ARM-specific virtual memory control handler
+ *
+ * Handles VM control operations for ARM architecture including:
+ * - VMCTL_GET_PDBR: Retrieves the process's page directory base register (TTBR)
+ * - VMCTL_SETADDRSPACE: Sets up new address space by configuring TTBR
+ * - VMCTL_FLUSHTLB: Flushes the Translation Lookaside Buffer
+ *
+ * @param m_ptr Pointer to the request message containing operation parameters
+ * @param p Pointer to the target process structure
+ * @return OK on success, EINVAL for unsupported parameters
+ *
+ * @note Uses SVMCTL_PARAM to determine the operation type
+ * @note Returns the requested value in SVMCTL_VALUE for GET operations
+ */
 /* The kernel call implemented in this file:
  *   m_type:	SYS_VMCTL
  *
@@ -8,12 +45,13 @@
  */
 
 #include "kernel/system.h"
-// #include <assert.h> // Replaced because kernel-specific assertion macros (e.g., KASSERT_PLACEHOLDER) are used instead for better integration with the kernel environment.
+// #include <assert.h> // Replaced
 #include <minix/type.h> // Kept for now, may need future review
 
 #include "arch_proto.h"
 
 // Added kernel headers
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h> // For KASSERT_PLACEHOLDER and kprintf_stub
 #include <minix/kernel_types.h>
 #include <klib/include/kstring.h> // Precautionary
@@ -24,7 +62,7 @@ static void set_ttbr(struct proc *p, u32_t ttbr, u32_t *v)
 {
 	/* Set process TTBR. */
 	p->p_seg.p_ttbr = ttbr;
-	KASSERT_PLACEHOLDER(p->p_seg.p_ttbr); // MODIFIED
+	KASSERT(p->p_seg.p_ttbr);
 	p->p_seg.p_ttbr_v = v;
 	if(p == get_cpulocal_var(ptproc)) {
 		write_ttbr0(p->p_seg.p_ttbr);
@@ -59,6 +97,7 @@ int arch_do_vmctl(
 	}
   }
 
+  kprintf_stub("arch_do_vmctl: strange param %d\n", m_ptr->SVMCTL_PARAM); // MODIFIED
   kprintf_stub("arch_do_vmctl: strange param %d\n", m_ptr->SVMCTL_PARAM); // MODIFIED
   return EINVAL;
 }

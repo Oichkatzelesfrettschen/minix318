@@ -1,3 +1,39 @@
+/**
+ * do_fork - Handle the SYS_FORK kernel call
+ * @caller: The process making the system call
+ * @m_ptr: Message containing fork parameters
+ *
+ * This function implements the fork system call at the kernel level. It creates
+ * a child process by copying the parent process structure and reinitializing
+ * appropriate fields for the new process.
+ *
+ * Message parameters:
+ * - m_lsys_krn_sys_fork.endpt: Endpoint of the parent process that forked
+ * - m_lsys_krn_sys_fork.slot: Process table slot for the child process
+ * - m_lsys_krn_sys_fork.flags: Fork flags (e.g., PFF_VMINHIBIT for VM mode)
+ *
+ * The function performs the following operations:
+ * 1. Validates the parent endpoint and process slot availability
+ * 2. Ensures the parent is in a receiving state for synchronous operation
+ * 3. Saves FPU context from parent before copying
+ * 4. Copies the parent's process structure to the child
+ * 5. Reinitializes child-specific fields (endpoint, return value, timers)
+ * 6. Handles privilege inheritance and restrictions
+ * 7. Sets up initial scheduling state for the child process
+ * 8. Clears signal-related flags that shouldn't be inherited
+ * 9. Initializes memory management structures
+ *
+ * Return values:
+ * - OK: Fork operation completed successfully
+ * - EINVAL: Invalid endpoint, slot already occupied, or parent not receiving
+ *
+ * Side effects:
+ * - Creates a new process entry in the process table
+ * - Modifies message to return child endpoint and message address
+ * - Sets various RTS flags to control child process scheduling
+ *
+ * Note: This function is only compiled when USE_FORK is defined.
+ */
 /* The kernel call implemented in this file:
  *   m_type:	SYS_FORK
  *

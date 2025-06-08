@@ -15,7 +15,6 @@
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
-#include "kernel/k_spinlock_irq.h" /* For spinlock_irq_t and IRQ-safe functions */
 
 
 #if USE_GETKSIG
@@ -61,21 +60,8 @@ int do_getksig(struct proc * caller, message * m_ptr)
 	  /* store signaled process' endpoint */
           m_ptr->m_sigcalls.endpt = rp->p_endpoint;
           m_ptr->m_sigcalls.map = rp->p_pending;	/* pending signals map */
-          k_sigemptyset(&rp->p_pending); 	/* clear map in the kernel */
-          /* KASSERT: Ensure the process's pending signal set (p_pending) is empty
-           * after k_sigemptyset(). This verifies the correctness of k_sigemptyset (P4)
-           * and ensures that no signals are inadvertently lost or left unprocessed
-           * from this batch. The signal manager is now responsible for all signals
-           * that were in 'map'.
-           */
-          KASSERT(k_sigisempty(&rp->p_pending),
-                  "do_getksig: signal set p_pending for proc %d (ep %d) not properly cleared by k_sigemptyset",
-                  proc_nr(rp), rp->p_endpoint);
-	  /* The RTS_UNSET macro itself should be SMP-safe or be called
-	   * while holding the appropriate lock.
-	   */
-	  RTS_UNSET(rp, RTS_SIGNALED);		/* remove signaled flag */
-          spin_unlock_irqrestore(&rp->p_sig_lock, flags);
+          /* FIXME: sigemptyset was here */ // (void) sigemptyset(&rp->p_pending); 	/* clear map in the kernel */
+	  RTS_UNSET(rp, RTS_SIGNALED);		/* blocked by SIG_PENDING */
           return(OK);
       }
   }

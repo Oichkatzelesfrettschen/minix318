@@ -18,6 +18,19 @@
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
 
+#include <minix/callnr.h> // Kept for now
+#include <minix/u64.h>    // Kept for now
+// #include <limits.h>    // Removed (INT_MAX might be an issue)
+// #include <string.h>    // Replaced
+// #include <assert.h>    // Replaced
+
+// Added kernel headers
+#include <minix/kernel_types.h>
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
+
 
 #define MAX_LOOP (NR_PROCS + NR_TASKS)
 
@@ -38,13 +51,16 @@ int runqueues_ok_cpu(unsigned cpu)
   for (q=l=0; q < NR_SCHED_QUEUES; q++) {
     if (rdy_head[q] && !rdy_tail[q]) {
 	kprintf_stub("head but no tail in %d\n", q); // MODIFIED
+	kprintf_stub("head but no tail in %d\n", q); // MODIFIED
 	return 0;
     }
     if (!rdy_head[q] && rdy_tail[q]) {
 	kprintf_stub("tail but no head in %d\n", q); // MODIFIED
+	kprintf_stub("tail but no head in %d\n", q); // MODIFIED
 	return 0;
     }
     if (rdy_tail[q] && rdy_tail[q]->p_nextready) {
+	kprintf_stub("tail and tail->next not null in %d\n", q); // MODIFIED
 	kprintf_stub("tail and tail->next not null in %d\n", q); // MODIFIED
 	return 0;
     }
@@ -53,33 +69,40 @@ int runqueues_ok_cpu(unsigned cpu)
 	vir_bytes dxp;
 	if(vxp < (vir_bytes) BEG_PROC_ADDR || vxp >= (vir_bytes) END_PROC_ADDR) {
 		kprintf_stub("xp out of range\n"); // MODIFIED
+		kprintf_stub("xp out of range\n"); // MODIFIED
 		return 0;
 	}
 	dxp = vxp - (vir_bytes) BEG_PROC_ADDR;
 	if(dxp % sizeof(struct proc)) {
 		kprintf_stub("xp not a real pointer"); // MODIFIED
+		kprintf_stub("xp not a real pointer"); // MODIFIED
 		return 0;
 	}
 	if(!proc_ptr_ok(xp)) {
 		kprintf_stub("xp bogus pointer"); // MODIFIED
+		kprintf_stub("xp bogus pointer"); // MODIFIED
 		return 0;
 	}
 	if (RTS_ISSET(xp, RTS_SLOT_FREE)) {
+		kprintf_stub("scheduling error: dead proc q %d %d\n", // MODIFIED
 		kprintf_stub("scheduling error: dead proc q %d %d\n", // MODIFIED
 			q, xp->p_endpoint);
 		return 0;
 	}
         if (!proc_is_runnable(xp)) {
 		kprintf_stub("scheduling error: unready on runq %d proc %d\n", // MODIFIED
+		kprintf_stub("scheduling error: unready on runq %d proc %d\n", // MODIFIED
 			q, xp->p_nr);
 		return 0;
         }
         if (xp->p_priority != q) {
 		kprintf_stub("scheduling error: wrong priority q %d proc %d ep %d name %s\n", // MODIFIED
+		kprintf_stub("scheduling error: wrong priority q %d proc %d ep %d name %s\n", // MODIFIED
 			q, xp->p_nr, xp->p_endpoint, xp->p_name);
 		return 0;
 	}
 	if (xp->p_found) {
+		kprintf_stub("scheduling error: double sched q %d proc %d\n", // MODIFIED
 		kprintf_stub("scheduling error: double sched q %d proc %d\n", // MODIFIED
 			q, xp->p_nr);
 		return 0;
@@ -87,10 +110,12 @@ int runqueues_ok_cpu(unsigned cpu)
 	xp->p_found = 1;
 	if (!xp->p_nextready && rdy_tail[q] != xp) {
 		kprintf_stub("sched err: last element not tail q %d proc %d\n", // MODIFIED
+		kprintf_stub("sched err: last element not tail q %d proc %d\n", // MODIFIED
 			q, xp->p_nr);
 		return 0;
 	}
 	if (l++ > MAX_LOOP) {
+		kprintf_stub("loop in schedule queue?"); // MODIFIED
 		kprintf_stub("loop in schedule queue?"); // MODIFIED
 		return 0;
 	}
@@ -100,11 +125,13 @@ int runqueues_ok_cpu(unsigned cpu)
   for (xp = BEG_PROC_ADDR; xp < END_PROC_ADDR; ++xp) {
 	if(!proc_ptr_ok(xp)) {
 		kprintf_stub("xp bogus pointer in proc table\n"); // MODIFIED
+		kprintf_stub("xp bogus pointer in proc table\n"); // MODIFIED
 		return 0;
 	}
 	if (isemptyp(xp))
 		continue;
 	if(proc_is_runnable(xp) && !xp->p_found) {
+		kprintf_stub("sched error: ready proc %d not on queue\n", xp->p_nr); // MODIFIED
 		kprintf_stub("sched error: ready proc %d not on queue\n", xp->p_nr); // MODIFIED
 		return 0;
 	}
@@ -147,6 +174,7 @@ rtsflagstr(const u32_t flags)
 	static char str[100];
 	str[0] = '\0';
 
+#define FLAG(n) if(flags & n) { /* FIXME: strlcat(str, #n " ", sizeof(str)); */ } // MODIFIED
 #define FLAG(n) if(flags & n) { /* FIXME: strlcat(str, #n " ", sizeof(str)); */ } // MODIFIED
 
 	FLAG(RTS_SLOT_FREE);
@@ -200,8 +228,10 @@ print_proc_name(struct proc *pp)
 
 	if(name) {
 		kprintf_stub("%s(%d)", name, ep); // MODIFIED
+		kprintf_stub("%s(%d)", name, ep); // MODIFIED
 	}
 	else {
+		kprintf_stub("%d", ep); // MODIFIED
 		kprintf_stub("%d", ep); // MODIFIED
 	}
 }
@@ -215,20 +245,25 @@ print_endpoint(endpoint_t ep)
 	switch(ep) {
 	case ANY:
 		kprintf_stub("ANY"); // MODIFIED
+		kprintf_stub("ANY"); // MODIFIED
 	break;
 	case SELF:
 		kprintf_stub("SELF"); // MODIFIED
+		kprintf_stub("SELF"); // MODIFIED
 	break;
 	case NONE:
+		kprintf_stub("NONE"); // MODIFIED
 		kprintf_stub("NONE"); // MODIFIED
 	break;
 	default:
 		if(!isokendpt(ep, &proc_nr)) {
 			kprintf_stub("??? %d\n", ep); // MODIFIED
+			kprintf_stub("??? %d\n", ep); // MODIFIED
 		}
 		else {
 			pp = proc_addr(proc_nr);
 			if(isemptyp(pp)) {
+				kprintf_stub("??? empty slot %d\n", proc_nr); // MODIFIED
 				kprintf_stub("??? empty slot %d\n", proc_nr); // MODIFIED
 			}
 			else {
@@ -247,8 +282,11 @@ print_sigmgr(struct proc *pp)
 	bak_sig_mgr = priv(pp) ? priv(pp)->s_bak_sig_mgr : NONE;
 	if(sig_mgr == NONE) { kprintf_stub("no sigmgr"); return; } // MODIFIED
 	kprintf_stub("sigmgr "); // MODIFIED
+	if(sig_mgr == NONE) { kprintf_stub("no sigmgr"); return; } // MODIFIED
+	kprintf_stub("sigmgr "); // MODIFIED
 	print_endpoint(sig_mgr);
 	if(bak_sig_mgr != NONE) {
+		kprintf_stub(" / "); // MODIFIED
 		kprintf_stub(" / "); // MODIFIED
 		print_endpoint(bak_sig_mgr);
 	}
@@ -258,6 +296,7 @@ void print_proc(struct proc *pp)
 {
 	endpoint_t dep;
 
+	kprintf_stub("%d: %s %d prio %d time %d/%d cycles 0x%x%08x cpu %2d " // MODIFIED
 	kprintf_stub("%d: %s %d prio %d time %d/%d cycles 0x%x%08x cpu %2d " // MODIFIED
 			"pdbr 0x%lx rts %s misc %s sched %s ",
 		proc_nr(pp), pp->p_name, pp->p_endpoint, 
@@ -277,8 +316,10 @@ void print_proc(struct proc *pp)
 	dep = P_BLOCKEDON(pp);
 	if(dep != NONE) {
 		kprintf_stub(" blocked on: "); // MODIFIED
+		kprintf_stub(" blocked on: "); // MODIFIED
 		print_endpoint(dep);
 	}
+	kprintf_stub("\n"); // MODIFIED
 	kprintf_stub("\n"); // MODIFIED
 }
 
@@ -287,8 +328,10 @@ static void print_proc_depends(struct proc *pp, const int level)
 	struct proc *depproc = NULL;
 	endpoint_t dep;
 #define COL { int i; for(i = 0; i < level; i++) kprintf_stub("> "); } // MODIFIED
+#define COL { int i; for(i = 0; i < level; i++) kprintf_stub("> "); } // MODIFIED
 
 	if(level >= NR_PROCS) {
+		kprintf_stub("loop??\n"); // MODIFIED
 		kprintf_stub("loop??\n"); // MODIFIED
 		return;
 	}
@@ -352,11 +395,15 @@ static const char *mtypename(int mtype, int *possible_callname)
 		(void)kstrlcpy(typename, errname, sizeof(typename)); /* FIXME: strcpy was here, validate size for kstrlcpy. sizeof(dst) is a guess. */ // MODIFIED
 		/* FIXME: strcat was here */ // (void)kstrcat(typename, " / ", sizeof(typename));
 		/* FIXME: strcat was here */ // (void)kstrcat(typename, callname, sizeof(typename));
+		(void)kstrlcpy(typename, errname, sizeof(typename)); /* FIXME: strcpy was here, validate size for kstrlcpy. sizeof(dst) is a guess. */ // MODIFIED
+		/* FIXME: strcat was here */ // (void)kstrcat(typename, " / ", sizeof(typename));
+		/* FIXME: strcat was here */ // (void)kstrcat(typename, callname, sizeof(typename));
 		return typename;
 	}
 
 	if(errname) return errname;
 
+	KASSERT(callname);
 	KASSERT(callname);
 	return callname;
 }
@@ -365,14 +412,22 @@ static void printproc(struct proc *rp)
 {
 	if (rp)
 		kprintf_stub(" %s(%d)", rp->p_name, rp - proc); // MODIFIED
+		kprintf_stub(" %s(%d)", rp->p_name, rp - proc); // MODIFIED
 	else
+		kprintf_stub(" kernel"); // MODIFIED
 		kprintf_stub(" kernel"); // MODIFIED
 }
 
 static void printparam(const char *name, const void *data, k_size_t size) // MODIFIED size_t
+static void printparam(const char *name, const void *data, k_size_t size) // MODIFIED size_t
 {
 	kprintf_stub(" %s=", name); // MODIFIED
+	kprintf_stub(" %s=", name); // MODIFIED
 	switch (size) {
+		case sizeof(char):	kprintf_stub("%d", *(char *) data);	break; // MODIFIED
+		case sizeof(short):	kprintf_stub("%d", *(short *) data);	break; // MODIFIED
+		case sizeof(int):	kprintf_stub("%d", *(int *) data);	break; // MODIFIED
+		default:		kprintf_stub("(%u bytes)", size);	break; // MODIFIED
 		case sizeof(char):	kprintf_stub("%d", *(char *) data);	break; // MODIFIED
 		case sizeof(short):	kprintf_stub("%d", *(short *) data);	break; // MODIFIED
 		case sizeof(int):	kprintf_stub("%d", *(int *) data);	break; // MODIFIED
@@ -385,6 +440,7 @@ static int namematch(char **names, int nnames, char *name)
 {
 	int i;
 	for(i = 0; i < nnames; i++)
+		if(!kstrcmp(names[i], name)) // MODIFIED
 		if(!kstrcmp(names[i], name)) // MODIFIED
 			return 1;
 	return 0;
@@ -415,12 +471,15 @@ void printmsg(message *msg, struct proc *src, struct proc *dst,
 
 	/* source, destination and message type */
 	kprintf_stub("%c", operation); // MODIFIED
+	kprintf_stub("%c", operation); // MODIFIED
 	printproc(src);
 	printproc(dst);
 	name = mtypename(mtype, &mightbecall);
 	if (name) {
 		kprintf_stub(" %s(%d/0x%x)", name, mtype, mtype); // MODIFIED
+		kprintf_stub(" %s(%d/0x%x)", name, mtype, mtype); // MODIFIED
 	} else {
+		kprintf_stub(" %d/0x%x", mtype, mtype); // MODIFIED
 		kprintf_stub(" %d/0x%x", mtype, mtype); // MODIFIED
 	}
 
@@ -429,6 +488,7 @@ void printmsg(message *msg, struct proc *src, struct proc *dst,
 #include "kernel/extracted-mfield.h"
 #undef IDENT
 	}
+	kprintf_stub("\n"); // MODIFIED
 	kprintf_stub("\n"); // MODIFIED
 }
 #endif
@@ -453,8 +513,10 @@ static void printstats(int ticks)
 		char	*n1 = name(winners[i].src),
 			*n2 = name(winners[i].dst);
 		kprintf_stub("%2d.  %8s -> %8s  %9d/s\n", // MODIFIED
+		kprintf_stub("%2d.  %8s -> %8s  %9d/s\n", // MODIFIED
 			i, n1, n2, persec(winners[i].messages));
 	}
+	kprintf_stub("total %d/s\n", persec(total)); // MODIFIED
 	kprintf_stub("total %d/s\n", persec(total)); // MODIFIED
 }
 
@@ -478,7 +540,12 @@ static void sortstats(void)
 			rem = PRINTSLOTS-w-1;
 			KASSERT(rem >= 0);
 			KASSERT(rem < PRINTSLOTS);
+			KASSERT(rem >= 0);
+			KASSERT(rem < PRINTSLOTS);
 			if(rem > 0) {
+				KASSERT(w+1 <= PRINTSLOTS-1);
+				KASSERT(w >= 0);
+				kmemmove(&winners[w+1], &winners[w],
 				KASSERT(w+1 <= PRINTSLOTS-1);
 				KASSERT(w >= 0);
 				kmemmove(&winners[w+1], &winners[w],
@@ -496,6 +563,7 @@ static void sortstats(void)
 	if(p) { s = p->p_nr; } \
 	else { s = KERNELIPC; } \
 	KASSERT(s >= 0 && s < IPCPROCS); \
+	KASSERT(s >= 0 && s < IPCPROCS); \
 }
 
 static void statmsg(message *msg, struct proc *srcp, struct proc *dstp)
@@ -504,6 +572,9 @@ static void statmsg(message *msg, struct proc *srcp, struct proc *dstp)
 	static int lastprint;
 
 	/* Stat message. */
+	KASSERT(src); // This assert was on 'src' which is uninitialized here. Assuming it meant srcp or similar.
+                               // For now, keeping as is, but this is a bug in original code.
+                               // If it meant to assert srcp, it would be KASSERT(srcp);
 	KASSERT(src); // This assert was on 'src' which is uninitialized here. Assuming it meant srcp or similar.
                                // For now, keeping as is, but this is a bug in original code.
                                // If it meant to assert srcp, it would be KASSERT(srcp);
@@ -517,8 +588,10 @@ static void statmsg(message *msg, struct proc *srcp, struct proc *dstp)
 	secs = dt/system_hz;
 	if(secs >= 30) {
 		kmemset(winners, 0, sizeof(winners)); // MODIFIED
+		kmemset(winners, 0, sizeof(winners)); // MODIFIED
 		sortstats();
 		printstats(dt);
+		kmemset(messages, 0, sizeof(messages)); // MODIFIED
 		kmemset(messages, 0, sizeof(messages)); // MODIFIED
 		lastprint = now;
 	}
@@ -565,7 +638,6 @@ void hook_ipc_clear(struct proc *p)
 #if DEBUG_IPCSTATS
 	int slot, i;
 	KASSERT(p);
-
 	proc2slot(p, slot);
 	for(i = 0; i < IPCPROCS; i++)
 		messages[slot][i] = messages[i][slot] = 0;

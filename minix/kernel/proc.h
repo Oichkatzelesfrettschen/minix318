@@ -3,6 +3,8 @@
 
 #include <minix/const.h> // Kept
 // #include <sys/cdefs.h> // Removed
+#include <minix/const.h> // Kept
+// #include <sys/cdefs.h> // Removed
 
 #ifndef __ASSEMBLY__
 
@@ -24,7 +26,6 @@
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
-#include "kernel/k_spinlock_irq.h" /* For spinlock_irq_t */
 
 
 struct proc {
@@ -63,10 +64,15 @@ struct proc {
   } p_accounting;
 
   k_clock_t p_dequeued;		/* uptime at which process was last dequeued */ // MODIFIED clock_t
+  k_clock_t p_dequeued;		/* uptime at which process was last dequeued */ // MODIFIED clock_t
 
   k_clock_t p_user_time;		/* user time in ticks */ // MODIFIED clock_t
   k_clock_t p_sys_time;		/* sys time in ticks */ // MODIFIED clock_t
+  k_clock_t p_user_time;		/* user time in ticks */ // MODIFIED clock_t
+  k_clock_t p_sys_time;		/* sys time in ticks */ // MODIFIED clock_t
 
+  k_clock_t p_virt_left;		/* number of ticks left on virtual timer */ // MODIFIED clock_t
+  k_clock_t p_prof_left;		/* number of ticks left on profile timer */ // MODIFIED clock_t
   k_clock_t p_virt_left;		/* number of ticks left on virtual timer */ // MODIFIED clock_t
   k_clock_t p_prof_left;		/* number of ticks left on profile timer */ // MODIFIED clock_t
 
@@ -84,16 +90,6 @@ struct proc {
   endpoint_t p_sendto_e;	/* to whom does process want to send? */
 
   k_sigset_t p_pending;		/* bit map for pending kernel signals */ // MODIFIED sigset_t
-  /**
-   * @brief IRQ-safe spinlock protecting signal-related state.
-   * This lock serializes access to signal fields such as `p_pending`,
-   * `s_sig_pending` (via `priv(rp)`), and associated RTS flags
-   * (e.g., `RTS_SIGNALED`, `RTS_SIG_PENDING`).
-   * Being an IRQ-safe spinlock (`spinlock_irq_t`), local CPU interrupts
-   * are disabled while the lock is held, which is achieved by using
-   * `spin_lock_irqsave()` and `spin_unlock_irqrestore()`.
-   */
-  spinlock_irq_t p_sig_lock;
 
   char p_name[PROC_NAME_LEN];	/* name of the process, including \0 */
 
