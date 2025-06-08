@@ -7,48 +7,66 @@
  * They serve as executable mathematical proofs of the DAG's correctness.
  */
 
-#include "../include/klib.h" // For kprintf (or kprintf_stub), KASSERT, etc.
-#include <minix/kcapability_dag.h> // For DAG structures and functions
-#include <stdbit.h>  // For _BitInt literals if used directly in tests
-#include <stdbool.h> // For bool, if not already included
+#include <kcapability_dag.h>
+#include <klib.h>        // For kprintf_stub, KASSERT (indirectly)
+#include <stdbool.h>     // For bool, true, false
+#include <sys/kassert.h> // For KASSERT
 
-// Define constants used in node creation if they are not globally visible
-// from kcapability_dag.c or kcapability_dag.h
-#ifndef INVALID_CAPABILITY_ID
-#define INVALID_CAPABILITY_ID 0wb
-#endif
-#ifndef MIN_SECURITY_LEVEL
-#define MIN_SECURITY_LEVEL 0wb
-#endif
-#ifndef MAX_SECURITY_LEVEL
-#define MAX_SECURITY_LEVEL 255wb
-#endif
+// --- Test Helper Macros/Functions ---
+#define TEST_ASSERT(condition, message)                                        \
+  do {                                                                         \
+    if (!(condition)) {                                                        \
+      kprintf_stub("TEST FAIL (%s:%d): %s\n", __func__, __LINE__, message);    \
+      KASSERT(condition); /* This will panic if KASSERT is enabled */          \
+      return false;       /* Indicate test failure */                          \
+    } else {                                                                   \
+      kprintf_stub("TEST PASS (%s:%d): %s\n", __func__, __LINE__, message);    \
+    }                                                                          \
+  } while (0)
 
-/**
- * @brief Test basic DAG creation and mathematical property verification.
- *
- * This test verifies that DAG creation establishes the correct mathematical
- * foundations (an empty, valid DAG) for subsequent operations.
- * It acts as a proof that the axioms of an empty graph hold.
- */
-void test_capability_dag_creation(void) {
-  kprintf("Testing capability DAG creation...\n");
+// --- Test Case Implementations ---
 
-  /* Create a DAG with known mathematical properties */
-  // Test with a common initial capacity
-  kcapability_dag_t *dag = kcapability_dag_create(10);
+static kbool test_dag_creation_destruction(void) {
+  kprintf_stub("--- Running Test: %s ---\n", __func__);
+  kcapability_dag_t *dag = kcapability_dag_create();
+  TEST_ASSERT(dag != NULL, "DAG creation should succeed.");
+  TEST_ASSERT(dag->num_nodes == 0, "New DAG should have 0 nodes.");
 
-  /* Verify mathematical invariants hold for empty DAG */
-  KASSERT(dag != NULL, "test_dag_creation: dag is NULL");
-  if (!dag)
-    return; // Guard for static analyzers if KASSERT doesn't halt
+  kcapability_dag_destroy(dag); // Resets the static instance
+  // TEST_ASSERT(dag->num_nodes == 0, "DAG should have 0 nodes after
+  // destruction."); // dag pointer might be invalid if heap allocated / or
+  // reset
+  kprintf_stub("DAG creation/destruction test finished.\n");
+  return true;
+}
 
-  KASSERT(dag->node_count == 0wb,
-          "test_dag_creation: node_count not initialized to 0");
-  KASSERT(dag->edge_count == 0wb,
-          "test_dag_creation: edge_count not initialized to 0");
-  KASSERT(dag->node_capacity == (_BitInt(32))10,
-          "test_dag_creation: node_capacity not matching initial_capacity");
+static kbool test_dag_node_creation_lookup(void) {
+  kprintf_stub("--- Running Test: %s ---\n", __func__);
+  kcapability_dag_t *dag = kcapability_dag_create(); // Gets static instance
+  kcapability_dag_destroy(dag);                      // Ensure clean state
+  kcapability_dag_t *dag = kcapability_dag_create(); // Gets static instance
+  kcapability_dag_destroy(dag);                      // Ensure clean state
+  dag = kcapability_dag_create();
+
+  kcapability_dag_node_t *node1 = kcapability_dag_node_t *node1 =
+      kcapability_dag_node_create(dag, 1001, 0xFF, 10);
+  TEST_ASSERT(node1 != NULL, "Node 1 creation.");
+  TEST_ASSERT(dag->num_nodes == 1, "DAG node count should be 1.");
+  TEST_ASSERT(node1->id == 1001, "Node 1 ID check.");
+  TEST_ASSERT(node1->rights_mask == 0xFF, "Node 1 rights check.");
+  TEST_ASSERT(node1->security_level == 10, "Node 1 security level check.");
+
+  kcapability_dag_node_t *node2 =
+      kcapability_dag_node_create(dag, 1002, 0x0F, 12);
+  TEST_ASSERT(node2 != NULL, "Node 2 creation.");
+  TEST_ASSERT(dag->num_nodes == 2, "DAG node count should be 2.");
+
+  kcapability_dag_node_t *found_node1 = kcapability_dag_lookup_node(dag, 1001);
+  TEST_ASSERT(found_node1 == node1, "Lookup node 1.");
+
+  kcapability_dag_node_t *found_node_non_existent =
+      kcapability_dag_lookup_node(dag, 9999);
+  TEST_ASSERT(found_node_non_existent == NULL, "Lookup non-existent node.");
 
   // The validate_invariants function itself contains KASSERTs.
   // Calling it here serves as part of the test.
@@ -321,11 +339,185 @@ void test_capability_dag_add_edge_and_delete(void) {
  * and maintains its invariants.
  */
 void kcapability_dag_run_mathematical_tests(void) {
+  kprintf_stub("=== Starting Capability DAG Mathematical Tests ===\n");
+  kbool all_passed = true;
+
+  all_passed &= test_dag_creation_destruction();
+  all_passed &=
+      test_dag_node_creation_lookup(); // Includes test_dag_lookup_node
+                                       // implicitly
+  all_passed &= test_dag_add_edge_valid();
+  all_passed &= test_dag_add_edge_cycle_detection();
+  all_passed &= test_dag_add_edge_rights_violation();
+  all_passed &= test_dag_add_edge_security_violation();
+  all_passed &= test_dag_validate_derivation_valid();
+  all_passed &= test_dag_validate_derivation_invalid_rights();
+  all_passed &= test_dag_validate_derivation_no_path();
+
+  if (all_passed) {
+    kprintf_stub("=== All Capability DAG Tests Passed ===\n");
+  } else {
+    kprintf_stub("=== SOME Capability DAG Tests FAILED ===\n");
+  }
+}**
+* @file kcapability_dag_test.c
+* @brief Mathematical verification tests for Capability DAG implementation
+*
+* These tests verify that our implementation correctly implements the
+* mathematical properties of directed acyclic graphs and capability theory.
+* They serve as executable mathematical proofs of the DAG's correctness.
+*/
+
+#include "../include/klib.h" // For kprintf (or kprintf_stub), KASSERT, etc.
+#include <minix/kcapability_dag.h> // For DAG structures and functions
+#include <stdbit.h>  // For _BitInt literals if used directly in tests
+#include <stdbool.h> // For bool, if not already included
+
+// Define constants used in node creation if they are not globally visible
+// from kcapability_dag.c or kcapability_dag.h
+#ifndef INVALID_CAPABILITY_ID
+#define INVALID_CAPABILITY_ID 0wb
+#endif
+#ifndef MIN_SECURITY_LEVEL
+#define MIN_SECURITY_LEVEL 0wb
+#endif
+#ifndef MAX_SECURITY_LEVEL
+#define MAX_SECURITY_LEVEL 255wb
+#endif
+
+/**
+* @brief Test basic DAG creation and mathematical property verification.
+*
+* This test verifies that DAG creation establishes the correct mathematical
+* foundations (an empty, valid DAG) for subsequent operations.
+* It acts as a proof that the axioms of an empty graph hold.
+*/
+void test_capability_dag_creation(void) {
+  kprintf("Testing capability DAG creation...\n");
+
+  /* Create a DAG with known mathematical properties */
+  // Test with a common initial capacity
+  kcapability_dag_t *dag = kcapability_dag_create(10);
+
+  /* Verify mathematical invariants hold for empty DAG */
+  KASSERT(dag != NULL, "test_dag_creation: dag is NULL");
+  if (!dag)
+    return; // Guard for static analyzers if KASSERT doesn't halt
+
+  KASSERT(dag->node_count == 0wb,
+          "test_dag_creation: node_count not initialized to 0");
+  KASSERT(dag->edge_count == 0wb,
+          "test_dag_creation: edge_count not initialized to 0");
+  KASSERT(dag->node_capacity == (_BitInt(32))10,
+          "test_dag_creation: node_capacity not matching initial_capacity");
+
+  // The validate_invariants function itself contains KASSERTs.
+  // Calling it here serves as part of the test.
+  KASSERT(dag->validate_invariants(dag),
+          "test_dag_creation: initial DAG failed invariant check");
+
+  /* Clean up test resources */
+  kcapability_dag_destroy(dag);
+
+  kprintf("DAG creation test passed - mathematical invariants verified.\n");
+}
+
+/**
+ * @brief Test capability node creation with mathematical validation.
+ *
+ * This test verifies that capability nodes are created with correct
+ * mathematical properties (ID, rights, security level) and constraints.
+ * It proves that individual mathematical entities (nodes) can be correctly
+ * formed.
+ */
+void test_capability_node_creation(void) {
+  kprintf("Testing capability node creation...\n");
+
+  /* Create nodes with specific mathematical properties */
+  kcapability_dag_node_t *root_node =
+      kcapability_dag_node_create(1wb,              /* capability_id */
+                                  0xFFFFwb,         /* full rights mask */
+                                  (_BitInt(16))10wb /* high security level */
+      );
+
+  kcapability_dag_node_t *derived_node =
+      kcapability_dag_node_create(2wb,              /* capability_id */
+                                  0x00FFwb,         /* subset of root rights */
+                                  (_BitInt(16))10wb /* same security level */
+      );
+
+  /* Verify mathematical properties of individual nodes */
+  KASSERT(root_node != NULL, "test_node_creation: root_node is NULL");
+  KASSERT(derived_node != NULL, "test_node_creation: derived_node is NULL");
+
+  if (root_node) {
+    KASSERT(root_node->capability_id == 1wb,
+            "test_node_creation: root_node ID mismatch");
+    KASSERT(root_node->rights_mask == 0xFFFFwb,
+            "test_node_creation: root_node rights_mask mismatch");
+    KASSERT(root_node->security_level == 10wb,
+            "test_node_creation: root_node security_level mismatch");
+    KASSERT(root_node->parent_count == 0wb && root_node->child_count == 0wb,
+            "test_node_creation: root_node counts not zero");
+  }
+  if (derived_node) {
+    KASSERT(derived_node->capability_id == 2wb,
+            "test_node_creation: derived_node ID mismatch");
+    KASSERT(derived_node->rights_mask == 0x00FFwb,
+            "test_node_creation: derived_node rights_mask mismatch");
+  }
+
+  /* Verify mathematical relationship (subset property for rights) */
+  if (root_node && derived_node) {
+    KASSERT((derived_node->rights_mask & root_node->rights_mask) ==
+                derived_node->rights_mask,
+            "test_node_creation: derived_node rights not a subset of root_node "
+            "rights");
+  }
+
+  /* Clean up test resources */
+  // Note: kcapability_dag_node_destroy is meant for nodes *within* a DAG
+  // structure if they have dynamically allocated parent/child lists. If these
+  // standalone nodes were just kmalloc'd and don't have such lists yet, kfree
+  // might be more direct. However, using kcapability_dag_node_destroy is
+  // consistent if it correctly handles NULL children/parents pointers. The
+  // kcapability_dag_node_destroy includes a KASSERT for reference_count == 0.
+  // For standalone nodes not yet in a DAG, reference_count might not be
+  // managed, or should be set to 0 before destroy if the KASSERT is active. For
+  // now, assume the KASSERT in node_destroy is appropriate or will be handled.
+  if (root_node)
+    root_node->reference_count = 0wb; // Simulate node no longer referenced
+  kcapability_dag_node_destroy(root_node);
+  if (derived_node)
+    derived_node->reference_count = 0wb; // Simulate node no longer referenced
+  kcapability_dag_node_destroy(derived_node);
+
+  kprintf("Node creation test passed - mathematical constraints verified.\n");
+}
+
+// TODO: Add test_capability_dag_add_edge which tests:
+// 1. Successful edge addition.
+// 2. Rights subset violation.
+// 3. Security level violation.
+// 4. Cycle detection.
+// KASSERT appropriate fields like parent_node->child_count,
+// child_node->parent_count, dag->edge_count.
+
+/**
+ * @brief Run comprehensive mathematical verification test suite for the
+ * Capability DAG.
+ *
+ * This function orchestrates all defined tests to verify that the DAG
+ * implementation correctly implements the specified mathematical theory
+ * and maintains its invariants.
+ */
+void kcapability_dag_run_mathematical_tests(void) {
   kprintf("Starting Capability DAG mathematical verification tests...\n");
 
   test_capability_dag_creation();
   test_capability_node_creation();
-  test_capability_dag_add_edge_and_delete(); // New call
+  // Add more test calls here as they are implemented, e.g.:
+  // test_capability_dag_add_edge();
 
   kprintf(
       "All currently implemented mathematical verification tests passed!\n");

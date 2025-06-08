@@ -415,6 +415,116 @@ size_t kstrlcpy_c23(char *restrict dest, const char *restrict src,
    * @version 1.0
    * @since C23
    */
+  while (*p1 != '\0' && *p1 == *p2) {
+    p1++;
+    p2++;
+  }
+  return (int)(*p1) - (int)(*p2);
+}
+
+/**
+ * @brief Compares up to n characters of two null-terminated strings
+ * lexicographically.
+ *
+ * @param s1 Pointer to the first null-terminated string. Must not be NULL.
+ * @param s2 Pointer to the second null-terminated string. Must not be NULL.
+ * @param n Maximum number of characters to compare.
+ * @return An integer less than, equal to, or greater than zero if the first
+ * n bytes of s1 (or fewer if a null terminator is encountered) is found,
+ *         respectively, to be less than, to match, or be greater than s2.
+ */
+int kstrncmp_c23(const char *s1, const char *s2, k_size_t n) {
+  int kstrncmp_c23(const char *s1, const char *s2, k_size_t n) {
+    KASSERT(s1 != NULL);
+    KASSERT(s2 != NULL);
+
+    if (n == 0) {
+      return 0;
+    }
+
+    const unsigned char *p1 = (const unsigned char *)s1;
+    const unsigned char *p2 = (const unsigned char *)s2;
+    const unsigned char *p1 = (const unsigned char *)s1;
+    const unsigned char *p2 = (const unsigned char *)s2;
+
+    k_size_t i = 0;
+    while (i < n && *p1 != '\0' && *p1 == *p2) {
+      p1++;
+      p2++;
+      i++;
+    }
+
+    if (i == n) {   // Compared n characters, or reached end of one string
+                    // while they were equal
+      if (i == n) { // Compared n characters, or reached end of one string
+                    // while they were equal
+        return 0;
+      }
+
+      return (int)(*p1) - (int)(*p2);
+    }
+
+    /**
+     * @brief Copies a string to a fixed-size buffer, ensuring null
+     * termination.
+     *
+     * Copies up to 'size - 1' characters from the NUL-terminated string
+     * 'src' to 'dest', NUL-terminating the result.
+     *
+     * @param dest Pointer to the destination buffer. Must not be NULL.
+     * @param src Pointer to the source NUL-terminated string. Must not be
+     * NULL.
+     * @param size The total size of the destination buffer 'dest'.
+     * @return The total length of the string that was attempted to create;
+     *         that is the length of 'src'. If the return value is >= size,
+     *         truncation occurred.
+     * @note This function uses kstrlen_c23 and kmemcpy_c23 internally.
+     */
+k_size_t kstrlcpy_c23(char *restrict dest, const char *restrict src,
+k_size_t kstrlcpy_c23(char *restrict dest, const char *restrict src,
+                      k_size_t size) {
+      KASSERT(dest != NULL);
+      KASSERT(src != NULL);
+
+      k_size_t src_len = kstrlen_c23(src);
+
+      if (size == 0) {
+        return src_len; // As per strlcpy behavior, return length of src
+        return src_len; // As per strlcpy behavior, return length of src
+      }
+
+      k_size_t copy_len;
+      if (src_len < size - 1) {
+        copy_len = src_len;
+      } else {
+        copy_len = size - 1;
+      }
+
+      kmemcpy_c23(dest, src, copy_len);
+      dest[copy_len] = '\0';
+
+      return src_len; // Return the original length of src
+}
+/**
+ * @file kstring_c23.c
+ * @brief C23-enhanced string length calculation
+ *
+ * This module provides a C23-enhanced string length function (kstrlen_c23)
+ * as part of the MINIX kernel library. The implementation leverages C23
+ * language features for enhanced type safety and potential performance
+ * optimization.
+ *
+ * Mathematical Properties:
+ * Not specified
+ *
+ * Performance Characteristics:
+ * Not specified
+ *
+ * @author MINIX C23 Development Team
+ * @date 2025-06-08
+ * @version 1.0
+ * @since C23
+ */
 
 #include "klib.h" /* Assuming a generic klib header */
   /* TODO: Re-evaluate if a more specific header like kernel/klib.h is better */
@@ -465,42 +575,42 @@ size_t kstrlcpy_c23(char *restrict dest, const char *restrict src,
    * @endcode
    */
   size_t kstrlen_c23(const char *s) {
-    /*
-     * C23 Enhanced Implementation Template
-     *
-     * This template provides a systematic structure for implementing
-     * kernel functions with C23 features, proper error handling,
-     * and comprehensive validation.
-     */
+      /*
+       * C23 Enhanced Implementation Template
+       *
+       * This template provides a systematic structure for implementing
+       * kernel functions with C23 features, proper error handling,
+       * and comprehensive validation.
+       */
 
-    KASSERT(s != NULL, "kstrlen_c23: input string pointer is NULL");
-    /* KASSERT(TRUE); */ /* PARAMETER_VALIDATION_2 commented out */
+      KASSERT(s != NULL, "kstrlen_c23: input string pointer is NULL");
+      /* KASSERT(TRUE); */ /* PARAMETER_VALIDATION_2 commented out */
 
-    /* C23 checked arithmetic for overflow protection */
-    /* ;/* No checked arithmetic variables by default */;
-    */
-        /* if (ckd_add(&result, op1, op2)) { */
-        /*     kpanic("kstrlen_c23: arithmetic overflow detected"); */
-        /* } */
+      /* C23 checked arithmetic for overflow protection */
+      /* ;/* No checked arithmetic variables by default */;
+      */
+          /* if (ckd_add(&result, op1, op2)) { */
+          /*     kpanic("kstrlen_c23: arithmetic overflow detected"); */
+          /* } */
 
-        /* Hardware capability detection and optimization selection */
-        /* Example: Assumes a global kcpu_features struct and specific feature
-           flag */
-        /* if (g_kcpu_features.feature_flag && 0) { */
-        /*     return kstrlen_c23_optimized(s); */ /* Pass 's' if optimized
-                                                      function needs it */
-        /* } */
+          /* Hardware capability detection and optimization selection */
+          /* Example: Assumes a global kcpu_features struct and specific feature
+             flag */
+          /* if (g_kcpu_features.feature_flag && 0) { */
+          /*     return kstrlen_c23_optimized(s); */ /* Pass 's' if optimized
+                                                        function needs it */
+          /* } */
 
-        /* Standard implementation path */
-        const char *p = s;
-    while (*p) {
-      p++;
-    }
+          /* Standard implementation path */
+          const char *p = s;
+      while (*p) {
+        p++;
+      }
 
-    /* Post-condition verification */
-    /* KASSERT(TRUE); */ /* Placeholder for KASSERT */
+      /* Post-condition verification */
+      /* KASSERT(TRUE); */ /* Placeholder for KASSERT */
 
-    return (size_t)(p - s);
+      return (size_t)(p - s);
   }
 
   /*
@@ -552,6 +662,6 @@ size_t kstrlcpy_c23(char *restrict dest, const char *restrict src,
   /* Performance validation */
   ; //* Performance tests here */;
 
-  /* kprintf("test_kstrlen_c23: All tests passed\n"); */
-  //}
-  // #endif /* KLIB_TESTING */
+/* kprintf("test_kstrlen_c23: All tests passed\n"); */
+//}
+// #endif /* KLIB_TESTING */
