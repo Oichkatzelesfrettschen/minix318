@@ -5,6 +5,8 @@
 #include <minix/type.h>
 #include <minix/const.h>
 #include <sys/signal.h>
+
+/* O_MATHEMATICAL and other open(2) flags are now in <minix/fcntl.h> */
 #include <sys/types.h>
 #include <sys/select.h>
 

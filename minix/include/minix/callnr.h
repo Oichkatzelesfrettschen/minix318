@@ -136,4 +136,46 @@
 
 #define NR_VFS_CALLS		64	/* highest number from base plus one */
 
+/* Existing MINIX system calls - Assume PM and VFS calls contribute to a total.
+   The feedback implies a flat numbering scheme starting from a generic NR_SYSCALLS.
+   Let's define a starting point for general kernel system calls if not already present,
+   or append to an existing general list.
+   If PM_BASE is 0x000 and VFS_BASE is 0x100, these are not contiguous.
+   The feedback's NR_SYSCALLS = 128 seems like an arbitrary starting point for new calls
+   if no such global counter exists.
+   Let's use the provided numbers directly as they might be known to avoid collision
+   or are part of a new scheme.
+*/
+
+/* Define a base for new system calls if the table is indeed flat from 0.
+   The feedback uses (NR_SYSCALLS + X). Let's assume NR_SYSCALLS is the total count
+   of *all* existing calls that should precede these new ones in a unified table.
+   Given NR_PM_CALLS = 48 and NR_VFS_CALLS = 64, total ~112.
+   The feedback's starting NR_SYSCALLS = 128 is a reasonable point after these.
+*/
+
+#define MINIX_NR_SYSCALLS    128  /* Base for new system calls as per feedback's initial value */
+
+/* Mathematical POSIX system calls - placed after existing calls */
+#define SYS_MATH_OPEN         (MINIX_NR_SYSCALLS + 0) // Adjusted to start from 0 for clarity with base
+#define SYS_MATH_READ         (MINIX_NR_SYSCALLS + 1)
+#define SYS_MATH_WRITE        (MINIX_NR_SYSCALLS + 2)
+#define SYS_MATH_CLOSE        (MINIX_NR_SYSCALLS + 3)
+#define SYS_MATH_OPEN_CACHED  (MINIX_NR_SYSCALLS + 4) // Was +5, adjusted for 0-indexed from base
+#define SYS_MATH_OPEN_BATCH   (MINIX_NR_SYSCALLS + 5) // Was +6
+
+/* Capability management system calls */
+#define SYS_CAP_DERIVE        (MINIX_NR_SYSCALLS + 6)
+#define SYS_CAP_RESTRICT      (MINIX_NR_SYSCALLS + 7)
+#define SYS_CAP_REVOKE        (MINIX_NR_SYSCALLS + 8)
+#define SYS_CAP_DELEGATE      (MINIX_NR_SYSCALLS + 9)
+
+/* New system call for querying capability policy */
+#define SYS_CAPABILITY_QUERY  (MINIX_NR_SYSCALLS + 10)
+
+/* Total number of system calls including new ones */
+/* The new total will be MINIX_NR_SYSCALLS + 11.
+*/
+#define NR_SYSCALLS    (MINIX_NR_SYSCALLS + 11)
+
 #endif /* !_MINIX_CALLNR_H */
