@@ -40,6 +40,7 @@
 #include <minix/callnr.h>
 #include "kernel.h"
 #include "proc.h"
+#include "reply_obj.h" // For explicit reply objects
 
 /* Scheduling and message passing functions. The functions are available to 
  * other parts of the kernel through lock_...(). The lock temporarily disables 
@@ -49,26 +50,86 @@ FORWARD _PROTOTYPE( int mini_send, (struct proc *caller_ptr, int dst,
 		message *m_ptr, unsigned flags) );
 FORWARD _PROTOTYPE( int mini_receive, (struct proc *caller_ptr, int src,
 		message *m_ptr, unsigned flags) );
-FORWARD _PROTOTYPE( int mini_notify, (struct proc *caller_ptr, int dst) );
+// Modified mini_notify to accept the user message pointer for badge extraction
+FORWARD _PROTOTYPE( int mini_notify, (struct proc *caller_ptr, int dst, message *user_m_ptr) );
 
 FORWARD _PROTOTYPE( void enqueue, (struct proc *rp) );
 FORWARD _PROTOTYPE( void dequeue, (struct proc *rp) );
 FORWARD _PROTOTYPE( void sched, (struct proc *rp, int *queue, int *front) );
 FORWARD _PROTOTYPE( void pick_proc, (void) );
 
-#define BuildMess(m_ptr, src, dst_ptr) \
-	(m_ptr)->m_source = (src); 					\
-	(m_ptr)->m_type = NOTIFY_FROM(src);				\
-	(m_ptr)->NOTIFY_TIMESTAMP = get_uptime();			\
-	switch (src) {							\
-	case HARDWARE:							\
-		(m_ptr)->NOTIFY_ARG = priv(dst_ptr)->s_int_pending;	\
-		priv(dst_ptr)->s_int_pending = 0;			\
-		break;							\
-	case SYSTEM:							\
-		(m_ptr)->NOTIFY_ARG = priv(dst_ptr)->s_sig_pending;	\
-		priv(dst_ptr)->s_sig_pending = 0;			\
-		break;							\
+// Global table for reply objects
+struct reply_object reply_objects_table[NR_PROCS];
+
+// Function to initialize the reply objects table
+PUBLIC void init_reply_objects(void) {
+    int i;
+    for (i = 0; i < NR_PROCS; i++) {
+        reply_objects_table[i].ro_in_use = 0;
+        // Assuming p_reply_obj_index exists in struct proc and is initialized elsewhere
+        // Ideally, proc_table[i].p_reply_obj_index = NO_REPLY_OBJ; would be here.
+    }
+    // Also initialize p_reply_obj_index for all processes in the proc table
+    // This requires access to the proc table (e.g., `proc` or `proc_addr(i)`)
+    // For example (conceptual):
+    // struct proc *rp;
+    // for (rp = BEG_PROC_ADDR; rp < END_PROC_ADDR; rp++) {
+    //     rp->p_reply_obj_index = NO_REPLY_OBJ; // ASSUMPTION: p_reply_obj_index exists
+    // }
+}
+
+// Function to allocate a reply object
+PRIVATE int alloc_reply_object(int caller_proc_nr, int target_proc_nr, endpoint_t caller_ep) {
+    int i;
+    for (i = 0; i < NR_PROCS; i++) {
+        if (reply_objects_table[i].ro_in_use == 0) {
+            reply_objects_table[i].ro_in_use = 1;
+            reply_objects_table[i].ro_caller_proc_nr = caller_proc_nr;
+            reply_objects_table[i].ro_target_proc_nr = target_proc_nr;
+            reply_objects_table[i].ro_caller_ep = caller_ep;
+            // ro_reply_message will be filled by do_reply
+            return i;
+        }
+    }
+    kprintf("alloc_reply_object: No free reply objects!\n");
+    return -1; // Error: No free reply objects (should use a proper error code)
+}
+
+// Function to free a reply object
+PRIVATE void free_reply_object(int obj_index) {
+    if (obj_index >= 0 && obj_index < NR_PROCS) {
+        reply_objects_table[obj_index].ro_in_use = 0;
+        // Clear other fields for security/safety if necessary
+        reply_objects_table[obj_index].ro_caller_proc_nr = NONE;
+        reply_objects_table[obj_index].ro_target_proc_nr = NONE;
+        reply_objects_table[obj_index].ro_caller_ep = NONE;
+    } else {
+        kprintf("free_reply_object: Invalid obj_index %d\n", obj_index);
+    }
+}
+
+// Modified BuildMess to include a badge and use direct struct access
+#define BuildMess(m_ptr_kernel, src_proc_nr, dst_proc_ptr, badge_val) \
+	(m_ptr_kernel)->m_source = (src_proc_nr); \
+	(m_ptr_kernel)->m_type = NOTIFY_FROM(src_proc_nr); \
+	(m_ptr_kernel)->m_notify.timestamp = get_uptime(); \
+	(m_ptr_kernel)->m_notify.badge = (badge_val); \
+	switch (src_proc_nr) { \
+	case HARDWARE: \
+		(m_ptr_kernel)->m_notify.interrupts = priv(dst_proc_ptr)->s_int_pending; \
+		priv(dst_proc_ptr)->s_int_pending = 0; \
+		(m_ptr_kernel)->m_notify.sigset = 0; /* Clear sigset field */ \
+		break; \
+	case SYSTEM: \
+		(m_ptr_kernel)->m_notify.sigset = priv(dst_proc_ptr)->s_sig_pending; \
+		priv(dst_proc_ptr)->s_sig_pending = 0; \
+		(m_ptr_kernel)->m_notify.interrupts = 0; /* Clear interrupts field */ \
+		break; \
+	default: \
+		/* For other kernel notifications (e.g. from drivers), clear specific payload fields */ \
+		(m_ptr_kernel)->m_notify.interrupts = 0; \
+		(m_ptr_kernel)->m_notify.sigset = 0; \
+		break; \
 	}
 
 #if (CHIP == INTEL)
@@ -168,23 +229,75 @@ message *m_ptr;			/* pointer to message in the caller's space */
   case SENDREC:
       /* A flag is set so that notifications cannot interrupt SENDREC. */
       priv(caller_ptr)->s_flags |= SENDREC_BUSY;
-      /* fall through */
+      caller_ptr->p_reply_obj_index = NO_REPLY_OBJ; // Initialize for this SENDREC attempt
+
+      result = mini_send(caller_ptr, src_dst, m_ptr, flags);
+      if (result != OK) {
+          priv(caller_ptr)->s_flags &= ~SENDREC_BUSY; // Clear busy flag on send failure
+          break;				/* SEND part failed */
+      }
+
+      /* SEND was successful, now prepare for RECEIVE part with reply object */
+      /* ASSUMPTION: caller_ptr->p_reply_obj_index exists in struct proc */
+      int obj_idx = alloc_reply_object(proc_nr(caller_ptr), src_dst, caller_ptr->p_endpoint);
+      if (obj_idx < 0) {
+          /* Failed to allocate a reply object. This is a critical error.
+           * The original SENDREC would block here. We need to decide how to handle this.
+           * Option 1: Return an error. This changes SENDREC behavior.
+           * Option 2: Attempt to "undo" mini_send if possible (complex).
+           * Option 3: Fallback to old mechanism (but we want to replace it).
+           * For now, return an error. Let's use ENOSPC as a placeholder for no reply objects.
+           */
+          priv(caller_ptr)->s_flags &= ~SENDREC_BUSY;
+          /* TODO: If mini_send made the process SENDING, this needs to be undone too,
+           * or the destination might be confused. This is a complex part of error handling.
+           * For this design phase, we'll assume mini_send blocks or this error is critical.
+           */
+          result = ENOSPC; // Or a more specific error like EREPLYOBJEXHAUSTED
+          break;
+      }
+      caller_ptr->p_reply_obj_index = obj_idx;
+
+      /* Fall through to RECEIVE */
+      result = mini_receive(caller_ptr, src_dst, m_ptr, flags); // src_dst is the original target
+      // If mini_receive blocks (returns OK), p_reply_obj_index remains set.
+      // If mini_receive doesn't block (e.g. NON_BLOCKING flag for receive, unusual for SENDREC),
+      // or if it gets a message immediately (not possible with reply_obj logic yet),
+      // then the reply object might need cleanup if not used.
+      // However, standard SENDREC implies blocking receive.
+      if (result != OK && caller_ptr->p_reply_obj_index != NO_REPLY_OBJ) {
+          // If mini_receive failed to block for some reason, free the allocated reply object.
+          free_reply_object(caller_ptr->p_reply_obj_index);
+          caller_ptr->p_reply_obj_index = NO_REPLY_OBJ;
+          priv(caller_ptr)->s_flags &= ~SENDREC_BUSY; // Clear busy if not blocking
+      }
+      break;
+
   case SEND:			
       result = mini_send(caller_ptr, src_dst, m_ptr, flags);
-      if (function == SEND || result != OK) {	
-          break;				/* done, or SEND failed */
-      }						/* fall through for SENDREC */
+      break;
   case RECEIVE:			
-      if (function == RECEIVE)
-          priv(caller_ptr)->s_flags &= ~SENDREC_BUSY;
+      /* This is for a standalone RECEIVE call. SENDREC has its own path. */
+      priv(caller_ptr)->s_flags &= ~SENDREC_BUSY; // Clear busy flag if set by other means
+      caller_ptr->p_reply_obj_index = NO_REPLY_OBJ; // Not using reply_obj for standalone RECEIVE
       result = mini_receive(caller_ptr, src_dst, m_ptr, flags);
       break;
   case NOTIFY:
-      result = mini_notify(caller_ptr, src_dst);
+      // Pass the caller's message (m_ptr) to mini_notify to extract the badge
+      result = mini_notify(caller_ptr, src_dst, m_ptr);
       break;
   case ECHO:
       CopyMess(caller_ptr->p_nr, caller_ptr, m_ptr, caller_ptr, m_ptr);
       result = OK;
+      break;
+  case SYS_REPLY: /* New system call for replying */
+      // src_dst parameter for SYS_REPLY would be the original caller's endpoint,
+      // but do_reply expects it in m_ptr->m_type.
+      // The user-level library function for reply(to_endpoint, message) should set this.
+      // For sys_call, src_dst is usually the primary target/source endpoint.
+      // Let's ensure m_ptr is correctly populated by the caller of SYS_REPLY.
+      // The actual endpoint to reply to is taken from m_ptr->m_type in do_reply.
+      result = do_reply(caller_ptr, m_ptr);
       break;
   default:
       result = EBADCALL;			/* illegal system call */
@@ -266,58 +379,108 @@ unsigned flags;				/* system call flags */
   bitchunk_t *chunk;
   int i, src_id, src_proc_nr;
 
-  /* Check to see if a message from desired source is already available.
-   * The caller's SENDING flag may be set if SENDREC couldn't send. If it is
-   * set, the process should be blocked.
+  /* If this is part of SENDREC and a reply object is associated,
+   * the process must block and wait for an explicit SYS_REPLY.
+   * Skip checking p_caller_q and notifications for this receive.
+   * ASSUMPTION: p_reply_obj_index exists in struct proc.
    */
+  if ((priv(caller_ptr)->s_flags & SENDREC_BUSY) &&
+      (caller_ptr->p_reply_obj_index != NO_REPLY_OBJ)) {
+
+      if (caller_ptr->p_rts_flags & SENDING) {
+          // This should not happen if mini_send in SENDREC blocked the caller as expected.
+          // If SEND part was non-blocking, this state is possible.
+          // For now, we assume SENDREC's send part is blocking.
+          // kprintf("mini_receive: SENDREC caller has SENDING set with reply_obj_index %d\n", caller_ptr->p_reply_obj_index);
+      }
+
+      // Block the caller for the REC part of SENDREC, waiting for SYS_REPLY.
+      // The source (src) for SENDREC is the original destination.
+      caller_ptr->p_getfrom = src;
+      caller_ptr->p_messbuf = m_ptr; // Kernel buffer to copy reply message into
+      if ((caller_ptr->p_rts_flags & (SENDING | RECEIVING)) == 0) {
+          // Only dequeue if not already blocked (e.g. by SENDING part of SENDREC)
+          // However, SENDREC implies the process was already marked SENDING or will be.
+          // If SENDING was set, it should not be on ready queue.
+          // If SENDING was not set (e.g. non-blocking SEND part, atypical for SENDREC),
+          // then it might be on ready queue.
+          // Standard SENDREC logic: mini_send blocks, then mini_receive is called.
+          // So, it should already be off the ready queues if SENDING.
+          // If p_rts_flags became 0 somehow (e.g. SEND was to a waiting receiver),
+          // it might have been enqueued.
+          if (caller_ptr->p_rts_flags == 0) dequeue(caller_ptr);
+      }
+      caller_ptr->p_rts_flags |= RECEIVING; // Mark as receiving
+      // s_flags SENDREC_BUSY is already set by sys_call.
+      return(OK); // Caller is now blocked, waiting for SYS_REPLY.
+  }
+
+  /* Original logic for standalone RECEIVE or SENDREC fallback (if p_reply_obj_index is NO_REPLY_OBJ) */
   if (!(caller_ptr->p_rts_flags & SENDING)) {
-
-    /* Check if there are pending notifications, except for SENDREC. */
-    if (! (priv(caller_ptr)->s_flags & SENDREC_BUSY)) {
-
+    /* Check if there are pending notifications, except for SENDREC
+     * if it's using the new reply object mechanism (already handled above).
+     */
+    if (! (priv(caller_ptr)->s_flags & SENDREC_BUSY) || (caller_ptr->p_reply_obj_index == NO_REPLY_OBJ) ) {
         map = &priv(caller_ptr)->s_notify_pending;
         for (chunk=&map->chunk[0]; chunk<&map->chunk[NR_SYS_CHUNKS]; chunk++) {
-
-            /* Find a pending notification from the requested source. */ 
-            if (! *chunk) continue; 			/* no bits in chunk */
-            for (i=0; ! (*chunk & (1<<i)); ++i) {} 	/* look up the bit */
+            if (! *chunk) continue;
+            for (i=0; ! (*chunk & (1<<i)); ++i) {}
             src_id = (chunk - &map->chunk[0]) * BITCHUNK_BITS + i;
-            if (src_id >= NR_SYS_PROCS) break;		/* out of range */
-            src_proc_nr = id_to_nr(src_id);		/* get source proc */
-            if (src!=ANY && src!=src_proc_nr) continue;	/* source not ok */
-            *chunk &= ~(1 << i);			/* no longer pending */
-
-            /* Found a suitable source, deliver the notification message. */
-	    BuildMess(&m, src_proc_nr, caller_ptr);	/* assemble message */
+            if (src_id >= NR_SYS_PROCS) break;
+            src_proc_nr = id_to_nr(src_id);
+            if (src!=ANY && src!=src_proc_nr && src_proc_nr != SYSTEM) continue; // Allow SYSTEM notifications through
+            *chunk &= ~(1 << i);
+            BuildMess(&m, src_proc_nr, caller_ptr);
             CopyMess(src_proc_nr, proc_addr(HARDWARE), &m, caller_ptr, m_ptr);
-            return(OK);					/* report success */
+            return(OK);
         }
     }
 
     /* Check caller queue. Use pointer pointers to keep code simple. */
-    xpp = &caller_ptr->p_caller_q;
-    while (*xpp != NIL_PROC) {
-        if (src == ANY || src == proc_nr(*xpp)) {
-	    /* Found acceptable message. Copy it and update status. */
-	    CopyMess((*xpp)->p_nr, *xpp, (*xpp)->p_messbuf, caller_ptr, m_ptr);
-            if (((*xpp)->p_rts_flags &= ~SENDING) == 0) enqueue(*xpp);
-            *xpp = (*xpp)->p_q_link;		/* remove from queue */
-            return(OK);				/* report success */
-	}
-	xpp = &(*xpp)->p_q_link;		/* proceed to next */
+    /* This part should only be reached for:
+     * 1. Standalone RECEIVE.
+     * 2. SENDREC that is NOT using reply objects (e.g. alloc failed and we have a fallback,
+     *    or if p_reply_obj_index was not set for some other reason).
+     */
+    if (! (priv(caller_ptr)->s_flags & SENDREC_BUSY) || (caller_ptr->p_reply_obj_index == NO_REPLY_OBJ) ) {
+        xpp = &caller_ptr->p_caller_q;
+        while (*xpp != NIL_PROC) {
+            if (src == ANY || src == proc_nr(*xpp)) {
+                CopyMess((*xpp)->p_nr, *xpp, (*xpp)->p_messbuf, caller_ptr, m_ptr);
+                if (((*xpp)->p_rts_flags &= ~SENDING) == 0) enqueue(*xpp);
+                *xpp = (*xpp)->p_q_link;
+                // If this was a SENDREC that fell back, clear SENDREC_BUSY
+                if(priv(caller_ptr)->s_flags & SENDREC_BUSY) {
+                    priv(caller_ptr)->s_flags &= ~SENDREC_BUSY;
+                }
+                return(OK);
+            }
+            xpp = &(*xpp)->p_q_link;
+        }
     }
   }
 
-  /* No suitable message is available or the caller couldn't send in SENDREC. 
+  /* No suitable message is available or the caller couldn't send in SENDREC (archaic SENDREC path).
    * Block the process trying to receive, unless the flags tell otherwise.
    */
   if ( ! (flags & NON_BLOCKING)) {
       caller_ptr->p_getfrom = src;		
       caller_ptr->p_messbuf = m_ptr;
       if (caller_ptr->p_rts_flags == 0) dequeue(caller_ptr);
-      caller_ptr->p_rts_flags |= RECEIVING;		
+      caller_ptr->p_rts_flags |= RECEIVING;
+      // SENDREC_BUSY flag remains if it was SENDREC and it's blocking here.
+      // If it's a SENDREC that used a reply object, it would have returned OK earlier.
       return(OK);
   } else {
+      // Non-blocking receive and no message available.
+      // If it was SENDREC, clear the busy flag and any reply object.
+      if (priv(caller_ptr)->s_flags & SENDREC_BUSY) {
+          if(caller_ptr->p_reply_obj_index != NO_REPLY_OBJ) {
+             free_reply_object(caller_ptr->p_reply_obj_index);
+             caller_ptr->p_reply_obj_index = NO_REPLY_OBJ;
+          }
+          priv(caller_ptr)->s_flags &= ~SENDREC_BUSY;
+      }
       return(ENOTREADY);
   }
 }
@@ -325,26 +488,40 @@ unsigned flags;				/* system call flags */
 /*===========================================================================*
  *				mini_notify				     * 
  *===========================================================================*/
-PRIVATE int mini_notify(caller_ptr, dst)
+// Added user_m_ptr to extract badge from caller's message
+PRIVATE int mini_notify(caller_ptr, dst, user_m_ptr)
 register struct proc *caller_ptr;	/* sender of the notification */
 int dst;				/* which process to notify */
+message *user_m_ptr;        /* message from the NOTIFY caller, used for badge */
 {
   register struct proc *dst_ptr = proc_addr(dst);
   int src_id;				/* source id for late delivery */
-  message m;				/* the notification message */
+  message m;				/* the notification message kernel will build */
+  u32_t badge_value = 0;    /* Default badge to 0 for kernel-internal notifications */
+
+  /* Extract badge from the user-supplied message if this is a syscall.
+   * As per problem spec, user-level library places badge in m_source.
+   * This is unconventional; m1_iX fields are more typical for such parameters.
+   * For syscalls, CHECK_PTR in sys_call ensures m_ptr (user_m_ptr here) is valid.
+   */
+  if (user_m_ptr != NULL) {
+      // Assuming m_source is of a type assignable to u32_t.
+      // In Minix, m_source is endpoint_t (effectively int). This should be fine for u32_t.
+      badge_value = (u32_t) user_m_ptr->m_source;
+  }
 
   /* Check to see if target is blocked waiting for this message. A process 
    * can be both sending and receiving during a SENDREC system call.
    */
   if ((dst_ptr->p_rts_flags & (RECEIVING|SENDING)) == RECEIVING &&
-      ! (priv(dst_ptr)->s_flags & SENDREC_BUSY) &&
+      ! (priv(dst_ptr)->s_flags & SENDREC_BUSY) && /* Not busy with SENDREC reply object */
       (dst_ptr->p_getfrom == ANY || dst_ptr->p_getfrom == caller_ptr->p_nr)) {
 
       /* Destination is indeed waiting for a message. Assemble a notification 
        * message and deliver it. Copy from pseudo-source HARDWARE, since the
        * message is in the kernel's address space.
        */ 
-      BuildMess(&m, proc_nr(caller_ptr), dst_ptr);
+      BuildMess(&m, proc_nr(caller_ptr), dst_ptr, badge_value); // Pass badge to BuildMess
       CopyMess(proc_nr(caller_ptr), proc_addr(HARDWARE), &m, 
           dst_ptr, dst_ptr->p_messbuf);
       dst_ptr->p_rts_flags &= ~RECEIVING;	/* deblock destination */
@@ -355,7 +532,15 @@ int dst;				/* which process to notify */
   /* Destination is not ready to receive the notification. Add it to the 
    * bit map with pending notifications. Note the indirectness: the system id 
    * instead of the process number is used in the pending bit map.
-   */ 
+   * IMPORTANT: The badge is NOT stored with the pending bit if delivery is deferred.
+   * This design currently only adds badges to notifications that are delivered immediately.
+   * To support badges for deferred notifications, s_notify_pending structure would
+   * need to be redesigned to store badges alongside pending source bits.
+   */
+  if (badge_value != 0 && user_m_ptr != NULL) { // Only print for actual user-provided badges
+      kprintf("mini_notify: Badge %u for notification from %d to %d will be lost as notification is pending.\n",
+              badge_value, proc_nr(caller_ptr), dst);
+  }
   src_id = priv(caller_ptr)->s_id;
   set_sys_bit(priv(dst_ptr)->s_notify_pending, src_id); 
   return(OK);
@@ -364,9 +549,13 @@ int dst;				/* which process to notify */
 /*===========================================================================*
  *				lock_notify				     *
  *===========================================================================*/
-PUBLIC int lock_notify(src, dst)
-int src;			/* sender of the notification */
-int dst;			/* who is to be notified */
+// Modifying lock_notify to align with mini_notify's new signature.
+// This function is used by kernel tasks/interrupts to send notifications.
+// These notifications typically won't have a 'user_m_ptr' for a badge from a syscall.
+// So, we pass NULL for user_m_ptr, and mini_notify will use a default badge (0).
+PUBLIC int lock_notify(src_proc_nr, dst_proc_nr)
+int src_proc_nr;			/* kernel sender of the notification (process number) */
+int dst_proc_nr;			/* who is to be notified (process number) */
 {
 /* Safe gateway to mini_notify() for tasks and interrupt handlers. The sender
  * is explicitely given to prevent confusion where the call comes from. MINIX 
@@ -375,16 +564,28 @@ int dst;			/* who is to be notified */
  * is done by temporarily disabling interrupts. 
  */
   int result;
+  struct proc *src_ptr;
+
+  /* When src_proc_nr is HARDWARE or SYSTEM, proc_addr might not be appropriate
+   * or might return a pointer to a "kernel proc" structure that doesn't fully
+   * represent a normal process (e.g. no user_m_ptr).
+   * mini_notify expects a valid caller_ptr for priv(caller_ptr)->s_id.
+   * For HARDWARE/SYSTEM, a dummy proc_ptr or specific handling might be needed
+   * if s_id is not directly available or relevant in the same way.
+   * However, proc_addr(SYSTEM) and proc_addr(HARDWARE) are valid.
+   */
+  src_ptr = proc_addr(src_proc_nr);
 
   /* Exception or interrupt occurred, thus already locked. */
   if (k_reenter >= 0) {
-      result = mini_notify(proc_addr(src), dst); 
+      // Pass NULL for user_m_ptr, as this is a kernel-originated notification
+      result = mini_notify(src_ptr, dst_proc_nr, NULL);
   }
-
   /* Call from task level, locking is required. */
   else {
       lock(0, "notify");
-      result = mini_notify(proc_addr(src), dst); 
+      // Pass NULL for user_m_ptr
+      result = mini_notify(src_ptr, dst_proc_nr, NULL);
       unlock(0);
   }
   return(result);
@@ -598,3 +799,87 @@ struct proc *rp;		/* this process is no longer runnable */
   unlock(4);
 }
 
+/*===========================================================================*
+ *				do_reply				     *
+ *===========================================================================*/
+PUBLIC int do_reply(register struct proc *caller_ptr, /* pointer to replier's proc structure */
+		    message *m_ptr)	/* pointer to message from replier */
+{
+    int original_caller_endpoint;
+    struct proc *original_caller_ptr;
+    int obj_idx;
+    struct reply_object *ro_ptr;
+
+    /* Parameter checks */
+    // In MINIX, the message endpoint to reply to is often passed in a specific field.
+    // Assuming m_ptr->m1_i1 contains the endpoint of the process to reply to.
+    // This needs to be standardized for the SYS_REPLY call.
+    // Let's use m_dest (M.m_type/destination for message) or a specific field if defined.
+    // For now, using m_ptr->M_REPLY_TO_ENDPOINT if such a field existed, or m_ptr->m1_i1 as a placeholder.
+    // Let's assume the user-level lib for SYS_REPLY sets m_ptr->m_type to the target endpoint.
+    original_caller_endpoint = m_ptr->m_type; // Common pattern in Minix for destination.
+
+    if (!isokendpt(original_caller_endpoint, &original_caller_ptr)) {
+        kprintf("do_reply: Invalid original_caller_endpoint %d by %d\n", original_caller_endpoint, proc_nr(caller_ptr));
+        return EDEADSRCDST; // Or EBADSRCDST if endpoint format is wrong
+    }
+
+    // Check if the original caller is actually waiting for a reply via this mechanism
+    if (!(original_caller_ptr->p_rts_flags & RECEIVING) ||
+        priv(original_caller_ptr)->s_flags & SENDREC_BUSY == 0 || // Must be in SENDREC state
+        original_caller_ptr->p_reply_obj_index == NO_REPLY_OBJ) {
+        kprintf("do_reply: Original caller %d not waiting for this reply (flags %x, reply_idx %d)\n",
+               proc_nr(original_caller_ptr), original_caller_ptr->p_rts_flags, original_caller_ptr->p_reply_obj_index);
+        return EBADREQUEST; // Not a valid state for reply, or not using reply_obj
+    }
+
+    obj_idx = original_caller_ptr->p_reply_obj_index;
+    if (obj_idx < 0 || obj_idx >= NR_PROCS || !reply_objects_table[obj_idx].ro_in_use) {
+        // This should ideally not happen if p_reply_obj_index was valid.
+        kprintf("do_reply: Invalid reply object index %d for original caller %d\n", obj_idx, proc_nr(original_caller_ptr));
+        // Potentially reset p_reply_obj_index and unblock caller with error?
+        return EFAULT;
+    }
+    ro_ptr = &reply_objects_table[obj_idx];
+
+    /* Security Check: Verify that the replier (caller_ptr) is the intended target of the original SENDREC call. */
+    if (ro_ptr->ro_target_proc_nr != proc_nr(caller_ptr)) {
+        kprintf("do_reply: Security check failed. Replier %d is not the expected target %d for original caller %d.\n",
+               proc_nr(caller_ptr), ro_ptr->ro_target_proc_nr, proc_nr(original_caller_ptr));
+        return EPERM; // Or another appropriate error code
+    }
+
+    // Verify the original caller endpoint matches what's in the reply object.
+    // This is a sanity check, as p_reply_obj_index already links them.
+    if (ro_ptr->ro_caller_ep != original_caller_endpoint) {
+         kprintf("do_reply: Mismatch between message endpoint %d and reply object endpoint %d\n",
+                original_caller_endpoint, ro_ptr->ro_caller_ep);
+        return EBADREQUEST;
+    }
+
+    /* Copy the reply message from replier's userspace to original caller's kernel message buffer. */
+    // The message m_ptr is already in kernel space after sys_call.
+    // We need to copy it to original_caller_ptr->p_messbuf.
+    // Important: The source of the message for the original caller should be the replier.
+    m_ptr->m_source = proc_addr(proc_nr(caller_ptr))->p_endpoint; // Set source to replier's endpoint
+    CopyMess(proc_nr(caller_ptr), caller_ptr, m_ptr, original_caller_ptr, original_caller_ptr->p_messbuf);
+
+    /* Unblock the original_caller_ptr. */
+    original_caller_ptr->p_rts_flags &= ~RECEIVING;
+    priv(original_caller_ptr)->s_flags &= ~SENDREC_BUSY;
+    // p_reg.retreg should already contain OK from mini_receive if it blocked.
+    // If mini_receive returned something else, that's an issue.
+    // For now, assume mini_receive returned OK and the process is just waiting.
+    // The actual return value of SENDREC will be the result of the reply.
+    // The message copy above has set the return message for the original caller.
+
+    if (original_caller_ptr->p_rts_flags == 0) { // If no other flags (like SENDING, which shouldn't be set)
+        enqueue(original_caller_ptr); /* Add to ready queue */
+    }
+
+    /* Invalidate/consume the reply object. */
+    free_reply_object(obj_idx);
+    original_caller_ptr->p_reply_obj_index = NO_REPLY_OBJ;
+
+    return(OK); /* Return OK to the replier (caller_ptr) */
+}

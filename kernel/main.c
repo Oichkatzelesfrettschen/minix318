@@ -142,6 +142,9 @@ PUBLIC void main()
 	alloc_segments(rp);
   }
 
+  /* Initialize the explicit reply objects system. */
+  init_reply_objects();
+
 #if ENABLE_BOOTDEV 
   /* Expect an image of the boot device to be loaded into memory as well. 
    * The boot device is the last module that is loaded into memory, and, 

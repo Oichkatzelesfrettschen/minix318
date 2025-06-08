@@ -10,8 +10,10 @@
 #define NOTIFY		   4	/* asynchronous notify */
 #define SENDNB             5    /* nonblocking send */
 #define MINIX_KERNINFO     6    /* request kernel info structure */
+/* 7-15 are reserved for future use or were used by obsolete calls */
 #define SENDA		   16	/* asynchronous send */
-#define IPCNO_HIGHEST	SENDA
+#define SYS_REPLY          17   /* reply to a SENDREC caller */
+#define IPCNO_HIGHEST	SYS_REPLY
 /* Check that the message payload type doesn't grow past the maximum IPC payload size.
  * This is a compile time check. */
 #define _ASSERT_MSG_SIZE(msg_type) \

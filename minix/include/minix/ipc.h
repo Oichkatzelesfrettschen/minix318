@@ -1718,7 +1718,15 @@ typedef struct {
 	u64_t timestamp;	/* valid for every notify msg */
 	u64_t interrupts;	/* raised interrupts; valid if from HARDWARE */
 	sigset_t sigset;	/* raised signals; valid if from SYSTEM */
-	uint8_t padding[24];
+	u32_t badge;        /* Notification badge.
+	                     * For a NOTIFY syscall, the user-level library is expected
+	                     * to place the desired badge value into the m_source field
+	                     * of the message passed to the syscall. The kernel will then
+	                     * transfer this value into m_notify.badge of the notification message.
+	                     * Note: If a notification with a badge becomes pending (not delivered
+	                     * immediately), the badge is currently lost.
+	                     */
+	uint8_t padding[20]; /* Adjusted padding from 24 to 20 to make space for badge */
 } mess_notify;
 _ASSERT_MSG_SIZE(mess_notify);
 
