@@ -43,12 +43,18 @@ apt-get install -y \
 
 # Install auxiliary utilities for scripting and performance analysis
 apt-get install -y \
-	python3 \
-	python3-pip \
-	python3-venv \
-	cmake \
-	perf \
-	lsof
+        python3 \
+        python3-pip \
+        python3-venv \
+        cmake \
+        perf \
+        lsof
+
+# Install Node.js and npm for JavaScript-based tooling
+apt-get install -y nodejs npm
+
+# Install Node-based developer dependencies (e.g., jscpd)
+npm ci
 
 # Clean up apt cache to reduce image size
 apt-get clean
