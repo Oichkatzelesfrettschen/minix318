@@ -1,0 +1,20 @@
+KSTRLEN(3K)          Kernel Library Functions          KSTRLEN(3K)
+
+NAME
+     kstrlen - calculate the length of a kernel string
+
+SYNOPSIS
+     #include <klib/include/kstring.h>
+
+     k_size_t kstrlen(const char *s);
+
+DESCRIPTION
+     The kstrlen() function calculates the number of characters in the
+     string pointed to by s, excluding the terminating null byte ('\0').
+
+RETURN VALUES
+     kstrlen() returns the number of characters in s.
+     If s is a NULL pointer, it returns 0 (behavior specific to this klib impl).
+
+NOTES
+     This is a kernel-safe implementation.

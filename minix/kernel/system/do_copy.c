@@ -1,3 +1,33 @@
+/**
+ * @brief Handles SYS_VIRCOPY and SYS_PHYSCOPY kernel calls for copying data.
+ * 
+ * This function implements both virtual and physical memory copy operations.
+ * It validates the source and destination addresses, checks process permissions,
+ * and performs the actual memory copy using either virtual_copy() or 
+ * virtual_copy_vmcheck() depending on the flags specified.
+ * 
+ * @param caller Pointer to the process structure of the calling process
+ * @param m_ptr Pointer to the message containing copy parameters:
+ *              - src_addr: Source offset within segment
+ *              - src_endpt: Source process endpoint number
+ *              - dst_addr: Destination offset within segment  
+ *              - dst_endpt: Destination process endpoint number
+ *              - nr_bytes: Number of bytes to copy
+ *              - flags: Copy operation flags (e.g., CP_FLAG_TRY)
+ * 
+ * @return 0 on success, or error code on failure:
+ *         - EINVAL: Invalid endpoint number
+ *         - E2BIG: Byte count overflow detected
+ *         - EFAULT: Memory access fault (when CP_FLAG_TRY is set)
+ *         - Other error codes from virtual_copy_vmcheck()
+ * 
+ * @note The function supports SELF as a special endpoint value which resolves
+ *       to the caller's endpoint. Process validation is performed using
+ *       isokendpt() to ensure valid endpoint numbers.
+ * 
+ * @note When CP_FLAG_TRY flag is set, only VFS_PROC_NR is allowed to call
+ *       this function and fault errors are handled specially.
+ */
 /* The kernel call implemented in this file:
  *   m_type:	SYS_VIRCOPY, SYS_PHYSCOPY
  *
@@ -12,6 +42,15 @@
 
 #include "kernel/system.h"
 #include "kernel/vm.h"
+// #include <assert.h> // Replaced
+
+// Added kernel headers
+#include <minix/kernel_types.h> // For k_errno_t or similar if error codes are mapped
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
+
 // #include <assert.h> // Replaced
 
 // Added kernel headers
@@ -47,6 +86,7 @@ int do_copy(struct proc * caller, message * m_ptr)
 	{
 		first= 0;
 		kprintf_stub( // MODIFIED
+		kprintf_stub( // MODIFIED
 "do_copy: got request from %d (source %d, destination %d)\n",
 			caller->p_endpoint,
 			m_ptr->m_lsys_krn_sys_copy.src_endpt,
@@ -75,6 +115,8 @@ int do_copy(struct proc * caller, message * m_ptr)
 	if(! isokendpt(vir_addr[i].proc_nr_e, &p)) {
 	  kprintf_stub("do_copy: %d: %d not ok endpoint\n", i, vir_addr[i].proc_nr_e); // MODIFIED
           return(EINVAL);  // EINVAL might be undefined
+	  kprintf_stub("do_copy: %d: %d not ok endpoint\n", i, vir_addr[i].proc_nr_e); // MODIFIED
+          return(EINVAL);  // EINVAL might be undefined
         }
       }
   }
@@ -83,13 +125,14 @@ int do_copy(struct proc * caller, message * m_ptr)
    * vir_bytes. Especially copying by the PM on do_fork() is affected. 
    */
   if (bytes != (phys_bytes) (vir_bytes) bytes) return(E2BIG); // E2BIG might be undefined
+  if (bytes != (phys_bytes) (vir_bytes) bytes) return(E2BIG); // E2BIG might be undefined
 
   /* Now try to make the actual virtual copy. */
   if(m_ptr->m_lsys_krn_sys_copy.flags & CP_FLAG_TRY) {
 	int r;
 	KASSERT(caller->p_endpoint == VFS_PROC_NR);
-
 	r = virtual_copy(&vir_addr[_SRC_], &vir_addr[_DST_], bytes);
+	if(r == EFAULT_SRC || r == EFAULT_DST) return r = EFAULT; // EFAULT* might be undefined
 	if(r == EFAULT_SRC || r == EFAULT_DST) return r = EFAULT; // EFAULT* might be undefined
 	return r;
   } else {

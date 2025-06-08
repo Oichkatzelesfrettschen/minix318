@@ -18,6 +18,15 @@
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
 
+// #include <assert.h> // Replaced
+
+// Added kernel headers
+#include <minix/kernel_types.h> // For k_errno_t
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
+
 
 /*===========================================================================*
  *				do_vmctl				     *
@@ -33,6 +42,8 @@ int do_vmctl(struct proc * caller, message * m_ptr)
   if(!isokendpt(ep, &proc_nr)) {
 	kprintf_stub("do_vmctl: unexpected endpoint %d from VM\n", ep); // MODIFIED
 	return EINVAL; // EINVAL might be undefined
+	kprintf_stub("do_vmctl: unexpected endpoint %d from VM\n", ep); // MODIFIED
+	return EINVAL; // EINVAL might be undefined
   }
 
   p = proc_addr(proc_nr);
@@ -40,7 +51,6 @@ int do_vmctl(struct proc * caller, message * m_ptr)
   switch(m_ptr->SVMCTL_PARAM) {
 	case VMCTL_CLEAR_PAGEFAULT:
 		KASSERT(RTS_ISSET(p,RTS_PAGEFAULT));
-LDER(RTS_ISSET(p,RTS_PAGEFAULT)); // MODIFIED
 		RTS_UNSET(p, RTS_PAGEFAULT);
 		return OK;
 	case VMCTL_MEMREQ_GET:
@@ -50,9 +60,11 @@ LDER(RTS_ISSET(p,RTS_PAGEFAULT)); // MODIFIED
 		 * sources. However, IPC filters are used only in rare cases.
 		 */
 		for (rpp = &vmrequest; *rpp != NULL; // NULL might be undefined
+		for (rpp = &vmrequest; *rpp != NULL; // NULL might be undefined
 		    rpp = &(*rpp)->p_vmrequest.nextrequestor) {
 			rp = *rpp;
 
+			KASSERT(RTS_ISSET(rp, RTS_VMREQUEST));
 			KASSERT(RTS_ISSET(rp, RTS_VMREQUEST));
 
 			okendpt(rp->p_vmrequest.target, &proc_nr);
@@ -86,13 +98,17 @@ LDER(RTS_ISSET(p,RTS_PAGEFAULT)); // MODIFIED
 		}
 
 		return ENOENT; // ENOENT might be undefined
+		return ENOENT; // ENOENT might be undefined
 
 	case VMCTL_MEMREQ_REPLY:
+		KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
+		KASSERT(p->p_vmrequest.vmresult == VMSUSPEND);
 		KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
 		KASSERT(p->p_vmrequest.vmresult == VMSUSPEND);
   		okendpt(p->p_vmrequest.target, &proc_nr);
 		target = proc_addr(proc_nr);
 		p->p_vmrequest.vmresult = m_ptr->SVMCTL_VALUE;
+		KASSERT(p->p_vmrequest.vmresult != VMSUSPEND);
 		KASSERT(p->p_vmrequest.vmresult != VMSUSPEND);
 
 		switch(p->p_vmrequest.type) {
@@ -107,8 +123,12 @@ LDER(RTS_ISSET(p,RTS_PAGEFAULT)); // MODIFIED
 			KASSERT(p->p_misc_flags & MF_DELIVERMSG);
 			KASSERT(p == target);
 			KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
+			KASSERT(p->p_misc_flags & MF_DELIVERMSG);
+			KASSERT(p == target);
+			KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
 			break;
 		case VMSTYPE_MAP:
+			KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
 			KASSERT(RTS_ISSET(p, RTS_VMREQUEST));
 			break;
 		default:
@@ -145,7 +165,6 @@ LDER(RTS_ISSET(p,RTS_PAGEFAULT)); // MODIFIED
 		return OK;
 	case VMCTL_VMINHIBIT_CLEAR:
 		KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
-
 		/*
 		 * the processes is certainly not runnable, no need to tell its
 		 * cpu
