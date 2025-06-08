@@ -60,7 +60,7 @@ static int acpi_check_csum(struct acpi_sdt_header * tb, k_size_t size) // MODIFI
 static int acpi_check_signature(const char * orig, const char * match)
 {
 	// MODIFIED strncmp to placeholder
-	/* FIXME: strncmp needs kstrncmp */ (void)0; return kstrncmp_placeholder(orig, match, ACPI_SDT_SIGNATURE_LEN);
+	return kstrncmp(orig, match, ACPI_SDT_SIGNATURE_LEN);
 }
 
 static u32_t acpi_phys2vir(u32_t p)
@@ -88,8 +88,8 @@ static int acpi_read_sdt_at(phys_bytes addr,
 {
 	struct acpi_sdt_header hdr;
 
-	/* if NULL is supplied, we only return the size of the table */
-	if (tb == NULL) { // NULL might be undefined
+	/* if 0 is supplied, we only return the size of the table */
+	if (tb == 0) { // NULL might be undefined
 		if (read_func(addr, &hdr, sizeof(struct acpi_sdt_header))) {
 			kprintf_stub("ERROR acpi cannot read %s header\n", name); // MODIFIED
 			return -1;
@@ -132,12 +132,12 @@ phys_bytes acpi_get_table_base(const char * name)
 
 	for(i = 0; i < sdt_count; i++) {
 		// MODIFIED strncmp to placeholder
-		if (/* FIXME: strncmp needs kstrncmp */ kstrncmp_placeholder(name, sdt_trans[i].signature,
+		if (kstrncmp(name, sdt_trans[i].signature,
 					ACPI_SDT_SIGNATURE_LEN) == 0)
 			return (phys_bytes) rsdt.data[i];
 	}
 
-	return (phys_bytes) NULL; // NULL might be undefined
+	return (phys_bytes) 0; // NULL might be undefined
 }
 
 k_size_t acpi_get_table_length(const char * name) // MODIFIED size_t
@@ -146,7 +146,7 @@ k_size_t acpi_get_table_length(const char * name) // MODIFIED size_t
 
 	for(i = 0; i < sdt_count; i++) {
 		// MODIFIED strncmp to placeholder
-		if (/* FIXME: strncmp needs kstrncmp */ kstrncmp_placeholder(name, sdt_trans[i].signature,
+		if (kstrncmp(name, sdt_trans[i].signature,
 					ACPI_SDT_SIGNATURE_LEN) == 0)
 			return sdt_trans[i].length;
 	}
@@ -175,7 +175,7 @@ static void * acpi_madt_get_typed_item(struct acpi_madt_hdr * hdr,
 		t += ((struct acpi_madt_item_hdr *) t)->length;
 	}
 
-	return NULL; // NULL might be undefined
+	return 0; // NULL might be undefined
 }
 
 #if 0
@@ -194,7 +194,7 @@ static void * acpi_madt_get_item(struct acpi_madt_hdr * hdr,
 		t += ((struct acpi_madt_item_hdr *) t)->length;
 	}
 
-	return NULL; // NULL might be undefined
+	return 0; // NULL might be undefined
 }
 #endif
 
@@ -205,7 +205,7 @@ static int acpi_rsdp_test(void * buff)
 	if (!platform_tbl_checksum_ok(buff, 20))
 		return 0;
 	// MODIFIED strncmp to placeholder
-	if (/* FIXME: strncmp needs kstrncmp */ kstrncmp_placeholder(rsdp->signature, "RSD PTR ", 8))
+	if (kstrncmp(rsdp->signature, "RSD PTR ", 8))
 		return 0;
 
 	return 1;
@@ -239,25 +239,25 @@ static int get_acpi_rsdp(void)
 
 static void acpi_init_poweroff(void)
 {
-	u8_t *ptr = NULL; // NULL might be undefined
-	u8_t *start = NULL; // NULL might be undefined
-	u8_t *end = NULL; // NULL might be undefined
-	struct acpi_fadt_header *fadt_header = NULL; // NULL might be undefined
-	struct acpi_rsdt * dsdt_header = NULL; // NULL might be undefined
-	char *msg = NULL; // NULL might be undefined
+	u8_t *ptr = 0; // NULL might be undefined
+	u8_t *start = 0; // NULL might be undefined
+	u8_t *end = 0; // NULL might be undefined
+	struct acpi_fadt_header *fadt_header = 0; // NULL might be undefined
+	struct acpi_rsdt * dsdt_header = 0; // NULL might be undefined
+	char *msg = 0; // NULL might be undefined
 
 	/* Everything used here existed since ACPI spec 1.0 */
 	/* So we can safely use them */
 	fadt_header = (struct acpi_fadt_header *)
 		acpi_phys2vir(acpi_get_table_base("FACP"));
-	if (fadt_header == NULL) { // NULL might be undefined
+	if (fadt_header == 0) { // NULL might be undefined
 		msg = "Could not load FACP";
 		goto exit;
 	}
 
 	dsdt_header = (struct acpi_rsdt *)
 		acpi_phys2vir((phys_bytes) fadt_header->dsdt);
-	if (dsdt_header == NULL) { // NULL might be undefined
+	if (dsdt_header == 0) { // NULL might be undefined
 		msg = "Could not load DSDT";
 		goto exit;
 	}
@@ -271,7 +271,7 @@ static void acpi_init_poweroff(void)
 	/* See http://forum.osdev.org/viewtopic.php?t=16990 */
 	/* for layout of \_S5 */
 	// MODIFIED memcmp to placeholder
-	while (ptr < end && (/* FIXME: memcmp needs kmemcmp */ kmemcmp_placeholder(ptr, "_S5_", 4) != 0))
+	while (ptr < end && (kmemcmp(ptr, "_S5_", 4) != 0))
 		ptr++;
 
 	msg = "Could not read S5 data. Use default SLP_TYPa and SLP_TYPb";
@@ -313,7 +313,7 @@ static void acpi_init_poweroff(void)
 	msg = "poweroff initialized";
 
 exit:
-	if (msg) { // NULL might be undefined
+	if (msg) { // Check if msg is not 0
 		DEBUGBASIC(("acpi: %s\n", msg));
 	}
 }
@@ -361,8 +361,8 @@ struct acpi_madt_ioapic * acpi_get_ioapic_next(void)
 	if (idx == 0) {
 		madt_hdr = (struct acpi_madt_hdr *)
 			acpi_phys2vir(acpi_get_table_base("APIC"));
-		if (madt_hdr == NULL) // NULL might be undefined
-			return NULL; // NULL might be undefined
+		if (madt_hdr == 0) // NULL might be undefined
+			return 0; // NULL might be undefined
 	}
 
 	ret = (struct acpi_madt_ioapic *)
@@ -383,8 +383,8 @@ struct acpi_madt_lapic * acpi_get_lapic_next(void)
 	if (idx == 0) {
 		madt_hdr = (struct acpi_madt_hdr *)
 			acpi_phys2vir(acpi_get_table_base("APIC"));
-		if (madt_hdr == NULL) // NULL might be undefined
-			return NULL; // NULL might be undefined
+		if (madt_hdr == 0) // NULL might be undefined
+			return 0; // NULL might be undefined
 	}
 
 	for (;;) {
@@ -418,27 +418,4 @@ void acpi_poweroff(void)
 	if (pm1b_cnt_blk != 0) {
 		outw(pm1b_cnt_blk, slp_typb | SLP_EN_CODE);
 	}
-}
-
-// Helper for strncmp placeholder
-int kstrncmp_placeholder(const char *s1, const char *s2, k_size_t n) {
-    /* FIXME: This is a placeholder for strncmp. It's not a correct implementation. */
-    /* A real kstrncmp should be implemented or this logic revisited. */
-    if (!s1 || !s2 || n == 0) return 0; // Simplified handling
-    return kstrcmp(s1, s2); // Fallback to kstrcmp for basic check, ignoring n for now
-}
-
-// Helper for memcmp placeholder
-int kmemcmp_placeholder(const void *s1, const void *s2, k_size_t n) {
-    /* FIXME: This is a placeholder for memcmp. It's not a correct implementation. */
-    /* A real kmemcmp should be implemented. */
-    if (!s1 || !s2 || n == 0) return 0;
-    const unsigned char *p1 = s1;
-    const unsigned char *p2 = s2;
-    for (k_size_t i = 0; i < n; i++) {
-        if (p1[i] != p2[i]) {
-            return p1[i] - p2[i];
-        }
-    }
-    return 0;
 }

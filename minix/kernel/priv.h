@@ -71,7 +71,7 @@ struct priv {
   endpoint_t s_grant_endpoint;  /* the endpoint the grant table belongs to */
   vir_bytes s_state_table;	/* state table address of process, or 0 */
   int s_state_entries;		/* no. of entries, or 0 */
-};
+} __k_cacheline_aligned;
 
 /* Guard word for task stacks. */
 #define STACK_GUARD	((reg_t) (sizeof(reg_t) == 2 ? 0xBEEF : 0xDEADBEEF))
