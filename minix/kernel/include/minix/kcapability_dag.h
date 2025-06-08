@@ -23,11 +23,16 @@
 #ifndef KCAPABILITY_DAG_H
 #define KCAPABILITY_DAG_H
 
-#include <minix/kernel_types.h> /* For k_atomic_t, size_t potentially */
+#include <minix/kernel_types.h> /* For k_atomic_t, size_t potentially, endpoint_t */
 #include <stddef.h> /* For size_t if not in kernel_types.h */
 #include <stdbool.h> /* For bool type */
 /* TODO: Re-evaluate if a more specific header like kernel/klib.h is better */
 /* Or if individual klib components should be included directly. */
+
+// Define maximum length for a capability node's name component
+#ifndef MAX_COMPONENT_NAME_LEN
+#define MAX_COMPONENT_NAME_LEN 64
+#endif
 
 /* C23 standard headers for specific features */
 #include <stdbit.h>    /* C23 bit manipulation functions */
@@ -66,6 +71,8 @@ typedef struct kcapability_dag_node {
     // Fields for identifying process-specific capability nodes
     _BitInt(1) is_process_main_cap_node; /**< Flag: True if this node represents a process's primary capability set. */
     endpoint_t owner_endpoint;         /**< If is_process_main_cap_node is true, this holds the process's endpoint. */
+
+    char name[MAX_COMPONENT_NAME_LEN]; /**< Name of the component if this node represents a named entity like a file/directory. */
 } kcapability_dag_node_t;
 
 /**
@@ -126,9 +133,10 @@ kcapability_dag_t* kcapability_dag_create(size_t initial_node_pool_capacity);
  * @param id The unique identifier for the new node.
  * @param granted_permissions A bitmask of permissions granted by this capability node.
  * @param resource_ptr Pointer to the underlying kernel resource this capability governs.
+ * @param name_param The name for this capability node (e.g. filename). Can be NULL.
  * @return Pointer to the newly created kcapability_dag_node_t, or NULL on failure.
  */
-kcapability_dag_node_t* kcapability_dag_node_create(_BitInt(64) capability_id, _BitInt(64) rights_mask, _BitInt(16) security_level);
+kcapability_dag_node_t* kcapability_dag_node_create(_BitInt(64) capability_id, _BitInt(64) rights_mask, _BitInt(16) security_level, const char* name_param);
 
 /**
  * @brief Adds a pre-created node to the DAG's managed set.
