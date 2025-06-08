@@ -84,7 +84,9 @@ kernel_core_sources = files(
     'table.c',
     'usermapped_data.c',
     'utility.c',
-    'watchdog.c'
+    'watchdog.c',
+    'clhlock.c',    # Generic CLH lock implementation
+    'clh_bkl.c'     # CLH BKL specific instance and initialization
 )
 
 # System call handler sources
