@@ -24,11 +24,16 @@
 #ifndef KCAPABILITY_DAG_H
 #define KCAPABILITY_DAG_H
 
-#include <minix/kernel_types.h> /* For k_atomic_t, size_t potentially */
+#include <minix/kernel_types.h> /* For k_atomic_t, size_t potentially, endpoint_t */
 #include <stdbool.h>            /* For bool type */
 #include <stddef.h>             /* For size_t if not in kernel_types.h */
 /* TODO: Re-evaluate if a more specific header like kernel/klib.h is better */
 /* Or if individual klib components should be included directly. */
+
+// Define maximum length for a capability node's name component
+#ifndef MAX_COMPONENT_NAME_LEN
+#define MAX_COMPONENT_NAME_LEN 64
+#endif
 
 /* C23 standard headers for specific features */
 #include <stdbit.h>          /* C23 bit manipulation functions */
