@@ -36,6 +36,11 @@
 #include "proto.h"
 #include "proc.h"
 
+/* Define _PROTOTYPE macro if not already defined */
+#ifndef _PROTOTYPE
+#define _PROTOTYPE(function, params) function params
+#endif
+
 _PROTOTYPE( int do_exec, (struct proc * caller, message *m_ptr) );
 #if ! USE_EXEC
 #define do_exec NULL
@@ -77,7 +82,12 @@ _PROTOTYPE( int do_exit, (struct proc * caller, message *m_ptr) );
 #endif
 
 _PROTOTYPE( int do_copy, (struct proc * caller, message *m_ptr) );
+#if (USE_VIRCOPY || USE_PHYSCOPY)
 #define do_vircopy 	do_copy
+#else
+#define do_vircopy NULL
+#endif
+
 #if ! (USE_VIRCOPY || USE_PHYSCOPY)
 #define do_copy NULL
 #endif
@@ -202,18 +212,10 @@ _PROTOTYPE( int do_profbuf, (struct proc * caller, message *m_ptr) );
 
 _PROTOTYPE( int do_getmcontext, (struct proc * caller, message *m_ptr) );
 _PROTOTYPE( int do_setmcontext, (struct proc * caller, message *m_ptr) );
-#if ! USE_MCONTEXT
-#define do_getmcontext NULL
-#define do_setmcontext NULL
-#endif
-
 _PROTOTYPE( int do_schedule,    (struct proc * caller, message *m_ptr) );
 _PROTOTYPE( int do_schedctl, (struct proc * caller, message *m_ptr) );
-
 _PROTOTYPE( int do_statectl, (struct proc * caller, message *m_ptr) );
-#if ! USE_STATECTL
-#define do_statectl NULL
-#endif
-git checkout master && git merge pr-76
-#endif	/* SYSTEM_H */
 
+#endif	/* SYSTEM_H */
+#define do_statectl NULL
+#endif	/* SYSTEM_H */
