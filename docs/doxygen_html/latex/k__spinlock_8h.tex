@@ -1,0 +1,139 @@
+\doxysection{minix/kernel/k\+\_\+spinlock.h File Reference}
+\hypertarget{k__spinlock_8h}{}\label{k__spinlock_8h}\index{minix/kernel/k\_spinlock.h@{minix/kernel/k\_spinlock.h}}
+
+
+Defines a simple, non-\/recursive spinlock using GCC atomic builtins.
+
+
+{\ttfamily \#include $<$minix/sys\+\_\+config.\+h$>$}\newline
+Include dependency graph for k\+\_\+spinlock.\+h\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=221pt]{k__spinlock_8h__incl}
+\end{center}
+\end{figure}
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item
+struct \mbox{\hyperlink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t}}
+\begin{DoxyCompactList}\small\item\em Structure representing a simple spinlock. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item
+\#define \mbox{\hyperlink{k__spinlock_8h_ab64669b95d563f14428a1f073106ef04}{MAX\+\_\+\+SPIN\+\_\+\+THRESHOLD}}~100000
+\begin{DoxyCompactList}\small\item\em Maximum number of spin iterations before attempting to yield. \end{DoxyCompactList}\item
+\#define \mbox{\hyperlink{k__spinlock_8h_ab7e692108b27a8b15089a297b451f293}{KERNEL\+\_\+\+YIELD\+\_\+\+DEFINED}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item
+static void \mbox{\hyperlink{k__spinlock_8h_a79887c626e823a36834e349fb75c539c}{arch\+\_\+pause}} (void)
+\begin{DoxyCompactList}\small\item\em Placeholder for arch\+\_\+pause on non-\/x86 architectures. \end{DoxyCompactList}\item
+static void \mbox{\hyperlink{k__spinlock_8h_a3b96827abeb83529b5d946e2654231ed}{kernel\+\_\+yield}} (void)
+\begin{DoxyCompactList}\small\item\em Yields the CPU, typically to the scheduler. (Stub Implementation) \end{DoxyCompactList}\item
+static void \mbox{\hyperlink{k__spinlock_8h_a614711109a66b779e92036c573e57002}{simple\+\_\+spin\+\_\+init}} (\mbox{\hyperlink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t}} \texorpdfstring{$\ast$}{*}lock)
+\begin{DoxyCompactList}\small\item\em Initializes a spinlock to the unlocked state and resets statistics. \end{DoxyCompactList}\item
+static void \mbox{\hyperlink{k__spinlock_8h_a8e8fd03b0cdf6f309bde43577c3dd548}{simple\+\_\+spin\+\_\+lock}} (\mbox{\hyperlink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t}} \texorpdfstring{$\ast$}{*}lock)
+\begin{DoxyCompactList}\small\item\em Acquires a spinlock, busy-\/waiting if necessary. \end{DoxyCompactList}\item
+static void \mbox{\hyperlink{k__spinlock_8h_ad62d430c4e62aaa0d945088f5e1adc32}{simple\+\_\+spin\+\_\+unlock}} (\mbox{\hyperlink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t}} \texorpdfstring{$\ast$}{*}lock)
+\begin{DoxyCompactList}\small\item\em Releases a previously acquired spinlock. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Defines a simple, non-\/recursive spinlock using GCC atomic builtins.
+
+This header provides a basic spinlock implementation suitable for short critical sections, particularly in contexts where sleeping is not permissible (e.\+g., some interrupt handlers or core kernel code before schedulers are fully active). It is designed with SMP considerations, relying on GCC\textquotesingle{}s atomic builtins which typically ensure full memory barriers for sequential consistency. Includes adaptive spinning using {\ttfamily \doxylink{k__spinlock_8h_a79887c626e823a36834e349fb75c539c}{arch\+\_\+pause()}} for supported architectures.
+
+\doxysubsection{Macro Definition Documentation}
+\Hypertarget{k__spinlock_8h_ab7e692108b27a8b15089a297b451f293}\label{k__spinlock_8h_ab7e692108b27a8b15089a297b451f293}
+\index{k\_spinlock.h@{k\_spinlock.h}!KERNEL\_YIELD\_DEFINED@{KERNEL\_YIELD\_DEFINED}}
+\index{KERNEL\_YIELD\_DEFINED@{KERNEL\_YIELD\_DEFINED}!k\_spinlock.h@{k\_spinlock.h}}
+\doxysubsubsection{\texorpdfstring{KERNEL\_YIELD\_DEFINED}{KERNEL\_YIELD\_DEFINED}}
+{\footnotesize\ttfamily \#define KERNEL\+\_\+\+YIELD\+\_\+\+DEFINED}
+
+\Hypertarget{k__spinlock_8h_ab64669b95d563f14428a1f073106ef04}\label{k__spinlock_8h_ab64669b95d563f14428a1f073106ef04}
+\index{k\_spinlock.h@{k\_spinlock.h}!MAX\_SPIN\_THRESHOLD@{MAX\_SPIN\_THRESHOLD}}
+\index{MAX\_SPIN\_THRESHOLD@{MAX\_SPIN\_THRESHOLD}!k\_spinlock.h@{k\_spinlock.h}}
+\doxysubsubsection{\texorpdfstring{MAX\_SPIN\_THRESHOLD}{MAX\_SPIN\_THRESHOLD}}
+{\footnotesize\ttfamily \#define MAX\+\_\+\+SPIN\+\_\+\+THRESHOLD~100000}
+
+
+
+Maximum number of spin iterations before attempting to yield.
+
+This threshold is used in {\ttfamily simple\+\_\+spin\+\_\+lock} to prevent a CPU from monopolizing resources by spinning indefinitely on a highly contended lock. After this many spins in the inner loop, {\ttfamily \doxylink{k__spinlock_8h_a3b96827abeb83529b5d946e2654231ed}{kernel\+\_\+yield()}} is called. The value should be tuned based on system characteristics and expected contention levels.
+
+\doxysubsection{Function Documentation}
+\Hypertarget{k__spinlock_8h_a79887c626e823a36834e349fb75c539c}\label{k__spinlock_8h_a79887c626e823a36834e349fb75c539c}
+\index{k\_spinlock.h@{k\_spinlock.h}!arch\_pause@{arch\_pause}}
+\index{arch\_pause@{arch\_pause}!k\_spinlock.h@{k\_spinlock.h}}
+\doxysubsubsection{\texorpdfstring{arch\_pause()}{arch\_pause()}}
+{\footnotesize\ttfamily static void arch\+\_\+pause (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Placeholder for arch\+\_\+pause on non-\/x86 architectures.
+
+For architectures other than i386/x86\+\_\+64, this function currently acts as a no-\/op. It can be defined with architecture-\/specific pause/yield instructions if available to improve spin-\/wait loop performance. \Hypertarget{k__spinlock_8h_a3b96827abeb83529b5d946e2654231ed}\label{k__spinlock_8h_a3b96827abeb83529b5d946e2654231ed}
+\index{k\_spinlock.h@{k\_spinlock.h}!kernel\_yield@{kernel\_yield}}
+\index{kernel\_yield@{kernel\_yield}!k\_spinlock.h@{k\_spinlock.h}}
+\doxysubsubsection{\texorpdfstring{kernel\_yield()}{kernel\_yield()}}
+{\footnotesize\ttfamily static void kernel\+\_\+yield (\begin{DoxyParamCaption}\item[{void}]{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Yields the CPU, typically to the scheduler. (Stub Implementation)
+
+This function is called when a spinlock has been spinning for too long (exceeding MAX\+\_\+\+SPIN\+\_\+\+THRESHOLD), as a mechanism to prevent CPU monopolization and allow other threads/processes to run.
+
+\begin{DoxyNote}{Note}
+This is a stub implementation. A full implementation would typically involve interacting with the system scheduler to relinquish the CPU. For now, it at least performs an {\ttfamily \doxylink{k__spinlock_8h_a79887c626e823a36834e349fb75c539c}{arch\+\_\+pause()}} to reduce contention. A real implementation might call something like {\ttfamily sched\+\_\+yield()} or {\ttfamily yield()}.
+\end{DoxyNote}
+\Hypertarget{k__spinlock_8h_a614711109a66b779e92036c573e57002}\label{k__spinlock_8h_a614711109a66b779e92036c573e57002}
+\index{k\_spinlock.h@{k\_spinlock.h}!simple\_spin\_init@{simple\_spin\_init}}
+\index{simple\_spin\_init@{simple\_spin\_init}!k\_spinlock.h@{k\_spinlock.h}}
+\doxysubsubsection{\texorpdfstring{simple\_spin\_init()}{simple\_spin\_init()}}
+{\footnotesize\ttfamily static void simple\+\_\+spin\+\_\+init (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t}} \texorpdfstring{$\ast$}{*}}]{lock }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Initializes a spinlock to the unlocked state and resets statistics.
+
+
+\begin{DoxyParams}{Parameters}
+{\em lock} & Pointer to the \doxylink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t} to initialize.\\
+\hline
+\end{DoxyParams}
+This function must be called before the spinlock is used for the first time. It sets the lock state to 0 (unlocked) and initializes statistics counters to zero. \Hypertarget{k__spinlock_8h_a8e8fd03b0cdf6f309bde43577c3dd548}\label{k__spinlock_8h_a8e8fd03b0cdf6f309bde43577c3dd548}
+\index{k\_spinlock.h@{k\_spinlock.h}!simple\_spin\_lock@{simple\_spin\_lock}}
+\index{simple\_spin\_lock@{simple\_spin\_lock}!k\_spinlock.h@{k\_spinlock.h}}
+\doxysubsubsection{\texorpdfstring{simple\_spin\_lock()}{simple\_spin\_lock()}}
+{\footnotesize\ttfamily static void simple\+\_\+spin\+\_\+lock (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t}} \texorpdfstring{$\ast$}{*}}]{lock }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Acquires a spinlock, busy-\/waiting if necessary.
+
+
+\begin{DoxyParams}{Parameters}
+{\em lock} & Pointer to the \doxylink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t} to acquire.\\
+\hline
+\end{DoxyParams}
+This function attempts to acquire the lock. If the lock is already held, it will spin (busy-\/wait) until the lock becomes available. This function is non-\/recursive; a thread attempting to acquire a lock it already holds will deadlock. Includes a spin counter and calls {\ttfamily \doxylink{k__spinlock_8h_a3b96827abeb83529b5d946e2654231ed}{kernel\+\_\+yield()}} if spinning excessively. Also updates lock acquisition and contention statistics. \Hypertarget{k__spinlock_8h_ad62d430c4e62aaa0d945088f5e1adc32}\label{k__spinlock_8h_ad62d430c4e62aaa0d945088f5e1adc32}
+\index{k\_spinlock.h@{k\_spinlock.h}!simple\_spin\_unlock@{simple\_spin\_unlock}}
+\index{simple\_spin\_unlock@{simple\_spin\_unlock}!k\_spinlock.h@{k\_spinlock.h}}
+\doxysubsubsection{\texorpdfstring{simple\_spin\_unlock()}{simple\_spin\_unlock()}}
+{\footnotesize\ttfamily static void simple\+\_\+spin\+\_\+unlock (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t}} \texorpdfstring{$\ast$}{*}}]{lock }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}
+
+
+
+Releases a previously acquired spinlock.
+
+
+\begin{DoxyParams}{Parameters}
+{\em lock} & Pointer to the \doxylink{structsimple__spinlock__t}{simple\+\_\+spinlock\+\_\+t} to release.\\
+\hline
+\end{DoxyParams}
+This function releases the lock, allowing another thread to acquire it. It must only be called by the thread that currently holds the lock.
