@@ -313,8 +313,8 @@ kcapability_dag_validate_invariants_impl(const kcapability_dag_t *dag) {
  */
 kcapability_dag_node_t *kcapability_dag_node_create(_BitInt(64) capability_id,
                                                     _BitInt(64) rights_mask,
-                                                    _BitInt(16)
-                                                        security_level) {
+                                                    _BitInt(16) security_level,
+                                                    const char *name_param) {
   /* Validate mathematical preconditions - Axiom Check for Node Properties */
   KASSERT(capability_id != INVALID_CAPABILITY_ID,
           "kcapability_dag_node_create: capability_id is invalid");
@@ -379,6 +379,13 @@ kcapability_dag_node_t *kcapability_dag_node_create(_BitInt(64) capability_id,
   node->is_process_main_cap_node = 0wb; // Default to false
   node->owner_endpoint = NONE; // Assuming NONE is a defined invalid endpoint
                                // (e.g. from <minix/endpoint.h>)
+
+  // Initialize the name field
+  if (name_param) {
+    kstrlcpy_c23(node->name, name_param, MAX_COMPONENT_NAME_LEN);
+  } else {
+    node->name[0] = '\0'; // Empty string if no name provided
+  }
 
   return node;
 }
