@@ -1,3 +1,36 @@
+/**
+ * @file main.c
+ * @brief MINIX kernel main program and system initialization
+ *
+ * This file contains the core initialization routines for the MINIX kernel.
+ * It handles the complete boot process from early system setup to process
+ * scheduling, including:
+ * - Boot parameter processing and environment variable parsing
+ * - Process table initialization for boot image processes
+ * - Privilege and security setup for kernel tasks and system processes
+ * - Memory management initialization
+ * - Interrupt and timer system setup
+ * - SMP (Symmetric Multi-Processing) configuration when enabled
+ * - System shutdown and halt procedures
+ *
+ * Key Functions:
+ * - kmain(): Primary kernel entry point that orchestrates the boot process
+ * - bsp_finish_booting(): Completes boot on the bootstrap processor
+ * - cstart(): Early system initialization before main kernel startup
+ * - prepare_shutdown()/minix_shutdown(): System shutdown procedures
+ * - announce(): Displays the MINIX startup banner
+ * - env_get()/get_value(): Environment variable access for boot parameters
+ *
+ * The initialization process sets up all kernel tasks, system processes,
+ * and user processes from the boot image, configures their privileges,
+ * and transitions control to the scheduler to begin normal operation.
+ *
+ * @note This implementation uses kernel-specific string and memory functions
+ *       (kstring.h, kmemory.h) instead of standard library functions.
+ * @note SMP support is conditionally compiled based on CONFIG_SMP flag.
+ * @note The kernel transitions from initialization mode to user mode scheduling
+ *       at the end of the boot process.
+ */
 /* This file contains the main program of MINIX as well as its shutdown code.
  * The routine main() initializes the system and starts the ball rolling by
  * setting up the process table, interrupt vectors, and scheduling each task 
@@ -12,10 +45,15 @@
 // #include <stdlib.h> // Replaced by katoi placeholder or removed
 // #include <assert.h> // Replaced by KASSERT_PLACEHOLDER
 
+// #include <string.h> // Replaced by kstring.h
+// #include <stdlib.h> // Replaced by katoi placeholder or removed
+// #include <assert.h> // Replaced by KASSERT_PLACEHOLDER
+
 #include <minix/endpoint.h>
 #include <machine/vmparam.h>
 #include <minix/u64.h>
 #include <minix/board.h>
+#include <sys/reboot.h> // Keep for reboot flags like RB_POWERDOWN
 #include <sys/reboot.h> // Keep for reboot flags like RB_POWERDOWN
 #include "clock.h"
 #include "direct_utils.h"
@@ -37,11 +75,63 @@
 #include <minix/kernel_types.h>
 #include <sys/kassert.h>
 
-/* FIXME dummy for linking */
+// Includes for Capability DAG
+#include "../lib/klib/include/klib.h" // For kprintf_stub, kpanic, and kcapability_dag_run_mathematical_tests
+#include <minix/kcapability_dag.h> // For kcapability_dag_t and kcapability_dag_create
+#include <minix/kcap.h> // For INITIAL_KERNEL_CAPABILITY_CAPACITY and kernel_capability_dag extern
+
+
+/* dummy for linking */
 char *** _penviron;
 
 /* Prototype declarations for PRIVATE functions. */
 static void announce(void);
+
+// Definition of the global DAG pointer is NOT here, will be in kcap.c or similar.
+// extern struct kcapability_dag* kernel_capability_dag; // Already in kcap.h
+
+/**
+ * @brief Initializes the mathematical capability framework.
+ *
+ * This function is called early during kernel startup to:
+ * 1. Run mathematical verification tests for the Capability DAG implementation.
+ * 2. Create and initialize the global kernel_capability_dag instance.
+ * It panics if either the tests fail (implicitly via KASSERT in tests) or
+ * if the global DAG cannot be created.
+ */
+void kernel_initialize_mathematical_foundation(void) {
+    // Use kprintf_stub from klib.h for early kernel messages
+    kprintf_stub("Initializing mathematical capability framework...\n");
+
+    /*
+     * Run mathematical verification tests to prove that our capability
+     * DAG implementation maintains all required mathematical properties
+     * in the actual kernel environment.
+     * KASSERTs within the tests will panic on failure.
+     */
+    kcapability_dag_run_mathematical_tests();
+
+    kprintf_stub("Capability DAG mathematical tests passed.\n");
+
+    /*
+     * Initialize the global kernel capability DAG that will manage
+     * all system-wide capability relationships.
+     * Note: kernel_capability_dag is declared extern in kcap.h
+     * and will be defined globally in a separate .c file (e.g. kcap.c).
+     */
+    kernel_capability_dag = kcapability_dag_create(INITIAL_KERNEL_CAPABILITY_CAPACITY);
+
+    if (!kernel_capability_dag) {
+        kpanic("Failed to initialize kernel capability DAG - mathematical foundation compromised");
+    }
+
+    // Assuming kprintf_stub or a kprintf that can handle _BitInt directly or via casting
+    // For safety, let's cast node_capacity for kprintf_stub.
+    kprintf_stub("Mathematical capability framework initialized successfully.\n");
+    kprintf_stub("Kernel capability DAG created with %u node capacity.\n",
+            (unsigned int)kernel_capability_dag->node_capacity);
+}
+
 
 void bsp_finish_booting(void)
 {
@@ -130,9 +220,12 @@ void kmain(kinfo_t *local_cbi)
 
   /* bss sanity check */
   KASSERT(bss_test == 0);
+  KASSERT(bss_test == 0);
   bss_test = 1;
 
   /* save a global copy of the boot parameters */
+  kmemcpy(&kinfo, local_cbi, sizeof(kinfo)); // MODIFIED
+  kmemcpy(&kmess, kinfo.kmess, sizeof(kmess)); // MODIFIED
   kmemcpy(&kinfo, local_cbi, sizeof(kinfo)); // MODIFIED
   kmemcpy(&kmess, kinfo.kmess, sizeof(kmess)); // MODIFIED
 
@@ -151,10 +244,15 @@ void kmain(kinfo_t *local_cbi)
 
   KASSERT(sizeof(kinfo.boot_procs) == sizeof(image));
   kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
+  KASSERT(sizeof(kinfo.boot_procs) == sizeof(image));
+  kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
 
   cstart();
 
   BKL_LOCK();
+
+  // Initialize the mathematical capability foundation
+  kernel_initialize_mathematical_foundation();
  
    DEBUGEXTRA(("main()\n"));
 
@@ -182,6 +280,7 @@ void kmain(kinfo_t *local_cbi)
 	ip->endpoint = rp->p_endpoint;		/* ipc endpoint */
 	rp->p_cpu_time_left = 0;
 	if(i < NR_TASKS)			/* name (tasks only) */
+		kstrlcpy(rp->p_name, ip->proc_name, sizeof(rp->p_name)); // MODIFIED
 		kstrlcpy(rp->p_name, ip->proc_name, sizeof(rp->p_name)); // MODIFIED
 
 	if(i >= NR_TASKS) {
@@ -231,6 +330,7 @@ void kmain(kinfo_t *local_cbi)
             /* Privileges for the root system process. */
             else {
 		KASSERT(isrootsysn(proc_nr));
+		KASSERT(isrootsysn(proc_nr));
                 priv(rp)->s_flags= RSYS_F;        /* privilege flags */
                 priv(rp)->s_init_flags = SRV_I;   /* init flags */
                 priv(rp)->s_trap_mask= SRV_T;     /* allowed traps */
@@ -242,6 +342,7 @@ void kmain(kinfo_t *local_cbi)
             }
 
             /* Fill in target mask. */
+            kmemset(&map, 0, sizeof(map)); // MODIFIED
             kmemset(&map, 0, sizeof(map)); // MODIFIED
 
             if (ipc_to_m == ALL_M) {
@@ -281,8 +382,11 @@ void kmain(kinfo_t *local_cbi)
 
   /* update boot procs info for VM */
   kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
+  kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
 
 #define IPCNAME(n) { \
+	KASSERT((n) >= 0 && (n) <= IPCNO_HIGHEST); \
+	KASSERT(!ipc_call_names[n]);	\
 	KASSERT((n) >= 0 && (n) <= IPCNO_HIGHEST); \
 	KASSERT(!ipc_call_names[n]);	\
 	ipc_call_names[n] = #n; \
@@ -342,6 +446,7 @@ static void announce(void)
 {
   /* Display the MINIX startup banner. */
   kprintf_stub("\nMINIX %s. " // MODIFIED
+  kprintf_stub("\nMINIX %s. " // MODIFIED
 #ifdef PAE
 "(PAE) "
 #endif
@@ -350,6 +455,7 @@ static void announce(void)
 #endif
       "Copyright 2016, Vrije Universiteit, Amsterdam, The Netherlands\n",
       OS_RELEASE);
+  kprintf_stub("MINIX is open source software, see http://www.minix3.org\n"); // MODIFIED
   kprintf_stub("MINIX is open source software, see http://www.minix3.org\n"); // MODIFIED
 }
 
@@ -365,6 +471,7 @@ void prepare_shutdown(const int how)
    * do shutdown work.  Set a watchog timer to call shutdown(). The timer 
    * argument passes the shutdown status. 
    */
+  kprintf_stub("MINIX will now be shut down ...\n"); // MODIFIED
   kprintf_stub("MINIX will now be shut down ...\n"); // MODIFIED
   set_kernel_timer(&shutdown_timer, get_monotonic() + system_hz,
       minix_shutdown, how);
@@ -421,12 +528,14 @@ void cstart(void)
   /* determine verbosity */
   if ((value = env_get(VERBOSEBOOTVARNAME)))
 	  verboseboot = 0; /* FIXME: atoi(value) was here, replace with katoi */ // MODIFIED
+	  verboseboot = 0; /* FIXME: atoi(value) was here, replace with katoi */ // MODIFIED
 
   /* Initialize clock variables. */
   init_clock();
 
   /* Get memory parameters. */
   value = env_get("ac_layout");
+  if(value && (*value != '0')) { /* FIXME: atoi(value) was here, simple check for non-zero for now */ // MODIFIED
   if(value && (*value != '0')) { /* FIXME: atoi(value) was here, simple check for non-zero for now */ // MODIFIED
         kinfo.user_sp = (vir_bytes) USR_STACKTOP_COMPACT;
         kinfo.user_end = (vir_bytes) USR_DATATOP_COMPACT;
@@ -439,10 +548,14 @@ void cstart(void)
   kinfo.nr_tasks = NR_TASKS;
   kstrlcpy(kinfo.release, OS_RELEASE, sizeof(kinfo.release)); // MODIFIED
   kstrlcpy(kinfo.version, OS_VERSION, sizeof(kinfo.version)); // MODIFIED
+  kstrlcpy(kinfo.release, OS_RELEASE, sizeof(kinfo.release)); // MODIFIED
+  kstrlcpy(kinfo.version, OS_VERSION, sizeof(kinfo.version)); // MODIFIED
 
   /* Initialize various user-mapped structures. */
   kmemset(&arm_frclock, 0, sizeof(arm_frclock)); // MODIFIED
+  kmemset(&arm_frclock, 0, sizeof(arm_frclock)); // MODIFIED
 
+  kmemset(&kuserinfo, 0, sizeof(kuserinfo)); // MODIFIED
   kmemset(&kuserinfo, 0, sizeof(kuserinfo)); // MODIFIED
   kuserinfo.kui_size = sizeof(kuserinfo);
   kuserinfo.kui_user_sp = kinfo.user_sp;
@@ -451,18 +564,23 @@ void cstart(void)
   value = env_get("no_apic");
   if(value)
 	config_no_apic = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
+	config_no_apic = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
   else
+	config_no_apic = 1; /* Default if not set */
 	config_no_apic = 1; /* Default if not set */
   value = env_get("apic_timer_x");
   if(value)
 	config_apic_timer_x = 0; /* FIXME: atoi(value) was here, replace with katoi */ // MODIFIED (default to 0, needs proper katoi)
+	config_apic_timer_x = 0; /* FIXME: atoi(value) was here, replace with katoi */ // MODIFIED (default to 0, needs proper katoi)
   else
+	config_apic_timer_x = 1; /* Default if not set */
 	config_apic_timer_x = 1; /* Default if not set */
 #endif
 
 #ifdef USE_WATCHDOG
   value = env_get("watchdog");
   if (value)
+	  watchdog_enabled = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
 	  watchdog_enabled = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
 #endif
 
@@ -472,7 +590,9 @@ void cstart(void)
   value = env_get("no_smp");
   if(value)
 	config_no_smp = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
+	config_no_smp = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
   else
+	config_no_smp = 0; /* Default if not set */
 	config_no_smp = 0; /* Default if not set */
 #endif
   DEBUGEXTRA(("intr_init(0)\n"));

@@ -1,4 +1,4 @@
-#include "kmemory.h" // Assuming klib/include will be an include path for klib itself
+    #include "kmemory.h" // Assuming klib/include will be an include path for klib itself
 #include <minix/kernel_types.h> // For k_size_t
 
 /*
@@ -47,6 +47,5 @@ void *kmemmove(void *dest, const void *src, k_size_t n) {
             *pd++ = *ps++;
         }
     }
-
     return dest;
 }

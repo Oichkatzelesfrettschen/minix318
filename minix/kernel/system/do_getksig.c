@@ -1,87 +1,98 @@
-/* The kernel call that is implemented in this file:
- *	m_type: SYS_GETKSIG
+/**
+ * @file do_getksig.c
+ * @brief SYS_GETKSIG kernel call: retrieve pending signals for a managed process.
  *
- * The parameters for this kernel call are:
- *	m_sigcalls.endpt	# process with pending signals
- *	m_sigcalls.map		# bit map with pending signals
+ * This kernel call scans all user processes for one that:
+ *  - Has its RTS_SIGNALED flag set (i.e., has pending signals).
+ *  - Is managed by the caller (its s_sig_mgr matches the caller endpoint).
+ *
+ * For the first matching process:
+ *  - Locks its p_sig_lock.
+ *  - Copies its p_pending signal set into m_sigcalls.map.
+ *  - Clears p_pending via k_sigemptyset().
+ *  - Asserts the set is now empty.
+ *  - Clears its RTS_SIGNALED flag.
+ *  - Unlocks p_sig_lock.
+ *  - Returns OK with m_sigcalls.endpt set to the target endpoint.
+ *
+ * If no such process is found:
+ *  - Sets m_sigcalls.endpt = NONE.
+ *  - Returns OK.
+ *
+ * @see RTS_ISSET, RTS_UNSET, k_sigemptyset
+ *      spin_lock_irqsave, spin_unlock_irqrestore
  */
 
 #include "kernel/system.h"
-// #include <signal.h> // Replaced
-#include <minix/endpoint.h> // Kept
 
-// Added kernel headers
-#include <minix/kernel_types.h> // For k_sigset_t
+#include <stddef.h>            /* NULL */
+#include <minix/endpoint.h>    /* endpoint_t, NONE */
+#include <minix/const.h>       /* BEG_USER_ADDR, END_PROC_ADDR */
+#include <minix/com.h>         /* isemptyp() */
+#include <klib/include/kmemory.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
-#include <klib/include/kmemory.h>
-#include "kernel/k_spinlock_irq.h" /* For spinlock_irq_t and IRQ-safe functions */
-
+#include <minix/kernel_types.h>/* k_sigset_t */
+#include "kernel/k_spinlock_irq.h" /* spinlock_irq_t, spin_lock_irqsave, spin_unlock_irqrestore */
+#include <sys/kassert.h>          /* KASSERT */
 
 #if USE_GETKSIG
 
 /**
  * @brief Handle the SYS_GETKSIG kernel call.
- * @param caller Pointer to the calling process structure (the signal manager).
- * @param m_ptr  Pointer to the message containing call parameters and for result.
- * @return OK if a signal was retrieved or no signals are pending,
- *         otherwise an error code.
- *
- * This function is called by a signal manager (typically PM) to retrieve
- * pending signals for processes it manages. It iterates through user processes,
- * looking for one with the RTS_SIGNALED flag set. If found, and if the caller
- * is the authorized signal manager for that process, the pending signal map
- * (p_pending) is copied to the caller's message, p_pending is cleared,
- * and RTS_SIGNALED is unset for the target process. These operations are
- * protected by the target process's p_sig_lock.
- * If no process has pending signals for this manager, m_sigcalls.endpt is set to NONE.
+ * @param caller  The signal manager process invoking this call.
+ * @param m_ptr   The message structure:
+ *                   - m_sigcalls.endpt : out endpoint of the target process
+ *                   - m_sigcalls.map   : out bitmap of pending signals
+ * @return Always returns OK.
  */
-int do_getksig(struct proc * caller, message * m_ptr)
+int do_getksig(struct proc *caller, message *m_ptr)
 {
-  register struct proc *rp;
-  int flags; /* For spin_lock_irqsave */
+    struct proc *rp;
+    unsigned int flags;
 
-  /* Find the next process with pending signals. */
-  for (rp = BEG_USER_ADDR; rp < END_PROC_ADDR; rp++) {
-      if (isemptyp(rp)) continue; /* Skip empty slots */
-      if (RTS_ISSET(rp, RTS_SIGNALED)) {
-          /* KASSERT: Verify caller is the designated signal manager for this process.
-           * This is a critical security and correctness check (P3). Only the
-           * registered signal manager (s_sig_mgr, usually PM) for a target process
-           * should be able to retrieve and thus act upon its pending signals.
-           * Allowing unauthorized processes to get signals could lead to information
-           * leaks or incorrect signal handling.
-           */
-          KASSERT(caller->p_endpoint == priv(rp)->s_sig_mgr,
-                  "do_getksig: caller %d is not signal manager %d for target %d",
-                  caller->p_endpoint, priv(rp)->s_sig_mgr, rp->p_endpoint);
-          if (caller->p_endpoint != priv(rp)->s_sig_mgr) continue;
+    /* Scan all user processes for pending signals */
+    for (rp = BEG_USER_ADDR; rp < END_PROC_ADDR; rp++) {
+        if (isemptyp(rp)) {
+            continue; /* Skip free slots */
+        }
+        if (!RTS_ISSET(rp, RTS_SIGNALED)) {
+            continue; /* No pending signals */
+        }
 
-          flags = spin_lock_irqsave(&rp->p_sig_lock);
-	  /* store signaled process' endpoint */
-          m_ptr->m_sigcalls.endpt = rp->p_endpoint;
-          m_ptr->m_sigcalls.map = rp->p_pending;	/* pending signals map */
-          k_sigemptyset(&rp->p_pending); 	/* clear map in the kernel */
-          /* KASSERT: Ensure the process's pending signal set (p_pending) is empty
-           * after k_sigemptyset(). This verifies the correctness of k_sigemptyset (P4)
-           * and ensures that no signals are inadvertently lost or left unprocessed
-           * from this batch. The signal manager is now responsible for all signals
-           * that were in 'map'.
-           */
-          KASSERT(k_sigisempty(&rp->p_pending),
-                  "do_getksig: signal set p_pending for proc %d (ep %d) not properly cleared by k_sigemptyset",
-                  proc_nr(rp), rp->p_endpoint);
-	  /* The RTS_UNSET macro itself should be SMP-safe or be called
-	   * while holding the appropriate lock.
-	   */
-	  RTS_UNSET(rp, RTS_SIGNALED);		/* remove signaled flag */
-          spin_unlock_irqrestore(&rp->p_sig_lock, flags);
-          return(OK);
-      }
-  }
+        /* Only the registered signal manager may retrieve signals */
+        KASSERT(caller->p_endpoint == priv(rp)->s_sig_mgr,
+                "do_getksig: caller %d not s_sig_mgr %d for ep %d",
+                caller->p_endpoint, priv(rp)->s_sig_mgr, rp->p_endpoint);
+        if (caller->p_endpoint != priv(rp)->s_sig_mgr) {
+            continue;
+        }
 
-  /* No process with pending signals was found. */
-  m_ptr->m_sigcalls.endpt = NONE;
-  return(OK);
+        /* Acquire the target's signal lock */
+        flags = spin_lock_irqsave(&rp->p_sig_lock);
+
+        /* Return the signaled process and its pending signals */
+        m_ptr->m_sigcalls.endpt = rp->p_endpoint;
+        m_ptr->m_sigcalls.map   = rp->p_pending;
+
+        /* Clear the pending set in the kernel */
+        k_sigemptyset(&rp->p_pending);
+        KASSERT(k_sigisempty(&rp->p_pending),
+                "do_getksig: p_pending not empty for proc %d/ep %d",
+                proc_nr(rp), rp->p_endpoint);
+
+        /* Clear the signaled flag */
+        RTS_UNSET(rp, RTS_SIGNALED);
+
+        /* Release the lock */
+        spin_unlock_irqrestore(&rp->p_sig_lock, flags);
+
+        return OK;
+    }
+
+    /* No process had pending signals for this manager */
+    m_ptr->m_sigcalls.endpt = NONE;
+    return OK;
 }
+
 #endif /* USE_GETKSIG */

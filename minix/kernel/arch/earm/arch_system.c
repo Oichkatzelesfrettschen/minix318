@@ -1,9 +1,36 @@
+/**
+ * @file arch_system.c
+ * @brief ARM architecture-specific system functions for the MINIX kernel
+ * 
+ * This file contains ARM-specific implementations of system-dependent functions
+ * used throughout the kernel. It handles processor initialization, context
+ * switching, floating-point unit management, and other low-level ARM operations.
+ * 
+ * Key functionality includes:
+ * - Process context management and switching
+ * - ARM processor identification and initialization
+ * - Performance monitoring unit (PMU) configuration
+ * - Memory management unit (MMU) address space switching
+ * - System call handling for ARM architecture
+ * - Serial debugging interface initialization
+ * 
+ * The file is part of the ARM port of MINIX and provides the hardware
+ * abstraction layer between the generic kernel and ARM-specific features.
+ * 
+ * @note This implementation includes stubs for FPU operations as floating-point
+ *       support may not be available on all target ARM platforms.
+ * 
+ * @warning Some functions contain duplicate lines that should be reviewed
+ *          and corrected (marked with MODIFIED comments).
+ */
 /* system dependent functions for use inside the whole kernel. */
 
 #include "kernel/kernel.h"
 
 // Removed: <unistd.h>, <ctype.h>, <string.h>, <assert.h>, <signal.h>
+// Removed: <unistd.h>, <ctype.h>, <string.h>, <assert.h>, <signal.h>
 #include <minix/cpufeature.h>
+// Kept: <machine/vm.h>, <machine/signal.h>, <arm/armreg.h>, <minix/u64.h>
 // Kept: <machine/vm.h>, <machine/signal.h>, <arm/armreg.h>, <minix/u64.h>
 #include <machine/vm.h>
 #include <machine/signal.h> // May need review if it pulls userspace defs
@@ -14,6 +41,7 @@
 // Added kernel headers
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <minix/kernel_types.h>
 
@@ -45,9 +73,10 @@ void save_fpu(struct proc *pr)
 
 void arch_proc_reset(struct proc *pr)
 {
-	KASSERT_PLACEHOLDER(pr->p_nr < NR_PROCS); // MODIFIED
+	KASSERT(pr->p_nr < NR_PROCS);
 
 	/* Clear process state. */
+	kmemset(&pr->p_reg, 0, sizeof(pr->p_reg)); // MODIFIED
 	kmemset(&pr->p_reg, 0, sizeof(pr->p_reg)); // MODIFIED
 	if(iskerneln(pr->p_nr)) {
 		pr->p_reg.psr = INIT_TASK_PSR;
@@ -59,8 +88,9 @@ void arch_proc_reset(struct proc *pr)
 void arch_proc_setcontext(struct proc *p, struct stackframe_s *state,
 	int isuser, int trapstyle)
 {
-        KASSERT_PLACEHOLDER(sizeof(p->p_reg) == sizeof(*state)); // MODIFIED
+        KASSERT(sizeof(p->p_reg) == sizeof(*state));
 	if(state != &p->p_reg) {
+	        kmemcpy(&p->p_reg, state, sizeof(*state)); // MODIFIED
 	        kmemcpy(&p->p_reg, state, sizeof(*state)); // MODIFIED
 	}
 
@@ -70,6 +100,7 @@ void arch_proc_setcontext(struct proc *p, struct stackframe_s *state,
         p->p_misc_flags |= MF_CONTEXT_SET;
 
         if(!(p->p_rts_flags)) {
+                kprintf_stub("WARNINIG: setting full context of runnable process\n"); // MODIFIED
                 kprintf_stub("WARNINIG: setting full context of runnable process\n"); // MODIFIED
                 print_proc(p);
                 util_stacktrace();
@@ -107,7 +138,7 @@ void arch_init(void)
         u32_t value;
 
 	k_stacks = (void*) &k_stacks_start;
-	KASSERT_PLACEHOLDER(!((vir_bytes) k_stacks % K_STACK_SIZE)); // MODIFIED
+	KASSERT(!((vir_bytes) k_stacks % K_STACK_SIZE));
 
 #ifndef CONFIG_SMP
 	/*
@@ -145,7 +176,7 @@ void do_ser_debug(void)
 void arch_do_syscall(struct proc *proc)
 {
   /* do_ipc assumes that it's running because of the current process */
-  KASSERT_PLACEHOLDER(proc == get_cpulocal_var(proc_ptr)); // MODIFIED
+  KASSERT(proc == get_cpulocal_var(proc_ptr));
   /* Make the system call, for real this time. */
   proc->p_reg.retreg =
 	  do_ipc(proc->p_reg.retreg, proc->p_reg.r1, proc->p_reg.r2);

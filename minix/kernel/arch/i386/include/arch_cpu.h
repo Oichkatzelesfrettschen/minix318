@@ -20,10 +20,10 @@
  * tight spin loops on some out-of-order processors.
  */
 static inline void arch_pause(void) {
-    // 'pause' instruction: informs the CPU this is a spin-wait loop.
-    // It's a hint that can improve performance and power efficiency.
-    // 'volatile' ensures the instruction is not optimized away by the compiler.
-    asm volatile("pause");
+  // 'pause' instruction: informs the CPU this is a spin-wait loop.
+  // It's a hint that can improve performance and power efficiency.
+  // 'volatile' ensures the instruction is not optimized away by the compiler.
+  asm volatile("pause");
 }
 #else
 /**
@@ -35,10 +35,10 @@ static inline void arch_pause(void) {
  * would be provided by their respective architecture-specific headers.
  */
 static inline void arch_pause(void) {
-    /* No-op for non-x86 architectures in this specific header.
-     * A more generic system might have a centralized way to define
-     * arch_pause() that defaults to no-op if not implemented by the arch.
-     */
+  /* No-op for non-x86 architectures in this specific header.
+   * A more generic system might have a centralized way to define
+   * arch_pause() that defaults to no-op if not implemented by the arch.
+   */
 }
 #endif /* __i386__ || __x86_64__ */
 

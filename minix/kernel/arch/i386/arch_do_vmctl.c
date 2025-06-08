@@ -12,6 +12,7 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_errno_t and fixed-width types
+#include <sys/kassert.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -27,7 +28,7 @@ static void setcr3(struct proc *p, u32_t cr3, u32_t *v)
 {
 	/* Set process CR3. */
 	p->p_seg.p_cr3 = cr3;
-	KASSERT_PLACEHOLDER(p->p_seg.p_cr3); // MODIFIED
+	KASSERT(p->p_seg.p_cr3);
 	p->p_seg.p_cr3_v = v; 
 	if(p == get_cpulocal_var(ptproc)) {
 		write_cr3(p->p_seg.p_cr3);
@@ -69,6 +70,8 @@ int arch_do_vmctl(
 
 
 
+  kprintf_stub("arch_do_vmctl: strange param %d\n", m_ptr->SVMCTL_PARAM); // MODIFIED
+  return EINVAL; // EINVAL might be undefined
   kprintf_stub("arch_do_vmctl: strange param %d\n", m_ptr->SVMCTL_PARAM); // MODIFIED
   return EINVAL; // EINVAL might be undefined
 }
