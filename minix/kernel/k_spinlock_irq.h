@@ -90,4 +90,3 @@ static inline void spin_unlock_irqrestore(spinlock_irq_t *irq_lock, int flags) {
 }
 
 #endif /* K_SPINLOCK_IRQ_H */
-

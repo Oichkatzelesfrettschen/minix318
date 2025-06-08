@@ -20,14 +20,13 @@
  *   EPERM   – caller not authorized signal manager
  */
 
-#include "kernel/system.h"
-
 #include <klib/include/kmemory.h>
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <minix/kernel_types.h>
 
-#include "kernel/k_spinlock_irq.h"  /* spinlock_irq_t, irq-safe APIs */
+#include "kernel/k_spinlock_irq.h" /* spinlock_irq_t, irq-safe APIs */
+#include "kernel/system.h"
 
 #if USE_ENDKSIG
 
@@ -37,59 +36,52 @@
  * @param m_ptr  The message containing .m_sigcalls.endpt.
  * @return OK on success; error otherwise.
  */
-int do_endksig(struct proc *caller, message *m_ptr)
-{
-    int proc_nr;
-    struct proc *rp;
-    unsigned flags;
+int do_endksig(struct proc *caller, message *m_ptr) {
+  int proc_nr;
+  struct proc *rp;
+  unsigned flags;
 
-    /* Validate endpoint and map to process slot */
-    if (!isokendpt(m_ptr->m_sigcalls.endpt, &proc_nr))
-        return EINVAL;
+  /* Validate endpoint and map to process slot */
+  if (!isokendpt(m_ptr->m_sigcalls.endpt, &proc_nr)) return EINVAL;
 
-    rp = proc_addr(proc_nr);
+  rp = proc_addr(proc_nr);
 
-    /* Sanity checks on target process structure */
-    KASSERT(rp != NULL,
-            "do_endksig: null process for slot %d", proc_nr);
-    KASSERT(rp->p_magic == PMAGIC,
-            "do_endksig: corrupted proc %d/%d",
-            proc_nr, rp->p_endpoint);
-    KASSERT(priv(rp) != NULL,
-            "do_endksig: no priv for proc %d/%d",
-            proc_nr, rp->p_endpoint);
+  /* Sanity checks on target process structure */
+  KASSERT(rp != NULL, "do_endksig: null process for slot %d", proc_nr);
+  KASSERT(rp->p_magic == PMAGIC, "do_endksig: corrupted proc %d/%d", proc_nr,
+          rp->p_endpoint);
+  KASSERT(priv(rp) != NULL, "do_endksig: no priv for proc %d/%d", proc_nr,
+          rp->p_endpoint);
 
-    /* Only the designated signal manager may call this */
-    if (caller->p_endpoint != priv(rp)->s_sig_mgr)
-        return EPERM;
+  /* Only the designated signal manager may call this */
+  if (caller->p_endpoint != priv(rp)->s_sig_mgr) return EPERM;
 
-    /* Acquire the process’s signal lock */
-    flags = spin_lock_irqsave(&rp->p_sig_lock);
+  /* Acquire the process’s signal lock */
+  flags = spin_lock_irqsave(&rp->p_sig_lock);
 
-    /* Verify manager status under lock */
-    KASSERT(caller->p_endpoint == priv(rp)->s_sig_mgr,
-            "do_endksig: caller %d not s_sig_mgr %d",
-            caller->p_endpoint, priv(rp)->s_sig_mgr);
-    KASSERT(RTS_ISSET(rp, RTS_SIG_PENDING),
-            "do_endksig: no SIG_PENDING on proc %d/%d",
-            proc_nr, rp->p_endpoint);
+  /* Verify manager status under lock */
+  KASSERT(caller->p_endpoint == priv(rp)->s_sig_mgr,
+          "do_endksig: caller %d not s_sig_mgr %d", caller->p_endpoint,
+          priv(rp)->s_sig_mgr);
+  KASSERT(RTS_ISSET(rp, RTS_SIG_PENDING),
+          "do_endksig: no SIG_PENDING on proc %d/%d", proc_nr, rp->p_endpoint);
 
-    /* If unexpected state, bail out */
-    if (!RTS_ISSET(rp, RTS_SIG_PENDING)) {
-        spin_unlock_irqrestore(&rp->p_sig_lock, flags);
-        return EINVAL;
-    }
-
-    /* Clear pending flag if no new signals arrived */
-    if (!RTS_ISSET(rp, RTS_SIGNALED)) {
-        RTS_UNSET(rp, RTS_SIG_PENDING);
-    }
-
-    /* Leave SIG_PENDING set if RTS_SIGNALED was true */
-
+  /* If unexpected state, bail out */
+  if (!RTS_ISSET(rp, RTS_SIG_PENDING)) {
     spin_unlock_irqrestore(&rp->p_sig_lock, flags);
+    return EINVAL;
+  }
 
-    return OK;
+  /* Clear pending flag if no new signals arrived */
+  if (!RTS_ISSET(rp, RTS_SIGNALED)) {
+    RTS_UNSET(rp, RTS_SIG_PENDING);
+  }
+
+  /* Leave SIG_PENDING set if RTS_SIGNALED was true */
+
+  spin_unlock_irqrestore(&rp->p_sig_lock, flags);
+
+  return OK;
 }
 
 #endif /* USE_ENDKSIG */
