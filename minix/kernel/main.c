@@ -76,7 +76,7 @@
 #include <sys/kassert.h>
 
 // Includes for Capability DAG
-#include <klib/klib.h> // For kprintf_stub, kpanic, and kcapability_dag_run_mathematical_tests
+#include "../lib/klib/include/klib.h" // For kprintf_stub, kpanic, and kcapability_dag_run_mathematical_tests
 #include <minix/kcapability_dag.h> // For kcapability_dag_t and kcapability_dag_create
 #include <minix/kcap.h> // For INITIAL_KERNEL_CAPABILITY_CAPACITY and kernel_capability_dag extern
 
