@@ -48,8 +48,12 @@
 PUBLIC int (*call_vec[NR_SYS_CALLS])(message *m_ptr);
 
 #define map(call_nr, handler) \
-    {extern int dummy[NR_SYS_CALLS>(unsigned)(call_nr-KERNEL_CALL) ? 1:-1];} \
-    call_vec[(call_nr-KERNEL_CALL)] = (handler)  
+    if ((call_nr) >= KERNEL_CALL && (call_nr) < KERNEL_CALL + NR_SYS_CALLS) { \
+        extern int dummy[NR_SYS_CALLS>(unsigned)(call_nr-KERNEL_CALL) ? 1:-1]; \
+        call_vec[(call_nr-KERNEL_CALL)] = (handler); \
+    } else { \
+        kprintf("Invalid call number: %d\n", call_nr); \
+    }
 
 FORWARD _PROTOTYPE( void initialize, (void));
 
@@ -71,7 +75,8 @@ PUBLIC void sys_task()
   while (TRUE) {
       /* Get work. Block and wait until a request message arrives. */
       receive(ANY, &m);			
-      call_nr = (unsigned) m.m_type - KERNEL_CALL;	
+      if (call_nr >= sizeof(priv(caller_ptr)->s_call_mask) * CHAR_BIT || 
+          ! (priv(caller_ptr)->s_call_mask & (1<<call_nr))) {
       caller_ptr = proc_addr(m.m_source);	
 
       /* See if the caller made a valid request and try to handle it. */
@@ -123,7 +128,7 @@ PRIVATE void initialize(void)
    * if an illegal call number is used. The ordering is not important here.
    */
   for (i=0; i<NR_SYS_CALLS; i++) {
-      call_vec[i] = do_unused;
+      call_vec[i] = default_handler;
   }
 
   /* Process management. */
@@ -178,12 +183,14 @@ int proc_type;				/* system or user process flag */
 {
 /* Get a privilege structure. All user processes share the same privilege 
  * structure. System processes get their own privilege structure. 
- */
   register struct priv *sp;			/* privilege structure */
 
   if (proc_type == SYS_PROC) {			/* find a new slot */
-      for (sp = BEG_PRIV_ADDR; sp < END_PRIV_ADDR; ++sp) 
-          if (sp->s_proc_nr == NONE && sp->s_id != USER_PRIV_ID) break;	
+      for (sp = BEG_PRIV_ADDR; sp < END_PRIV_ADDR; ++sp) {
+          if (sp->s_proc_nr == NONE && sp->s_id != USER_PRIV_ID) {
+              break;				/* terminate loop early */
+          }
+      }
       if (sp->s_proc_nr != NONE) return(ENOSPC);
       rc->p_priv = sp;				/* assign new slot */
       rc->p_priv->s_proc_nr = proc_nr(rc);	/* set association */
@@ -193,6 +200,7 @@ int proc_type;				/* system or user process flag */
       rc->p_priv->s_proc_nr = INIT_PROC_NR;	/* set association */
       rc->p_priv->s_flags = 0;			/* no initial flags */
   }
+  return(OK);
   return(OK);
 }
 
@@ -209,16 +217,16 @@ int source;
  * Unfortunately this test is run-time - we don't want to bother with
  * compiling different kernels for different machines.
  *
- * On machines without RDTSC, we use read_clock().
- */
-  int r_next;
   unsigned long tsc_high, tsc_low;
 
   source %= RANDOM_SOURCES;
   r_next= krandom.bin[source].r_next;
-  if (machine.processor > 486) {
+  if (machine.processor > 486 && machine.supports_rdtsc) {
       read_tsc(&tsc_high, &tsc_low);
       krandom.bin[source].r_buf[r_next] = tsc_low;
+  } else {
+      krandom.bin[source].r_buf[r_next] = read_clock();
+  }
   } else {
       krandom.bin[source].r_buf[r_next] = read_clock();
   }
@@ -248,7 +256,7 @@ int sig_nr;			/* signal to be sent, 1 to _NSIG */
 
 /*===========================================================================*
  *				cause_sig				     *
- *===========================================================================*/
+ *==================================a=========================================*/
 PUBLIC void cause_sig(proc_nr, sig_nr)
 int proc_nr;			/* process to be signalled */
 int sig_nr;			/* signal to be sent, 1 to _NSIG */
@@ -273,6 +281,9 @@ int sig_nr;			/* signal to be sent, 1 to _NSIG */
   if (! sigismember(&rp->p_pending, sig_nr)) {
       sigaddset(&rp->p_pending, sig_nr);
       if (! (rp->p_rts_flags & SIGNALED)) {		/* other pending */
+          /* If the process is ready (no RTS flags set), remove it from the ready queue
+           * to ensure it is marked as not ready for execution while handling the signal.
+           */
           if (rp->p_rts_flags == 0) lock_dequeue(rp);	/* make not ready */
           rp->p_rts_flags |= SIGNALED | SIG_PENDING;	/* update flags */
           send_sig(PM_PROC_NR, SIGKSIG);
@@ -306,7 +317,9 @@ vir_bytes bytes;		/* # of bytes to be copied */
   	return (phys_bytes) vir_addr;
 #endif
 
-  kprintf("Warning, error in umap_bios, virtual address 0x%x\n", vir_addr);
+  kprintf("Warning, error in umap_bios: virtual address 0x%x is invalid. "
+          "Acceptable ranges are [0x%x - 0x%x] and [0x%x - 0x%x].\n",
+          vir_addr, BIOS_MEM_BEGIN, BIOS_MEM_END, BASE_MEM_TOP, UPPER_MEM_END);
   return 0;
 }
 
@@ -334,8 +347,8 @@ vir_bytes bytes;		/* # of bytes to be copied */
    * The Atari ST behaves like the 8088 in this respect.
    */
 
-  if (bytes <= 0) return( (phys_bytes) 0);
-  if (vir_addr + bytes <= vir_addr) return 0;	/* overflow */
+  if (bytes <= 0) return( (phys_bytes) 0);      /* validate bytes */
+  if (vir_addr + bytes <= vir_addr) return 0;	/* check for overflow */
   vc = (vir_addr + bytes - 1) >> CLICK_SHIFT;	/* last click of data */
 
 #if (CHIP == INTEL) || (CHIP == M68000)
@@ -438,11 +451,17 @@ vir_bytes bytes;		/* # of bytes to copy  */
       }
 
       /* Check if mapping succeeded. */
-      if (phys_addr[i] <= 0 && vir_addr[i]->segment != PHYS_SEG) 
+      if ((phys_addr[i] <= 0 || phys_addr[i] > MAX_PHYS_ADDR) && vir_addr[i]->segment != PHYS_SEG) 
           return(EFAULT);
   }
 
-  /* Now copy bytes between physical addresseses. */
+  /* Validate physical addresses before copying. */
+  if (!is_valid_phys_addr(phys_addr[_SRC_], bytes) || 
+      !is_valid_phys_addr(phys_addr[_DST_], bytes)) {
+      return(EFAULT);
+  }
+
+  /* Now copy bytes between physical addresses. */
   phys_copy(phys_addr[_SRC_], phys_addr[_DST_], (phys_bytes) bytes);
   return(OK);
 }
