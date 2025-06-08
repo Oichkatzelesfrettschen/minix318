@@ -64,6 +64,44 @@ typedef struct {
                            // Could also be arch-specific size.
 } __attribute__((aligned(8))) k_atomic_long_t; /* Explicitly long atomic type */
 
+
+/**
+ * @struct k_exec_info_s
+ * @brief Kernel-internal information about a program to be executed.
+ *
+ * This structure holds essential parameters that the kernel part of exec
+ * needs, such as entry point, stack pointer, and segment information
+ * for the new process image. It also includes the program name.
+ */
+typedef struct k_exec_info_s {
+    k_vaddr_t stack_top;        /**< Top of the initial user stack (highest address). */
+    k_vaddr_t initial_eip;      /**< Initial instruction pointer (entry point of the program). */
+
+    k_vaddr_t text_vaddr;       /**< Virtual address of the text segment start. */
+    k_size_t  text_size;        /**< Size of the text segment in bytes. */
+
+    k_vaddr_t data_vaddr;       /**< Virtual address of the data segment start. */
+    k_size_t  data_size;        /**< Total size of the data segment (data + bss) in bytes. */
+
+    k_vaddr_t bss_start_vaddr;  /**< Virtual address where the BSS section starts (within data segment). */
+    k_size_t  bss_size;         /**< Size of the BSS section in bytes. */
+
+    /**
+     * @brief Program name, typically the full path of the executable.
+     * Truncated if longer than the buffer. Using a common default length.
+     * A kernel-specific PATH_MAX or NAME_MAX would be preferable if available.
+     * PROC_NAME_LEN is often too short for paths.
+     */
+    char prog_name[256];
+
+    // Future considerations for more detailed exec parameters passed from PM to kernel:
+    // k_vaddr_t user_argv_ptr;   /**< Pointer to argv array in user space of the new process image. */
+    // k_vaddr_t user_envp_ptr;   /**< Pointer to envp array in user space of the new process image. */
+    // k_size_t  initial_stack_frame_size; /**< Size of initial arguments/environment copied to the user stack. */
+
+} k_exec_info_t;
+
+
 /* Opaque handle types (forward declarations) */
 /* These declare pointer types to incomplete structs, hiding implementation
  * details. */
