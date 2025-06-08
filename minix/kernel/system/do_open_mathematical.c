@@ -32,8 +32,36 @@
 #ifndef CAP_RIGHT_TRAVERSE
 #define CAP_RIGHT_TRAVERSE (_BitInt(64))0x00010000
 #endif
+#ifndef CAP_RIGHT_READ
+#define CAP_RIGHT_READ (_BitInt(64))0x00020000
+#endif
+#ifndef CAP_RIGHT_WRITE
+#define CAP_RIGHT_WRITE (_BitInt(64))0x00040000
+#endif
 
-// Forward declarations for static helper stubs (to be defined in the next step)
+// POSIX open flags (simplified definitions)
+#ifndef O_RDONLY
+#define O_RDONLY 00
+#endif
+#ifndef O_WRONLY
+#define O_WRONLY 01
+#endif
+#ifndef O_RDWR
+#define O_RDWR 02
+#endif
+#ifndef O_ACCMODE
+#define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
+#endif
+
+// File descriptor table and error codes
+#ifndef NO_FILES // Max open files per process
+#define NO_FILES 256
+#endif
+#ifndef EMFILE // Too many open files error code
+#define EMFILE 24
+#endif
+
+// Forward declarations for static helper functions
 static kcapability_dag_node_t *
 kcapability_dag_lookup_process_capability(kcapability_dag_t *dag,
                                           endpoint_t proc_ep);

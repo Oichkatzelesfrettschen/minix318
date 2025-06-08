@@ -13,7 +13,7 @@ void *kmemset_c23(void *dest, int c, size_t n);
 // String functions
 size_t kstrlen_c23(const char *s);
 size_t kstrlcpy_c23(char *restrict dest, const char *restrict src, size_t size);
-// int kstrcmp_c23(const char *s1, const char *s2); // Placeholder for future
+int kstrcmp_c23(const char *s1, const char *s2);
 
 // For Capability DAG functionalities, include <minix/kcapability_dag.h>
 // directly. However, the test suite runner can be exposed via klib.h for
