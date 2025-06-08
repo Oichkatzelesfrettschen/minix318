@@ -13,7 +13,8 @@
 /* 7-15 are reserved for future use or were used by obsolete calls */
 #define SENDA		   16	/* asynchronous send */
 #define SYS_REPLY          17   /* reply to a SENDREC caller */
-#define IPCNO_HIGHEST	SYS_REPLY
+#define SYS_IPC_SEND_CAP   18   /* capability-based send */
+#define IPCNO_HIGHEST	SYS_IPC_SEND_CAP
 /* Check that the message payload type doesn't grow past the maximum IPC payload size.
  * This is a compile time check. */
 #define _ASSERT_MSG_SIZE(msg_type) \
