@@ -24,10 +24,8 @@
 /* Or if individual klib components should be included directly. */
 
 /* C23 standard headers for specific features */
-#if __STDC_VERSION__ >= 202311L
-#include <stdbit.h>    /* C23 bit manipulation functions (e.g., stdc_leading_zeros) */
-#include <stdckdint.h> /* C23 checked integer arithmetic (e.g., ckd_add) */
-#endif
+/* #include <stdbit.h>    */ /* C23 bit manipulation functions (e.g., stdc_leading_zeros) */
+/* #include <stdckdint.h> */ /* C23 checked integer arithmetic (e.g., ckd_add) */
 
 /**
  * @brief ${FUNCTION_BRIEF}

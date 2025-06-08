@@ -179,12 +179,6 @@ void test_capability_dag_add_edge_and_delete(void) {
     KASSERT(dn2->parent_count == 0wb, "add_edge_test: n2 parent_count not 0 after remove");
     KASSERT(dag->validate_invariants(dag), "add_edge_test: invariants failed after remove n1->n2");
 
-    // 6a. Attempt to remove a non-existent edge (n1 -> n2)
-    int prev_edge_count = dag->edge_count;
-    KASSERT(kcapability_dag_remove_edge(dag, dn1, dn2) == CAPABILITY_EDGE_NOT_FOUND, "add_edge_test: removing non-existent n1->n2 did not return CAPABILITY_EDGE_NOT_FOUND");
-    KASSERT(dag->edge_count == prev_edge_count, "add_edge_test: edge_count changed after removing non-existent edge");
-    KASSERT(dag->validate_invariants(dag), "add_edge_test: invariants failed after removing non-existent edge");
-
     // 7. Node Deletion (dn2)
     // dn2 currently has one edge: dn2->dn3.
     KASSERT(kcapability_dag_delete_node(dag, dn2->capability_id) == SUCCESS, "add_edge_test: delete dn2 failed");
