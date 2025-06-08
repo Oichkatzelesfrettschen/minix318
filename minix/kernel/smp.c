@@ -6,6 +6,14 @@
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
+// #include <assert.h> // Replaced
+
+// Added kernel headers
+#include <minix/kernel_types.h>
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
 
 #include "smp.h"
 #include "interrupt.h"
@@ -45,6 +53,7 @@ void wait_for_APs_to_finish_booting(void)
 			n++;
 	}
 	if (n != ncpus)
+		kprintf_stub("WARNING only %d out of %d cpus booted\n", n, ncpus); // MODIFIED
 		kprintf_stub("WARNING only %d out of %d cpus booted\n", n, ncpus); // MODIFIED
 
 	/* we must let the other CPUs to run in kernel mode first */
@@ -125,6 +134,7 @@ void smp_schedule_stop_proc(struct proc * p)
 	else
 		RTS_SET(p, RTS_PROC_STOP);
 	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
+	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
 }
 
 void smp_schedule_vminhibit(struct proc * p)
@@ -133,6 +143,7 @@ void smp_schedule_vminhibit(struct proc * p)
 		smp_schedule_sync(p, SCHED_IPI_VM_INHIBIT);
 	else
 		RTS_SET(p, RTS_VMINHIBIT);
+	KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
 	KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
 }
 

@@ -23,6 +23,17 @@
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
 
+// #include <string.h> // Replaced
+// #include <assert.h> // Replaced
+#include <machine/mcontext.h> // Kept
+
+// Added kernel headers
+#include <minix/kernel_types.h> // For k_errno_t or similar if error codes are mapped
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
+
 
 #if USE_MCONTEXT 
 /*===========================================================================*
@@ -37,6 +48,8 @@ int do_getmcontext(struct proc * caller, message * m_ptr)
   mcontext_t mc;
 
   if (!isokendpt(m_ptr->m_lsys_krn_sys_getmcontext.endpt, &proc_nr))
+	return(EINVAL); // EINVAL might be undefined
+  if (iskerneln(proc_nr)) return(EPERM); // EPERM might be undefined
 	return(EINVAL); // EINVAL might be undefined
   if (iskerneln(proc_nr)) return(EPERM); // EPERM might be undefined
   rp = proc_addr(proc_nr);
@@ -87,6 +100,7 @@ int do_setmcontext(struct proc * caller, message * m_ptr)
   int proc_nr, r;
   mcontext_t mc;
 
+  if (!isokendpt(m_ptr->m_lsys_krn_sys_setmcontext.endpt, &proc_nr)) return(EINVAL); // EINVAL might be undefined
   if (!isokendpt(m_ptr->m_lsys_krn_sys_setmcontext.endpt, &proc_nr)) return(EINVAL); // EINVAL might be undefined
   rp = proc_addr(proc_nr);
 

@@ -16,22 +16,35 @@
 
 #if USE_ENDKSIG 
 
-/*===========================================================================*
- *			      do_endksig				     *
- *===========================================================================*/
+/**
+ * @brief Handle the SYS_ENDKSIG kernel call.
+ * @param caller Pointer to the calling process structure (the signal manager).
+ * @param m_ptr  Pointer to the message containing the endpoint of the process
+ *               for which signal processing is ending.
+ * @return OK if successful, or an error code if the target process is invalid,
+ *         the caller is not the authorized signal manager, or the process
+ *         was not in a signal-pending state.
+ *
+ * This function is called by a signal manager (typically PM) to indicate that
+ * it has finished processing signals for a given target process.
+ * It checks if new signals have arrived for the target process (RTS_SIGNALED is set).
+ * If no new signals have arrived, it clears the RTS_SIG_PENDING flag, indicating
+ * the process is no longer considered to be actively undergoing signal processing by PM.
+ * If new signals *have* arrived, RTS_SIG_PENDING remains set (as cause_sig would
+ * have set it again and notified PM), and PM is expected to call do_getksig again.
+ * Operations on RTS flags are protected by the target process's p_sig_lock.
+ */
 int do_endksig(struct proc * caller, message * m_ptr)
 {
-/* Finish up after a kernel type signal, caused by a SYS_KILL message or a 
- * call to cause_sig by a task. This is called by a signal manager after
- * processing a signal it got with SYS_GETKSIG.
- */
   register struct proc *rp;
   int proc_nr;
+  int flags; /* For spin_lock_irqsave */
 
   /* Get process pointer and verify that it had signals pending. If the 
    * process is already dead its flags will be reset. 
    */
   if(!isokendpt(m_ptr->m_sigcalls.endpt, &proc_nr))
+	return EINVAL; // EINVAL might be undefined
 	return EINVAL; // EINVAL might be undefined
 
   rp = proc_addr(proc_nr);
@@ -39,8 +52,16 @@ int do_endksig(struct proc * caller, message * m_ptr)
   if (!RTS_ISSET(rp, RTS_SIG_PENDING)) return(EINVAL); // EINVAL might be undefined
 
   /* The signal manager has finished one kernel signal. Is the process ready? */
-  if (!RTS_ISSET(rp, RTS_SIGNALED)) 		/* new signal arrived */
+  /* If no new signal has arrived (RTS_SIGNALED is clear), then clear SIG_PENDING. */
+  if (!RTS_ISSET(rp, RTS_SIGNALED)) {
 	RTS_UNSET(rp, RTS_SIG_PENDING);	/* remove pending flag */
+  }
+  /* If RTS_SIGNALED is set, it means a new signal arrived after do_getksig
+   * cleared it. cause_sig would have set RTS_SIG_PENDING again and sent a
+   * notification. So, do_endksig doesn't need to clear RTS_SIG_PENDING here,
+   * nor does it need to re-notify.
+   */
+  spin_unlock_irqrestore(&rp->p_sig_lock, flags);
   return(OK);
 }
 

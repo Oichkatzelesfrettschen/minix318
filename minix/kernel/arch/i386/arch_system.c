@@ -11,6 +11,17 @@
 // #include <assert.h> // Replaced
 // #include <signal.h> // Replaced
 #include <machine/vm.h>        // Kept
+// #include <unistd.h> // Removed
+// #include <ctype.h> // Removed
+// #include <string.h> // Replaced
+#include <machine/cmos.h>      // Kept
+#include <machine/bios.h>      // Kept
+#include <machine/cpu.h>       // Kept
+#include <minix/portio.h>   // Kept
+#include <minix/cpufeature.h> // Kept
+// #include <assert.h> // Replaced
+// #include <signal.h> // Replaced
+#include <machine/vm.h>        // Kept
 
 #include <minix/u64.h>         // Kept
 
@@ -154,6 +165,7 @@ static char fpu_state[NR_PROCS][FPU_XFP_SIZE] __aligned(FPUALIGN);
 void arch_proc_reset(struct proc *pr)
 {
 	char *v = NULL; // NULL might be undefined
+	char *v = NULL; // NULL might be undefined
 	struct stackframe_s reg;
 
 	KASSERT(pr->p_nr < NR_PROCS);
@@ -164,9 +176,11 @@ void arch_proc_reset(struct proc *pr)
 		KASSERT(!((vir_bytes)v % FPUALIGN));
 		/* initialize state */
 		kmemset(v, 0, FPU_XFP_SIZE); // MODIFIED
+		kmemset(v, 0, FPU_XFP_SIZE); // MODIFIED
 	}
 
 	/* Clear process state. */
+        kmemset(&reg, 0, sizeof(pr->p_reg)); // MODIFIED, was sizeof(pr->p_reg), should be sizeof(reg)
         kmemset(&reg, 0, sizeof(pr->p_reg)); // MODIFIED, was sizeof(pr->p_reg), should be sizeof(reg)
         if(iskerneln(pr->p_nr))
         	reg.psw = INIT_TASK_PSW;
@@ -211,6 +225,7 @@ int restore_fpu(struct proc *pr)
 			failed = frstor(state);
 		}
 
+		if (failed) return EINVAL; // EINVAL might be undefined
 		if (failed) return EINVAL; // EINVAL might be undefined
 	}
 
@@ -292,6 +307,7 @@ void arch_init(void)
 void do_ser_debug(void)
 {
 	u8_t c, lsr; // u8_t might be undefined
+	u8_t c, lsr; // u8_t might be undefined
 
 #if CONFIG_OXPCIE
 	{
@@ -319,9 +335,12 @@ static void ser_dump_queue_cpu(unsigned cpu)
 		struct proc *p;
 		if(rdy_head[q])	 {
 			kprintf_stub("%2d: ", q); // MODIFIED
+			kprintf_stub("%2d: ", q); // MODIFIED
 			for(p = rdy_head[q]; p; p = p->p_nextready) {
 				kprintf_stub("%s / %d  ", p->p_name, p->p_endpoint); // MODIFIED
+				kprintf_stub("%s / %d  ", p->p_name, p->p_endpoint); // MODIFIED
 			}
+			kprintf_stub("\n"); // MODIFIED
 			kprintf_stub("\n"); // MODIFIED
 		}
 	}
@@ -333,7 +352,9 @@ static void ser_dump_queues(void)
 	unsigned cpu;
 
 	kprintf_stub("--- run queues ---\n"); // MODIFIED
+	kprintf_stub("--- run queues ---\n"); // MODIFIED
 	for (cpu = 0; cpu < ncpus; cpu++) {
+		kprintf_stub("CPU %d :\n", cpu); // MODIFIED
 		kprintf_stub("CPU %d :\n", cpu); // MODIFIED
 		ser_dump_queue_cpu(cpu);
 	}
@@ -348,7 +369,9 @@ static void dump_bkl_usage(void)
 	unsigned cpu;
 
 	kprintf_stub("--- BKL usage ---\n"); // MODIFIED
+	kprintf_stub("--- BKL usage ---\n"); // MODIFIED
 	for (cpu = 0; cpu < ncpus; cpu++) {
+		kprintf_stub("cpu %3d kernel ticks 0x%x%08x bkl ticks 0x%x%08x succ %d tries %d\n", cpu, // MODIFIED
 		kprintf_stub("cpu %3d kernel ticks 0x%x%08x bkl ticks 0x%x%08x succ %d tries %d\n", cpu, // MODIFIED
 				ex64hi(kernel_ticks[cpu]),
 				ex64lo(kernel_ticks[cpu]),
@@ -360,6 +383,10 @@ static void dump_bkl_usage(void)
 
 static void reset_bkl_usage(void)
 {
+	kmemset(kernel_ticks, 0, sizeof(kernel_ticks)); // MODIFIED
+	kmemset(bkl_ticks, 0, sizeof(bkl_ticks)); // MODIFIED
+	kmemset(bkl_tries, 0, sizeof(bkl_tries)); // MODIFIED
+	kmemset(bkl_succ, 0, sizeof(bkl_succ)); // MODIFIED
 	kmemset(kernel_ticks, 0, sizeof(kernel_ticks)); // MODIFIED
 	kmemset(bkl_ticks, 0, sizeof(bkl_ticks)); // MODIFIED
 	kmemset(bkl_tries, 0, sizeof(bkl_tries)); // MODIFIED
@@ -404,8 +431,10 @@ static void ser_debug(const int c)
 		if(verboseflags & flag)	{		\
 			verboseflags &= ~flag;		\
 			kprintf_stub("%s disabled\n", #flag);	\
+			kprintf_stub("%s disabled\n", #flag);	\
 		} else {				\
 			verboseflags |= flag;		\
+			kprintf_stub("%s enabled\n", #flag);	\
 			kprintf_stub("%s enabled\n", #flag);	\
 		}					\
 		break;					\
@@ -439,6 +468,7 @@ static void ser_dump_proc_cpu(void)
 	unsigned cpu;
 
 	for (cpu = 0; cpu < ncpus; cpu++) {
+		kprintf_stub("CPU %d processes : \n", cpu); // MODIFIED
 		kprintf_stub("CPU %d processes : \n", cpu); // MODIFIED
 		for (pp= BEG_USER_ADDR; pp < END_PROC_ADDR; pp++) {
 			if (isemptyp(pp) || pp->p_cpu != cpu)
@@ -543,6 +573,7 @@ void arch_proc_setcontext(struct proc *p, struct stackframe_s *state,
 	KASSERT(sizeof(p->p_reg) == sizeof(*state));
 	if(state != &p->p_reg) {
 		kmemcpy(&p->p_reg, state, sizeof(*state)); // MODIFIED
+		kmemcpy(&p->p_reg, state, sizeof(*state)); // MODIFIED
 	}
 
 	/* further code is instructed to not touch the context
@@ -563,10 +594,12 @@ void arch_proc_setcontext(struct proc *p, struct stackframe_s *state,
 	 */
 	if(!(p->p_rts_flags)) {
 		kprintf_stub("WARNINIG: setting full context of runnable process\n"); // MODIFIED
+		kprintf_stub("WARNINIG: setting full context of runnable process\n"); // MODIFIED
 		print_proc(p);
 		util_stacktrace();
 	}
 	if(p->p_seg.p_kern_trap_style == KTS_NONE)
+		kprintf_stub("WARNINIG: setting full context of out-of-kernel process\n"); // MODIFIED
 		kprintf_stub("WARNINIG: setting full context of out-of-kernel process\n"); // MODIFIED
 	p->p_seg.p_kern_trap_style = trap_style;
 }
@@ -585,6 +618,8 @@ void restore_user_context(struct proc *p)
 		int t;
 		for(t = 0; t < TYPES; t++)
 			if(restores[t])
+				kprintf_stub("%d: %d   ", t, restores[t]); // MODIFIED
+		kprintf_stub("\n"); // MODIFIED
 				kprintf_stub("%d: %d   ", t, restores[t]); // MODIFIED
 		kprintf_stub("\n"); // MODIFIED
 	}
@@ -625,9 +660,11 @@ void fpu_sigcontext(struct proc *pr, struct sigframe_sigcontext *fr, struct sigc
 
 	if (osfxsr_feature) {
 		// FIXME: sc fields will be problematic
+		// FIXME: sc fields will be problematic
 		fp_error = sc->sc_fpu_state.xfp_regs.fp_status &
 			~sc->sc_fpu_state.xfp_regs.fp_control;
 	} else {
+		// FIXME: sc fields will be problematic
 		// FIXME: sc fields will be problematic
 		fp_error = sc->sc_fpu_state.fpu_regs.fp_status &
 			~sc->sc_fpu_state.fpu_regs.fp_control;
@@ -640,13 +677,18 @@ void fpu_sigcontext(struct proc *pr, struct sigframe_sigcontext *fr, struct sigc
 		 * User must clear the SF bit (0x40) if set
 		 */
 		fr->sf_code = FPE_FLTINV; // FPE_FLTINV might be undefined
+		fr->sf_code = FPE_FLTINV; // FPE_FLTINV might be undefined
 	} else if (fp_error & 0x004) {
+		fr->sf_code = FPE_FLTDIV; /* Divide by Zero */ // FPE_FLTDIV might be undefined
 		fr->sf_code = FPE_FLTDIV; /* Divide by Zero */ // FPE_FLTDIV might be undefined
 	} else if (fp_error & 0x008) {
 		fr->sf_code = FPE_FLTOVF; /* Overflow */ // FPE_FLTOVF might be undefined
+		fr->sf_code = FPE_FLTOVF; /* Overflow */ // FPE_FLTOVF might be undefined
 	} else if (fp_error & 0x012) {
 		fr->sf_code = FPE_FLTUND; /* Denormal, Underflow */ // FPE_FLTUND might be undefined
+		fr->sf_code = FPE_FLTUND; /* Denormal, Underflow */ // FPE_FLTUND might be undefined
 	} else if (fp_error & 0x020) {
+		fr->sf_code = FPE_FLTRES; /* Precision */ // FPE_FLTRES might be undefined
 		fr->sf_code = FPE_FLTRES; /* Precision */ // FPE_FLTRES might be undefined
 	} else {
 		fr->sf_code = 0;  /* XXX - probably should be used for FPE_INTOVF or

@@ -25,6 +25,7 @@
 #include "bsp_serial.h"
 #include "glo.h"
 #include <machine/multiboot.h> // Kept for now
+#include <machine/multiboot.h> // Kept for now
 
 #if USE_SYSDEBUG
 #define MULTIBOOT_VERBOSE 1
@@ -105,6 +106,7 @@ int find_value(char * content,char * key,char *value,int value_max_len){
 
 	if (match_len == key_len) {
 		kprintf_stub("key found at %d %s\n", match_len, &content[match_len]); // MODIFIED
+		kprintf_stub("key found at %d %s\n", match_len, &content[match_len]); // MODIFIED
 		value_len = 0;
 		/* copy the content to the value char iter already points to the first 
 		   char value */
@@ -127,8 +129,12 @@ static int mb_set_param(char *bigbuf,char *name,char *value, kinfo_t *cbi)
 	char *q;
 	k_size_t namelen = kstrlen(name); // MODIFIED
 	k_size_t valuelen = kstrlen(value); // MODIFIED
+	k_size_t namelen = kstrlen(name); // MODIFIED
+	k_size_t valuelen = kstrlen(value); // MODIFIED
 
 	/* Some variables we recognize */
+	if(!kstrcmp(name, SERVARNAME)) { cbi->do_serial_debug = 1; } // MODIFIED
+	if(!kstrcmp(name, SERBAUDVARNAME)) { cbi->serial_debug_baud = 0 /* FIXME: atoi(value) was here, replace with katoi */; } // MODIFIED
 	if(!kstrcmp(name, SERVARNAME)) { cbi->do_serial_debug = 1; } // MODIFIED
 	if(!kstrcmp(name, SERBAUDVARNAME)) { cbi->serial_debug_baud = 0 /* FIXME: atoi(value) was here, replace with katoi */; } // MODIFIED
 
@@ -172,7 +178,9 @@ static int mb_set_param(char *bigbuf,char *name,char *value, kinfo_t *cbi)
 	}
 	
 	(void)kstrlcpy(p, name, namelen + 1); /* FIXME: strcpy was here, validate size for kstrlcpy. namelen+1 for null. */ // MODIFIED
+	(void)kstrlcpy(p, name, namelen + 1); /* FIXME: strcpy was here, validate size for kstrlcpy. namelen+1 for null. */ // MODIFIED
 	p[namelen] = '=';
+	(void)kstrlcpy(p + namelen + 1, value, valuelen + 1); /* FIXME: strcpy was here, validate size for kstrlcpy. valuelen+1 for null */ // MODIFIED
 	(void)kstrlcpy(p + namelen + 1, value, valuelen + 1); /* FIXME: strcpy was here, validate size for kstrlcpy. valuelen+1 for null */ // MODIFIED
 	p[namelen + valuelen + 1] = 0;
 	p[namelen + valuelen + 2] = 0; /* end with a second delimiter */
@@ -209,6 +217,7 @@ multiboot_memory_map_t mb_memmap;
 
 void setup_mbi(multiboot_info_t *mbi, char *bootargs)
 {
+	kmemset(mbi, 0, sizeof(*mbi)); // MODIFIED
 	kmemset(mbi, 0, sizeof(*mbi)); // MODIFIED
 	mbi->flags = MULTIBOOT_INFO_MODS | MULTIBOOT_INFO_MEM_MAP |
 			MULTIBOOT_INFO_CMDLINE;
@@ -271,6 +280,7 @@ void get_parameters(kinfo_t *cbi, char *bootargs)
 
 		/* Override values with cmdline argument */
 		kmemcpy(cmdline, (void *) mbi->cmdline, BUF); // MODIFIED
+		kmemcpy(cmdline, (void *) mbi->cmdline, BUF); // MODIFIED
 		p = cmdline;
 		while (*p) {
 			var_i = 0;
@@ -317,6 +327,7 @@ void get_parameters(kinfo_t *cbi, char *bootargs)
 		mbi->mi_mods_count * sizeof(multiboot_module_t));
 	
 	kmemset(cbi->memmap, 0, sizeof(cbi->memmap)); // MODIFIED
+	kmemset(cbi->memmap, 0, sizeof(cbi->memmap)); // MODIFIED
 	/* mem_map has a variable layout */
 	if(mbi->flags & MULTIBOOT_INFO_MEM_MAP) {
 		cbi->mmap_size = 0;
@@ -347,6 +358,7 @@ void get_parameters(kinfo_t *cbi, char *bootargs)
 	for(m = 0; m < cbi->mods_with_kernel; m++) {
 #if 0
 		kprintf_stub("checking overlap of module %08lx-%08lx\n", // MODIFIED
+		kprintf_stub("checking overlap of module %08lx-%08lx\n", // MODIFIED
 		  cbi->module_list[m].mod_start, cbi->module_list[m].mod_end);
 #endif
 		if(overlaps(cbi->module_list, cbi->mods_with_kernel, m))
@@ -376,6 +388,7 @@ void set_machine_id(char *cmdline)
 
 	char boardname[20];
 	kmemset(boardname,'\0',20); // MODIFIED
+	kmemset(boardname,'\0',20); // MODIFIED
 	if (find_value(cmdline,"board_name=",boardname,20)){
 		/* we expect the bootloader to pass a board_name as argument
 		 * this however did not happen and given we still are in early
@@ -398,6 +411,8 @@ kinfo_t *pre_init(int argc, char **argv)
 	   from head.S */
 	   
 	/* Clear BSS */
+	kmemset(&_edata, 0, (u32_t)&_end - (u32_t)&_edata); // MODIFIED
+    kmemset(&_kern_unpaged_edata, 0, (u32_t)&_kern_unpaged_end - (u32_t)&_kern_unpaged_edata); // MODIFIED
 	kmemset(&_edata, 0, (u32_t)&_end - (u32_t)&_edata); // MODIFIED
     kmemset(&_kern_unpaged_edata, 0, (u32_t)&_kern_unpaged_end - (u32_t)&_kern_unpaged_edata); // MODIFIED
 

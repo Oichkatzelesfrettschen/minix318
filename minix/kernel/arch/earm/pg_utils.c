@@ -1,4 +1,5 @@
 #include <minix/cpufeature.h> // Kept for now
+#include <minix/cpufeature.h> // Kept for now
 
 #include <minix/type.h>    // Kept for now (appears twice, will be one)
 // #include <assert.h>       // Replaced
@@ -35,7 +36,9 @@ void print_memmap(kinfo_t *cbi)
 	for(m = 0; m < cbi->mmap_size; m++) {
 		phys_bytes addr = cbi->memmap[m].mm_base_addr, endit = cbi->memmap[m].mm_base_addr + cbi->memmap[m].mm_length;
 		kprintf_stub("%08lx-%08lx ",addr, endit); // MODIFIED
+		kprintf_stub("%08lx-%08lx ",addr, endit); // MODIFIED
 	}
+	kprintf_stub("\nsize %08lx\n", cbi->mmap_size); // MODIFIED
 	kprintf_stub("\nsize %08lx\n", cbi->mmap_size); // MODIFIED
 }
 
@@ -256,6 +259,7 @@ phys_bytes pg_load(void)
 
 void pg_clear(void)
 {
+	kmemset(pagedir, 0, sizeof(pagedir)); // MODIFIED
 	kmemset(pagedir, 0, sizeof(pagedir)); // MODIFIED
 }
 

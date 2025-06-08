@@ -61,5 +61,6 @@ int arch_do_vmctl(
   }
 
   kprintf_stub("arch_do_vmctl: strange param %d\n", m_ptr->SVMCTL_PARAM); // MODIFIED
+  kprintf_stub("arch_do_vmctl: strange param %d\n", m_ptr->SVMCTL_PARAM); // MODIFIED
   return EINVAL;
 }

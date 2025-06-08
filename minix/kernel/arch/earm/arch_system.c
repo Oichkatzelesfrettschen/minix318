@@ -3,7 +3,9 @@
 #include "kernel/kernel.h"
 
 // Removed: <unistd.h>, <ctype.h>, <string.h>, <assert.h>, <signal.h>
+// Removed: <unistd.h>, <ctype.h>, <string.h>, <assert.h>, <signal.h>
 #include <minix/cpufeature.h>
+// Kept: <machine/vm.h>, <machine/signal.h>, <arm/armreg.h>, <minix/u64.h>
 // Kept: <machine/vm.h>, <machine/signal.h>, <arm/armreg.h>, <minix/u64.h>
 #include <machine/vm.h>
 #include <machine/signal.h> // May need review if it pulls userspace defs
@@ -50,6 +52,7 @@ void arch_proc_reset(struct proc *pr)
 
 	/* Clear process state. */
 	kmemset(&pr->p_reg, 0, sizeof(pr->p_reg)); // MODIFIED
+	kmemset(&pr->p_reg, 0, sizeof(pr->p_reg)); // MODIFIED
 	if(iskerneln(pr->p_nr)) {
 		pr->p_reg.psr = INIT_TASK_PSR;
 	} else {
@@ -63,6 +66,7 @@ void arch_proc_setcontext(struct proc *p, struct stackframe_s *state,
         KASSERT(sizeof(p->p_reg) == sizeof(*state));
 	if(state != &p->p_reg) {
 	        kmemcpy(&p->p_reg, state, sizeof(*state)); // MODIFIED
+	        kmemcpy(&p->p_reg, state, sizeof(*state)); // MODIFIED
 	}
 
         /* further code is instructed to not touch the context
@@ -71,6 +75,7 @@ void arch_proc_setcontext(struct proc *p, struct stackframe_s *state,
         p->p_misc_flags |= MF_CONTEXT_SET;
 
         if(!(p->p_rts_flags)) {
+                kprintf_stub("WARNINIG: setting full context of runnable process\n"); // MODIFIED
                 kprintf_stub("WARNINIG: setting full context of runnable process\n"); // MODIFIED
                 print_proc(p);
                 util_stacktrace();

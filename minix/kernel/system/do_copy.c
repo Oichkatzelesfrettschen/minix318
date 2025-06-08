@@ -51,6 +51,15 @@
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
 
+// #include <assert.h> // Replaced
+
+// Added kernel headers
+#include <minix/kernel_types.h> // For k_errno_t or similar if error codes are mapped
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
+
 
 #if (USE_VIRCOPY || USE_PHYSCOPY)
 
@@ -76,6 +85,7 @@ int do_copy(struct proc * caller, message * m_ptr)
 	if (first)
 	{
 		first= 0;
+		kprintf_stub( // MODIFIED
 		kprintf_stub( // MODIFIED
 "do_copy: got request from %d (source %d, destination %d)\n",
 			caller->p_endpoint,
@@ -105,6 +115,8 @@ int do_copy(struct proc * caller, message * m_ptr)
 	if(! isokendpt(vir_addr[i].proc_nr_e, &p)) {
 	  kprintf_stub("do_copy: %d: %d not ok endpoint\n", i, vir_addr[i].proc_nr_e); // MODIFIED
           return(EINVAL);  // EINVAL might be undefined
+	  kprintf_stub("do_copy: %d: %d not ok endpoint\n", i, vir_addr[i].proc_nr_e); // MODIFIED
+          return(EINVAL);  // EINVAL might be undefined
         }
       }
   }
@@ -113,12 +125,14 @@ int do_copy(struct proc * caller, message * m_ptr)
    * vir_bytes. Especially copying by the PM on do_fork() is affected. 
    */
   if (bytes != (phys_bytes) (vir_bytes) bytes) return(E2BIG); // E2BIG might be undefined
+  if (bytes != (phys_bytes) (vir_bytes) bytes) return(E2BIG); // E2BIG might be undefined
 
   /* Now try to make the actual virtual copy. */
   if(m_ptr->m_lsys_krn_sys_copy.flags & CP_FLAG_TRY) {
 	int r;
 	KASSERT(caller->p_endpoint == VFS_PROC_NR);
 	r = virtual_copy(&vir_addr[_SRC_], &vir_addr[_DST_], bytes);
+	if(r == EFAULT_SRC || r == EFAULT_DST) return r = EFAULT; // EFAULT* might be undefined
 	if(r == EFAULT_SRC || r == EFAULT_DST) return r = EFAULT; // EFAULT* might be undefined
 	return r;
   } else {

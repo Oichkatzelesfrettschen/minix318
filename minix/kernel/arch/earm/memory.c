@@ -271,6 +271,7 @@ phys_bytes umap_virtual(
 
 	if(vm_lookup(rp, vir_addr, &phys, NULL) != OK) {
 		kprintf_stub("SYSTEM:umap_virtual: vm_lookup of %s: seg 0x%x: 0x%lx failed\n", rp->p_name, seg, vir_addr); // MODIFIED
+		kprintf_stub("SYSTEM:umap_virtual: vm_lookup of %s: seg 0x%x: 0x%lx failed\n", rp->p_name, seg, vir_addr); // MODIFIED
 		phys = 0;
 	} else {
 		if(phys == 0)
@@ -279,6 +280,7 @@ phys_bytes umap_virtual(
 
 	if(phys == 0) {
 		kprintf_stub("SYSTEM:umap_virtual: lookup failed\n"); // MODIFIED
+		kprintf_stub("SYSTEM:umap_virtual: lookup failed\n"); // MODIFIED
 		return 0;
 	}
 
@@ -286,6 +288,8 @@ phys_bytes umap_virtual(
 	 * so that the umap makes sense.
 	 */
 	if(bytes > 0 && vm_lookup_range(rp, vir_addr, NULL, bytes) != bytes) {
+		kprintf_stub("umap_virtual: %s: %lu at 0x%lx (vir 0x%lx) not contiguous\n", // MODIFIED
+			rp->p_name, (unsigned long)bytes, vir_addr, vir_addr); // MODIFIED k_size_t cast for %lu
 		kprintf_stub("umap_virtual: %s: %lu at 0x%lx (vir 0x%lx) not contiguous\n", // MODIFIED
 			rp->p_name, (unsigned long)bytes, vir_addr, vir_addr); // MODIFIED k_size_t cast for %lu
 		return 0;
@@ -358,6 +362,8 @@ int vm_lookup(const struct proc *proc, const vir_bytes virtual,
  *===========================================================================*/
 k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIED size_t to k_size_t
 	phys_bytes *phys_addr, k_size_t bytes) // MODIFIED size_t to k_size_t
+k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIED size_t to k_size_t
+	phys_bytes *phys_addr, k_size_t bytes) // MODIFIED size_t to k_size_t
 {
 	/* Look up the physical address corresponding to linear virtual address
 	 * 'vir_addr' for process 'proc'. Return the size of the range covered
@@ -369,6 +375,7 @@ k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIE
 	 * linear range is valid for the given process at all.
 	 */
 	phys_bytes phys, next_phys;
+	k_size_t len; // MODIFIED size_t to k_size_t
 	k_size_t len; // MODIFIED size_t to k_size_t
 
 	KASSERT(proc);
@@ -407,6 +414,7 @@ k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIE
  *				vm_check_range				     *
  *===========================================================================*/
 int vm_check_range(struct proc *caller, struct proc *target,
+	vir_bytes vir_addr, k_size_t bytes, int writeflag) // MODIFIED size_t to k_size_t
 	vir_bytes vir_addr, k_size_t bytes, int writeflag) // MODIFIED size_t to k_size_t
 {
 	/* Public interface to vm_suspend(), for use by kernel calls. On behalf
@@ -530,6 +538,7 @@ int virtual_copy_f(
 	} else {
 		if(!isokendpt(proc_e, &proc_nr)) {
 			kprintf_stub("virtual_copy: no reasonable endpoint\n"); // MODIFIED
+			kprintf_stub("virtual_copy: no reasonable endpoint\n"); // MODIFIED
 			return ESRCH;
 		}
 		p = proc_addr(proc_nr);
@@ -580,6 +589,7 @@ int virtual_copy_f(
 int data_copy(const endpoint_t from_proc, const vir_bytes from_addr,
 	const endpoint_t to_proc, const vir_bytes to_addr,
 	k_size_t bytes) // MODIFIED size_t to k_size_t
+	k_size_t bytes) // MODIFIED size_t to k_size_t
 {
   struct vir_addr src, dst;
 
@@ -599,6 +609,7 @@ int data_copy(const endpoint_t from_proc, const vir_bytes from_addr,
 int data_copy_vmcheck(struct proc * caller,
 	const endpoint_t from_proc, const vir_bytes from_addr,
 	const endpoint_t to_proc, const vir_bytes to_addr,
+	k_size_t bytes) // MODIFIED size_t to k_size_t
 	k_size_t bytes) // MODIFIED size_t to k_size_t
 {
   struct vir_addr src, dst;
@@ -633,6 +644,7 @@ void arch_proc_init(struct proc *pr, const u32_t ip, const u32_t sp,
 {
 	arch_proc_reset(pr);
 	(void)kstrlcpy(pr->p_name, name, sizeof(pr->p_name)); /* FIXME: strcpy was here, validate size for kstrlcpy */ // MODIFIED
+	(void)kstrlcpy(pr->p_name, name, sizeof(pr->p_name)); /* FIXME: strcpy was here, validate size for kstrlcpy */ // MODIFIED
 
 	/* set custom state we know */
 	pr->p_reg.pc = ip;
@@ -660,6 +672,7 @@ int arch_phys_map(const int index,
 			(u32_t) &usermapped_start;
 
 	if(first) {
+		kmemset(&minix_kerninfo, 0, sizeof(minix_kerninfo)); // MODIFIED
 		kmemset(&minix_kerninfo, 0, sizeof(minix_kerninfo)); // MODIFIED
 		if(glo_len > 0) {
 			usermapped_glo_index = freeidx++;

@@ -27,7 +27,7 @@ GSYMS
 GTAGS
 \#*#
 CVS
-obj
+# obj  # Commented out to allow kernel object files to be tracked
 !/.gitignore
 .gitignore
 .svn
@@ -40,6 +40,8 @@ etc/spwd.db
 releasetools/image
 releasetools/kernel
 releasetools/revision
+# limine  # Commented out to allow limine folder to be tracked
+# microwindows
 share/zoneinfo/builddir
 external/bsd/llvm/dist/clang/test/CodeGenCXX/microsoft-abi-vtables-multiple-nonvirtual-inheritance-no-thu
 external/bsd/llvm/dist/clang/test/CodeGenCXX/microsoft-abi-vtables-multiple-nonvirtual-inheritance-pure-v

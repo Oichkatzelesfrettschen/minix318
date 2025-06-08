@@ -150,6 +150,7 @@ static void smp_start_aps(void)
 		if (apic_send_init_ipi(cpu, trampoline_base) ||
 				apic_send_startup_ipi(cpu, trampoline_base)) {
 			kprintf_stub("WARNING cannot boot cpu %d\n", cpu); // MODIFIED
+			kprintf_stub("WARNING cannot boot cpu %d\n", cpu); // MODIFIED
 			continue;
 		}
 
@@ -163,6 +164,7 @@ static void smp_start_aps(void)
 			}
 		}
 		if (ap_cpu_ready == -1) {
+			kprintf_stub("WARNING : CPU %d didn't boot\n", cpu); // MODIFIED
 			kprintf_stub("WARNING : CPU %d didn't boot\n", cpu); // MODIFIED
 		}
 	}
@@ -196,6 +198,7 @@ void smp_shutdown_aps(void)
 			continue;
 		if (!cpu_test_flag(cpu, CPU_IS_READY)) {
 			kprintf_stub("CPU %d didn't boot\n", cpu); // MODIFIED
+			kprintf_stub("CPU %d didn't boot\n", cpu); // MODIFIED
 			continue;
 		}
 
@@ -204,6 +207,7 @@ void smp_shutdown_aps(void)
 		apic_send_ipi(APIC_SMP_CPU_HALT_VECTOR, cpu, APIC_IPI_DEST);
 		/* wait for the cpu to be down */
 		while (cpu_down != cpu);
+		kprintf_stub("CPU %d is down\n", cpu); // MODIFIED
 		kprintf_stub("CPU %d is down\n", cpu); // MODIFIED
 		cpu_clear_flag(cpu, CPU_IS_READY);
 	}
@@ -234,6 +238,7 @@ static void ap_finish_booting(void)
 	spinlock_lock(&boot_lock);
 	BKL_LOCK();
 
+	kprintf_stub("CPU %d is up\n", cpu); // MODIFIED
 	kprintf_stub("CPU %d is up\n", cpu); // MODIFIED
 
 	cpu_identify();
@@ -282,7 +287,12 @@ static void tss_init_all(void)
 static int discover_cpus(void)
 {
 	struct acpi_madt_lapic * cpu_info_lapic; // Renamed to avoid conflict with global cpu_info
+	struct acpi_madt_lapic * cpu_info_lapic; // Renamed to avoid conflict with global cpu_info
 
+	while (ncpus < CONFIG_MAX_CPUS && (cpu_info_lapic = acpi_get_lapic_next())) { // MODIFIED
+		apicid2cpuid[cpu_info_lapic->apic_id] = ncpus; // MODIFIED
+		cpuid2apicid[ncpus] = cpu_info_lapic->apic_id; // MODIFIED
+		kprintf_stub("CPU %3d local APIC id %3d\n", ncpus, cpu_info_lapic->apic_id); // MODIFIED
 	while (ncpus < CONFIG_MAX_CPUS && (cpu_info_lapic = acpi_get_lapic_next())) { // MODIFIED
 		apicid2cpuid[cpu_info_lapic->apic_id] = ncpus; // MODIFIED
 		cpuid2apicid[ncpus] = cpu_info_lapic->apic_id; // MODIFIED
@@ -314,6 +324,7 @@ void smp_init (void)
 
 	if (!lapic_enable(bsp_cpu_id)) {
 		kprintf_stub("ERROR : failed to initialize BSP Local APIC\n"); // MODIFIED
+		kprintf_stub("ERROR : failed to initialize BSP Local APIC\n"); // MODIFIED
 		goto uniproc_fallback;
 	}
 
@@ -337,6 +348,7 @@ void smp_init (void)
 	idt_reload();
 
 	BOOT_VERBOSE(kprintf_stub("SMP initialized\n")); // MODIFIED
+	BOOT_VERBOSE(kprintf_stub("SMP initialized\n")); // MODIFIED
 
 	switch_k_stack((char *)get_k_stack_top(bsp_cpu_id) -
 			X86_STACK_TOP_RESERVED, smp_start_aps);
@@ -348,6 +360,7 @@ uniproc_fallback:
 	idt_reload();
 	smp_reinit_vars (); /* revert to a single proc system. */
 	intr_init(0); /* no auto eoi */
+	kprintf_stub("WARNING : SMP initialization failed\n"); // MODIFIED
 	kprintf_stub("WARNING : SMP initialization failed\n"); // MODIFIED
 }
 	

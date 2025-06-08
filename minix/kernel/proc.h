@@ -3,6 +3,8 @@
 
 #include <minix/const.h> // Kept
 // #include <sys/cdefs.h> // Removed
+#include <minix/const.h> // Kept
+// #include <sys/cdefs.h> // Removed
 
 #ifndef __ASSEMBLY__
 
@@ -62,10 +64,15 @@ struct proc {
   } p_accounting;
 
   k_clock_t p_dequeued;		/* uptime at which process was last dequeued */ // MODIFIED clock_t
+  k_clock_t p_dequeued;		/* uptime at which process was last dequeued */ // MODIFIED clock_t
 
   k_clock_t p_user_time;		/* user time in ticks */ // MODIFIED clock_t
   k_clock_t p_sys_time;		/* sys time in ticks */ // MODIFIED clock_t
+  k_clock_t p_user_time;		/* user time in ticks */ // MODIFIED clock_t
+  k_clock_t p_sys_time;		/* sys time in ticks */ // MODIFIED clock_t
 
+  k_clock_t p_virt_left;		/* number of ticks left on virtual timer */ // MODIFIED clock_t
+  k_clock_t p_prof_left;		/* number of ticks left on profile timer */ // MODIFIED clock_t
   k_clock_t p_virt_left;		/* number of ticks left on virtual timer */ // MODIFIED clock_t
   k_clock_t p_prof_left;		/* number of ticks left on profile timer */ // MODIFIED clock_t
 
@@ -141,7 +148,7 @@ struct proc {
 #if DEBUG_TRACE
   int p_schedules;
 #endif
-};
+} __k_cacheline_aligned;
 
 #endif /* __ASSEMBLY__ */
 

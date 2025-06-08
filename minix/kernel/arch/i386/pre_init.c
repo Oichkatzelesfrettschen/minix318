@@ -47,13 +47,19 @@ static int mb_set_param(char *bigbuf, char *name, char *value, kinfo_t *cbi)
 	char *q;
 	k_size_t namelen = kstrlen(name); // MODIFIED
 	k_size_t valuelen = kstrlen(value); // MODIFIED
+	k_size_t namelen = kstrlen(name); // MODIFIED
+	k_size_t valuelen = kstrlen(value); // MODIFIED
 
 	/* Some variables we recognize */
+	if(!kstrcmp(name, SERVARNAME)) { cbi->do_serial_debug = 1; } // MODIFIED
+	if(!kstrcmp(name, SERBAUDVARNAME)) { cbi->serial_debug_baud = 0 /* FIXME: atoi(value) replaced */; } // MODIFIED
 	if(!kstrcmp(name, SERVARNAME)) { cbi->do_serial_debug = 1; } // MODIFIED
 	if(!kstrcmp(name, SERBAUDVARNAME)) { cbi->serial_debug_baud = 0 /* FIXME: atoi(value) replaced */; } // MODIFIED
 
 	/* Delete the item if already exists */
 	while (*p) {
+		// MODIFIED strncmp to placeholder
+		if ( (/* FIXME: strncmp needs kstrncmp */ (void)0, kstrncmp_placeholder(p, name, namelen)) == 0 && p[namelen] == '=') {
 		// MODIFIED strncmp to placeholder
 		if ( (/* FIXME: strncmp needs kstrncmp */ (void)0, kstrncmp_placeholder(p, name, namelen)) == 0 && p[namelen] == '=') {
 			q = p;
@@ -76,7 +82,9 @@ static int mb_set_param(char *bigbuf, char *name, char *value, kinfo_t *cbi)
 		return -1;
 	
 	(void)kstrlcpy(p, name, namelen + 1); /* FIXME: strcpy was here... Using namelen+1 for kstrlcpy */ // MODIFIED
+	(void)kstrlcpy(p, name, namelen + 1); /* FIXME: strcpy was here... Using namelen+1 for kstrlcpy */ // MODIFIED
 	p[namelen] = '=';
+	(void)kstrlcpy(p + namelen + 1, value, valuelen + 1); /* FIXME: strcpy was here... Using valuelen+1 for kstrlcpy */ // MODIFIED
 	(void)kstrlcpy(p + namelen + 1, value, valuelen + 1); /* FIXME: strcpy was here... Using valuelen+1 for kstrlcpy */ // MODIFIED
 	p[namelen + valuelen + 1] = 0;
 	p[namelen + valuelen + 2] = 0;
@@ -101,6 +109,7 @@ int overlaps(multiboot_module_t *mod, int n, int cmp_mod)
 }
 
 void get_parameters(u32_t ebx, kinfo_t *cbi) // u32_t might be undefined
+void get_parameters(u32_t ebx, kinfo_t *cbi) // u32_t might be undefined
 {
 	multiboot_memory_map_t *mmap;
 	multiboot_info_t *mbi = &cbi->mbi;
@@ -114,6 +123,7 @@ void get_parameters(u32_t ebx, kinfo_t *cbi) // u32_t might be undefined
 	static char cmdline[BUF];
 
 	/* get our own copy of the multiboot info struct and module list */
+	kmemcpy((void *) mbi, (void *) ebx, sizeof(*mbi)); // MODIFIED
 	kmemcpy((void *) mbi, (void *) ebx, sizeof(*mbi)); // MODIFIED
 
 	/* Set various bits of info for the higher-level kernel. */
@@ -135,6 +145,7 @@ void get_parameters(u32_t ebx, kinfo_t *cbi) // u32_t might be undefined
 		static char value[BUF];
 
 		/* Override values with cmdline argument */
+		kmemcpy(cmdline, (void *) mbi->mi_cmdline, BUF); // MODIFIED
 		kmemcpy(cmdline, (void *) mbi->mi_cmdline, BUF); // MODIFIED
 		p = cmdline;
 		while (*p) {
@@ -180,6 +191,7 @@ void get_parameters(u32_t ebx, kinfo_t *cbi) // u32_t might be undefined
 		mbi->mi_mods_count * sizeof(multiboot_module_t));
 	
 	kmemset(cbi->memmap, 0, sizeof(cbi->memmap)); // MODIFIED
+	kmemset(cbi->memmap, 0, sizeof(cbi->memmap)); // MODIFIED
 	/* mem_map has a variable layout */
 	if(mbi->mi_flags & MULTIBOOT_INFO_HAS_MMAP) {
 		cbi->mmap_size = 0;
@@ -210,6 +222,7 @@ void get_parameters(u32_t ebx, kinfo_t *cbi) // u32_t might be undefined
 	for(m = 0; m < cbi->mods_with_kernel; m++) {
 #if 0
 		kprintf_stub("checking overlap of module %08lx-%08lx\n", // MODIFIED
+		kprintf_stub("checking overlap of module %08lx-%08lx\n", // MODIFIED
 		  cbi->module_list[m].mod_start, cbi->module_list[m].mod_end);
 #endif
 		if(overlaps(cbi->module_list, cbi->mods_with_kernel, m))
@@ -223,6 +236,7 @@ void get_parameters(u32_t ebx, kinfo_t *cbi) // u32_t might be undefined
 	}
 }
 
+kinfo_t *pre_init(u32_t magic, u32_t ebx) // u32_t might be undefined
 kinfo_t *pre_init(u32_t magic, u32_t ebx) // u32_t might be undefined
 {
 	KASSERT(magic == MULTIBOOT_INFO_MAGIC);
@@ -250,6 +264,14 @@ void send_diag_sig(void) { }
 void minix_shutdown(int how) { arch_shutdown(how); }
 void busy_delay_ms(int x) { }
 int raise(int sig) { panic("raise(%d)\n", sig); }
+
+// Helper for strncmp placeholder
+int kstrncmp_placeholder(const char *s1, const char *s2, k_size_t n) {
+    /* FIXME: This is a placeholder for strncmp. It's not a correct implementation. */
+    /* A real kstrncmp should be implemented or this logic revisited. */
+    if (!s1 || !s2 || n == 0) return 0;
+    return kstrcmp(s1, s2);
+}
 
 // Helper for strncmp placeholder
 int kstrncmp_placeholder(const char *s1, const char *s2, k_size_t n) {

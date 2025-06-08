@@ -72,4 +72,6 @@ int arch_do_vmctl(
 
   kprintf_stub("arch_do_vmctl: strange param %d\n", m_ptr->SVMCTL_PARAM); // MODIFIED
   return EINVAL; // EINVAL might be undefined
+  kprintf_stub("arch_do_vmctl: strange param %d\n", m_ptr->SVMCTL_PARAM); // MODIFIED
+  return EINVAL; // EINVAL might be undefined
 }

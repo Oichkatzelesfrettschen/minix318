@@ -1,5 +1,7 @@
 #include <minix/cpufeature.h> // Kept
+#include <minix/cpufeature.h> // Kept
 
+// #include <assert.h> // Replaced
 // #include <assert.h> // Replaced
 #include "kernel/kernel.h"
 #include "arch_proto.h"
@@ -24,6 +26,7 @@ static phys_bytes kern_kernlen = (phys_bytes) &_kern_size;
 
 /* page directory we can use to map things */
 static u32_t pagedir[1024]  __aligned(4096); // u32_t might be undefined
+static u32_t pagedir[1024]  __aligned(4096); // u32_t might be undefined
 
 void print_memmap(kinfo_t *cbi)
 {
@@ -32,7 +35,9 @@ void print_memmap(kinfo_t *cbi)
         for(m = 0; m < cbi->mmap_size; m++) {
 		phys_bytes addr = cbi->memmap[m].mm_base_addr, endit = cbi->memmap[m].mm_base_addr + cbi->memmap[m].mm_length;
                 kprintf_stub("%08lx-%08lx ",addr, endit); // MODIFIED
+                kprintf_stub("%08lx-%08lx ",addr, endit); // MODIFIED
         }
+        kprintf_stub("\nsize %08lx\n", cbi->mmap_size); // MODIFIED
         kprintf_stub("\nsize %08lx\n", cbi->mmap_size); // MODIFIED
 }
 
@@ -128,9 +133,12 @@ void add_memmap(kinfo_t *cbi, u64_t addr, u64_t len)
 }
 
 u32_t *alloc_pagetable(phys_bytes *ph) // u32_t might be undefined
+u32_t *alloc_pagetable(phys_bytes *ph) // u32_t might be undefined
 {
 	u32_t *ret; // u32_t might be undefined
+	u32_t *ret; // u32_t might be undefined
 #define PG_PAGETABLES 6
+	static u32_t pagetables[PG_PAGETABLES][1024]  __aligned(4096); // u32_t might be undefined
 	static u32_t pagetables[PG_PAGETABLES][1024]  __aligned(4096); // u32_t might be undefined
 	static int pt_inuse = 0;
 	if(pt_inuse >= PG_PAGETABLES) panic("no more pagetables");
@@ -169,6 +177,7 @@ phys_bytes pg_alloc_page(kinfo_t *cbi)
 void pg_identity(kinfo_t *cbi)
 {
 	uint32_t i; // uint32_t might be undefined
+	uint32_t i; // uint32_t might be undefined
 	phys_bytes phys;
 
 	/* We map memory that does not correspond to physical memory
@@ -178,6 +187,7 @@ void pg_identity(kinfo_t *cbi)
 
         /* Set up an identity mapping page directory */
         for(i = 0; i < I386_VM_DIR_ENTRIES; i++) {
+		u32_t flags = I386_VM_PRESENT | I386_VM_BIGPAGE // u32_t might be undefined
 		u32_t flags = I386_VM_PRESENT | I386_VM_BIGPAGE // u32_t might be undefined
 			| I386_VM_USER
 			| I386_VM_WRITE;
@@ -193,6 +203,7 @@ void pg_identity(kinfo_t *cbi)
 int pg_mapkernel(void)
 {
 	int pde;
+	u32_t mapped = 0, kern_phys = kern_phys_start; // u32_t might be undefined
 	u32_t mapped = 0, kern_phys = kern_phys_start; // u32_t might be undefined
 
         KASSERT(!(kern_vir_start % I386_BIG_PAGE_SIZE));
@@ -210,6 +221,7 @@ int pg_mapkernel(void)
 
 void vm_enable_paging(void)
 {
+        u32_t cr0, cr4; // u32_t might be undefined
         u32_t cr0, cr4; // u32_t might be undefined
         int pgeok;
 
@@ -261,6 +273,7 @@ phys_bytes pg_load(void)
 void pg_clear(void)
 {
 	kmemset(pagedir, 0, sizeof(pagedir)); // MODIFIED
+	kmemset(pagedir, 0, sizeof(pagedir)); // MODIFIED
 }
 
 phys_bytes pg_rounddown(phys_bytes b)
@@ -275,6 +288,7 @@ void pg_map(phys_bytes phys, vir_bytes vaddr, vir_bytes vaddr_end,
 	kinfo_t *cbi)
 {
 	static int mapped_pde = -1;
+	static u32_t *pt = NULL; // u32_t might be undefined, NULL might be undefined
 	static u32_t *pt = NULL; // u32_t might be undefined, NULL might be undefined
 	int pde, pte;
 
@@ -316,6 +330,7 @@ void pg_map(phys_bytes phys, vir_bytes vaddr, vir_bytes vaddr_end,
 	}
 }
 
+void pg_info(reg_t *pagedir_ph, u32_t **pagedir_v) // u32_t might be undefined
 void pg_info(reg_t *pagedir_ph, u32_t **pagedir_v) // u32_t might be undefined
 {
 	*pagedir_ph = vir2phys(pagedir);

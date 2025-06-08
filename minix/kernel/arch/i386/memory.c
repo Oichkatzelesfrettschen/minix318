@@ -199,6 +199,8 @@ static int lin_lin_copy(struct proc *srcproc, vir_bytes srclinaddr,
 		/* Check for overflow. */
 		if (srcptr + chunk < srcptr) return EFAULT_SRC; // EFAULT_SRC might be undefined
 		if (dstptr + chunk < dstptr) return EFAULT_DST; // EFAULT_DST might be undefined
+		if (srcptr + chunk < srcptr) return EFAULT_SRC; // EFAULT_SRC might be undefined
+		if (dstptr + chunk < dstptr) return EFAULT_DST; // EFAULT_DST might be undefined
 
 		/* Copy pages. */
 		PHYS_COPY_CATCH(srcptr, dstptr, chunk, addr);
@@ -208,14 +210,17 @@ static int lin_lin_copy(struct proc *srcproc, vir_bytes srclinaddr,
 
 			if(addr >= srcptr && addr < (srcptr + chunk)) {
 				return EFAULT_SRC; // EFAULT_SRC might be undefined
+				return EFAULT_SRC; // EFAULT_SRC might be undefined
 			}
 			if(addr >= dstptr && addr < (dstptr + chunk)) {
+				return EFAULT_DST; // EFAULT_DST might be undefined
 				return EFAULT_DST; // EFAULT_DST might be undefined
 			}
 
 			panic("lin_lin_copy fault out of range");
 
 			/* Not reached. */
+			return EFAULT; // EFAULT might be undefined
 			return EFAULT; // EFAULT might be undefined
 		}
 
@@ -240,6 +245,7 @@ static u32_t phys_get32(phys_bytes addr)
 	int r;
 
 	if((r=lin_lin_copy(NULL, addr, // NULL might be undefined
+	if((r=lin_lin_copy(NULL, addr, // NULL might be undefined
 		proc_addr(SYSTEM), (phys_bytes) &v, sizeof(v))) != OK) {
 		panic("lin_lin_copy for phys_get32 failed: %d",  r);
 	}
@@ -253,6 +259,8 @@ static char *cr0_str(u32_t e)
 	static char str[80];
 	(void)kstrlcpy(str, "", sizeof(str)); /* FIXME: strcpy was here ... */ // MODIFIED
 #define FLAG(v) do { if(e & (v)) { /* FIXME: strcat was here */ /* kstrcat(str, #v " ", sizeof(str)); */ e &= ~v; } } while(0)
+	(void)kstrlcpy(str, "", sizeof(str)); /* FIXME: strcpy was here ... */ // MODIFIED
+#define FLAG(v) do { if(e & (v)) { /* FIXME: strcat was here */ /* kstrcat(str, #v " ", sizeof(str)); */ e &= ~v; } } while(0)
 	FLAG(I386_CR0_PE);
 	FLAG(I386_CR0_MP);
 	FLAG(I386_CR0_EM);
@@ -261,12 +269,14 @@ static char *cr0_str(u32_t e)
 	FLAG(I386_CR0_PG);
 	FLAG(I386_CR0_WP);
 	if(e) { /* FIXME: strcat was here */ /* kstrcat(str, " (++)", sizeof(str)); */ }
+	if(e) { /* FIXME: strcat was here */ /* kstrcat(str, " (++)", sizeof(str)); */ }
 	return str;
 }
 
 static char *cr4_str(u32_t e)
 {
 	static char str[80];
+	(void)kstrlcpy(str, "", sizeof(str)); /* FIXME: strcpy was here ... */ // MODIFIED
 	(void)kstrlcpy(str, "", sizeof(str)); /* FIXME: strcpy was here ... */ // MODIFIED
 	FLAG(I386_CR4_VME);
 	FLAG(I386_CR4_PVI);
@@ -276,6 +286,7 @@ static char *cr4_str(u32_t e)
 	FLAG(I386_CR4_PAE);
 	FLAG(I386_CR4_MCE);
 	FLAG(I386_CR4_PGE);
+	if(e) { /* FIXME: strcat was here */ /* kstrcat(str, " (++)", sizeof(str)); */ }
 	if(e) { /* FIXME: strcat was here */ /* kstrcat(str, " (++)", sizeof(str)); */ }
 	return str;
 }
@@ -295,6 +306,8 @@ phys_bytes umap_virtual(
 
 	if(vm_lookup(rp, vir_addr, &phys, NULL) != OK) { // NULL might be undefined
 		kprintf_stub("SYSTEM:umap_virtual: vm_lookup of %s: seg 0x%x: 0x%lx failed\n", rp->p_name, seg, vir_addr); // MODIFIED
+	if(vm_lookup(rp, vir_addr, &phys, NULL) != OK) { // NULL might be undefined
+		kprintf_stub("SYSTEM:umap_virtual: vm_lookup of %s: seg 0x%x: 0x%lx failed\n", rp->p_name, seg, vir_addr); // MODIFIED
 		phys = 0;
 	} else {
 		if(phys == 0)
@@ -303,12 +316,16 @@ phys_bytes umap_virtual(
 
 	if(phys == 0) {
 		kprintf_stub("SYSTEM:umap_virtual: lookup failed\n"); // MODIFIED
+		kprintf_stub("SYSTEM:umap_virtual: lookup failed\n"); // MODIFIED
 		return 0;
 	}
 
 	/* Now make sure addresses are contiguous in physical memory
 	 * so that the umap makes sense.
 	 */
+	if(bytes > 0 && vm_lookup_range(rp, vir_addr, NULL, bytes) != bytes) { // NULL might be undefined
+		kprintf_stub("umap_virtual: %s: %lu at 0x%lx (vir 0x%lx) not contiguous\n", // MODIFIED
+			rp->p_name, (unsigned long)bytes, vir_addr, vir_addr); // MODIFIED k_size_t cast for %lu
 	if(bytes > 0 && vm_lookup_range(rp, vir_addr, NULL, bytes) != bytes) { // NULL might be undefined
 		kprintf_stub("umap_virtual: %s: %lu at 0x%lx (vir 0x%lx) not contiguous\n", // MODIFIED
 			rp->p_name, (unsigned long)bytes, vir_addr, vir_addr); // MODIFIED k_size_t cast for %lu
@@ -348,6 +365,7 @@ int vm_lookup(const struct proc *proc, const vir_bytes virtual,
 
 	if(!(pde_v & I386_VM_PRESENT)) {
 		return EFAULT; // EFAULT might be undefined
+		return EFAULT; // EFAULT might be undefined
 	}
 
 	/* We don't expect to ever see this. */
@@ -363,6 +381,7 @@ int vm_lookup(const struct proc *proc, const vir_bytes virtual,
 		KASSERT(pte >= 0 && pte < I386_VM_PT_ENTRIES);
 		pte_v = phys_get32((u32_t) (pt + pte));
 		if(!(pte_v & I386_VM_PRESENT)) {
+			return EFAULT; // EFAULT might be undefined
 			return EFAULT; // EFAULT might be undefined
 		}
 
@@ -381,6 +400,8 @@ int vm_lookup(const struct proc *proc, const vir_bytes virtual,
  *===========================================================================*/
 k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIED size_t
 	phys_bytes *phys_addr, k_size_t bytes) // MODIFIED size_t
+k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIED size_t
+	phys_bytes *phys_addr, k_size_t bytes) // MODIFIED size_t
 {
 	/* Look up the physical address corresponding to linear virtual address
 	 * 'vir_addr' for process 'proc'. Return the size of the range covered
@@ -393,6 +414,7 @@ k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIE
 	 */
 	phys_bytes phys, next_phys;
 	k_size_t len; // MODIFIED size_t
+	k_size_t len; // MODIFIED size_t
 
 	KASSERT(proc);
 	KASSERT(bytes > 0);
@@ -400,8 +422,10 @@ k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIE
 
 	/* Look up the first page. */
 	if (vm_lookup(proc, vir_addr, &phys, NULL) != OK) // NULL might be undefined
+	if (vm_lookup(proc, vir_addr, &phys, NULL) != OK) // NULL might be undefined
 		return 0;
 
+	if (phys_addr != NULL) // NULL might be undefined
 	if (phys_addr != NULL) // NULL might be undefined
 		*phys_addr = phys;
 
@@ -411,6 +435,7 @@ k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIE
 
 	/* Look up any next pages and test physical contiguity. */
 	while (len < bytes) {
+		if (vm_lookup(proc, vir_addr, &phys, NULL) != OK) // NULL might be undefined
 		if (vm_lookup(proc, vir_addr, &phys, NULL) != OK) // NULL might be undefined
 			break;
 
@@ -430,6 +455,7 @@ k_size_t vm_lookup_range(const struct proc *proc, vir_bytes vir_addr, // MODIFIE
  *				vm_check_range				     *
  *===========================================================================*/
 int vm_check_range(struct proc *caller, struct proc *target,
+	vir_bytes vir_addr, k_size_t bytes, int writeflag) // MODIFIED size_t
 	vir_bytes vir_addr, k_size_t bytes, int writeflag) // MODIFIED size_t
 {
 	/* Public interface to vm_suspend(), for use by kernel calls. On behalf
@@ -456,6 +482,8 @@ int vm_check_range(struct proc *caller, struct proc *target,
 static char *flagstr(u32_t e, const int dir)
 {
 	static char str[80];
+	(void)kstrlcpy(str, "", sizeof(str)); /* FIXME: strcpy was here ... */ // MODIFIED
+#define FLAG(v) do { if(e & (v)) { /* FIXME: strcat was here */ /* kstrcat(str, #v " ", sizeof(str)); */ e &= ~v; } } while(0)
 	(void)kstrlcpy(str, "", sizeof(str)); /* FIXME: strcpy was here ... */ // MODIFIED
 #define FLAG(v) do { if(e & (v)) { /* FIXME: strcat was here */ /* kstrcat(str, #v " ", sizeof(str)); */ e &= ~v; } } while(0)
 	FLAG(I386_VM_PRESENT);
@@ -485,11 +513,14 @@ static void vm_pt_print(u32_t *pagetable, const u32_t v)
 			continue;
 		pfa = I386_VM_PFA(pte_v);
 		kprintf_stub("%4d:%08lx:%08lx %2s ", // MODIFIED
+		kprintf_stub("%4d:%08lx:%08lx %2s ", // MODIFIED
 			pte, v + I386_PAGE_SIZE*pte, pfa,
 			(pte_v & I386_VM_WRITE) ? "rw":"RO");
 		col++;
 		if(col == 3) { kprintf_stub("\n"); col = 0; } // MODIFIED
+		if(col == 3) { kprintf_stub("\n"); col = 0; } // MODIFIED
 	}
+	if(col > 0) kprintf_stub("\n"); // MODIFIED
 	if(col > 0) kprintf_stub("\n"); // MODIFIED
 
 	return;
@@ -502,6 +533,7 @@ static void vm_print(u32_t *root)
 	KASSERT(!((u32_t) root % I386_PAGE_SIZE));
 
 	kprintf_stub("page table 0x%lx:\n", root); // MODIFIED
+	kprintf_stub("page table 0x%lx:\n", root); // MODIFIED
 
 	for(pde = 0; pde < I386_VM_DIR_ENTRIES; pde++) {
 		u32_t pde_v;
@@ -511,12 +543,15 @@ static void vm_print(u32_t *root)
 			continue;
 		if(pde_v & I386_VM_BIGPAGE) {
 			kprintf_stub("%4d: 0x%lx, flags %s\n", // MODIFIED
+			kprintf_stub("%4d: 0x%lx, flags %s\n", // MODIFIED
 				pde, I386_VM_PFA(pde_v), flagstr(pde_v, 1));
 		} else {
 			pte_a = (u32_t *) I386_VM_PFA(pde_v);
 			kprintf_stub("%4d: pt %08lx %s\n", // MODIFIED
+			kprintf_stub("%4d: pt %08lx %s\n", // MODIFIED
 				pde, pte_a, flagstr(pde_v, 1));
 			vm_pt_print(pte_a, pde * I386_VM_PT_ENTRIES * I386_PAGE_SIZE);
+			kprintf_stub("\n"); // MODIFIED
 			kprintf_stub("\n"); // MODIFIED
 		}
 	}
@@ -534,6 +569,7 @@ int vm_memset(struct proc* caller, endpoint_t who, phys_bytes ph, int c,
 {
 	u32_t pattern;
 	struct proc *whoptr = NULL; // NULL might be undefined
+	struct proc *whoptr = NULL; // NULL might be undefined
 	phys_bytes cur_ph = ph;
 	phys_bytes left = count;
 	phys_bytes ptr, chunk, pfa = 0;
@@ -544,6 +580,7 @@ int vm_memset(struct proc* caller, endpoint_t who, phys_bytes ph, int c,
 
 	/* NONE for physical, otherwise virtual */
 	if (who != NONE && !(whoptr = endpoint_lookup(who)))
+		return ESRCH; // ESRCH might be undefined
 		return ESRCH; // ESRCH might be undefined
 
 	c &= 0xFF;
@@ -601,6 +638,10 @@ int virtual_copy_f(
   struct vir_addr *dst_addr,		/* destination virtual address */
   vir_bytes bytes,			/* # of bytes to copy  */
   int vmcheck				/* if nonzero, can return VMSUSPEND */
+  struct vir_addr *src_addr,		/* source virtual address */
+  struct vir_addr *dst_addr,		/* destination virtual address */
+  vir_bytes bytes,			/* # of bytes to copy  */
+  int vmcheck				/* if nonzero, can return VMSUSPEND */
 )
 {
 /* Copy bytes from virtual address src_addr to virtual address dst_addr. */
@@ -611,6 +652,7 @@ int virtual_copy_f(
   KASSERT((vmcheck && caller) || (!vmcheck && !caller));
 
   /* Check copy count. */
+  if (bytes <= 0) return(EDOM); // EDOM might be undefined
   if (bytes <= 0) return(EDOM); // EDOM might be undefined
 
   /* Do some more checks and map virtual addresses to physical addresses. */
@@ -624,8 +666,11 @@ int virtual_copy_f(
 
 	if(proc_e == NONE) {
 		p = NULL; // NULL might be undefined
+		p = NULL; // NULL might be undefined
 	} else {
 		if(!isokendpt(proc_e, &proc_nr)) {
+			kprintf_stub("virtual_copy: no reasonable endpoint\n"); // MODIFIED
+			return ESRCH; // ESRCH might be undefined
 			kprintf_stub("virtual_copy: no reasonable endpoint\n"); // MODIFIED
 			return ESRCH; // ESRCH might be undefined
 		}
@@ -642,7 +687,9 @@ int virtual_copy_f(
   	procs[_DST_], vir_addr[_DST_]->offset, bytes)) != OK) {
 	int writeflag;
 	struct proc *target = NULL; // NULL might be undefined
+	struct proc *target = NULL; // NULL might be undefined
   	phys_bytes lin;
+	if(r != EFAULT_SRC && r != EFAULT_DST) // EFAULT* might be undefined
 	if(r != EFAULT_SRC && r != EFAULT_DST) // EFAULT* might be undefined
   		panic("lin_lin_copy failed: %d",  r);
   	if(!vmcheck || !caller) {
@@ -650,9 +697,11 @@ int virtual_copy_f(
   	}
 
 	if(r == EFAULT_SRC) { // EFAULT_SRC might be undefined
+	if(r == EFAULT_SRC) { // EFAULT_SRC might be undefined
   		lin = vir_addr[_SRC_]->offset;
   		target = procs[_SRC_];
 		writeflag = 0;
+	} else if(r == EFAULT_DST) { // EFAULT_DST might be undefined
 	} else if(r == EFAULT_DST) { // EFAULT_DST might be undefined
   		lin = vir_addr[_DST_]->offset;
   		target = procs[_DST_];
@@ -677,6 +726,7 @@ int virtual_copy_f(
 int data_copy(const endpoint_t from_proc, const vir_bytes from_addr,
 	const endpoint_t to_proc, const vir_bytes to_addr,
 	k_size_t bytes) // MODIFIED size_t
+	k_size_t bytes) // MODIFIED size_t
 {
   struct vir_addr src, dst;
 
@@ -696,6 +746,7 @@ int data_copy(const endpoint_t from_proc, const vir_bytes from_addr,
 int data_copy_vmcheck(struct proc * caller,
 	const endpoint_t from_proc, const vir_bytes from_addr,
 	const endpoint_t to_proc, const vir_bytes to_addr,
+	k_size_t bytes) // MODIFIED size_t
 	k_size_t bytes) // MODIFIED size_t
 {
   struct vir_addr src, dst;
@@ -730,6 +781,7 @@ void arch_proc_init(struct proc *pr, const u32_t ip, const u32_t sp,
 {
 	arch_proc_reset(pr);
 	kstrlcpy(pr->p_name, name, sizeof(pr->p_name)); // MODIFIED
+	kstrlcpy(pr->p_name, name, sizeof(pr->p_name)); // MODIFIED
 
 	/* set custom state we know */
 	pr->p_reg.pc = ip;
@@ -757,10 +809,12 @@ int arch_phys_map(const int index,
 	static int first = 1;
 	int freeidx = 0;
 	static char *ser_var = NULL; // NULL might be undefined
+	static char *ser_var = NULL; // NULL might be undefined
 	u32_t glo_len = (u32_t) &usermapped_nonglo_start -
 			(u32_t) &usermapped_start;
 
 	if(first) {
+		kmemset(&minix_kerninfo, 0, sizeof(minix_kerninfo)); // MODIFIED
 		kmemset(&minix_kerninfo, 0, sizeof(minix_kerninfo)); // MODIFIED
 		video_mem_mapping_index = freeidx++;
 		if(glo_len > 0) {
@@ -787,7 +841,9 @@ int arch_phys_map(const int index,
 		if((ser_var = env_get("oxpcie"))) {
 			if(ser_var[0] != '0' || ser_var[1] != 'x') {
 				kprintf_stub("oxpcie address in hex please\n"); // MODIFIED
+				kprintf_stub("oxpcie address in hex please\n"); // MODIFIED
 			} else {
+				kprintf_stub("oxpcie address is %s\n", ser_var); // MODIFIED
 				kprintf_stub("oxpcie address is %s\n", ser_var); // MODIFIED
 				oxpcie_mapping_index = freeidx++;
 			}
@@ -822,6 +878,7 @@ int arch_phys_map(const int index,
 		/* map the local APIC if enabled */
 		if (!lapic_addr)
 			return EINVAL; // EINVAL might be undefined
+			return EINVAL; // EINVAL might be undefined
 		*addr = lapic_addr;
 		*len = 4 << 10 /* 4kB */;
 		*flags = VMMF_UNCACHED | VMMF_WRITE;
@@ -834,6 +891,7 @@ int arch_phys_map(const int index,
 		*len = 4 << 10 /* 4kB */;
 		*flags = VMMF_UNCACHED | VMMF_WRITE;
 		kprintf_stub("ioapic map: addr 0x%lx\n", *addr); // MODIFIED
+		kprintf_stub("ioapic map: addr 0x%lx\n", *addr); // MODIFIED
 		return OK;
 	}
 #endif
@@ -841,12 +899,14 @@ int arch_phys_map(const int index,
 #if CONFIG_OXPCIE
 	if(index == oxpcie_mapping_index) {
 		*addr = 0 /* FIXME: strtoul(ser_var+2, NULL, 16) replaced */; // MODIFIED (NULL might be undefined)
+		*addr = 0 /* FIXME: strtoul(ser_var+2, NULL, 16) replaced */; // MODIFIED (NULL might be undefined)
 		*len = 0x4000;
 		*flags = VMMF_UNCACHED | VMMF_WRITE;
 		return OK;
 	}
 #endif
 
+	return EINVAL; // EINVAL might be undefined
 	return EINVAL; // EINVAL might be undefined
 }
 
@@ -924,6 +984,8 @@ int arch_phys_map_reply(const int index, const vir_bytes addr)
 		if(env_get("libc_ipc")) {
 			kprintf_stub("kernel: forcing in-libc fallback ipc style\n"); // MODIFIED
 			minix_kerninfo.minix_ipcvecs = NULL; // NULL might be undefined
+			kprintf_stub("kernel: forcing in-libc fallback ipc style\n"); // MODIFIED
+			minix_kerninfo.minix_ipcvecs = NULL; // NULL might be undefined
 		} else {
 			minix_kerninfo.ki_flags |= MINIX_KIF_IPCVECS;
 		}
@@ -940,6 +1002,7 @@ int arch_phys_map_reply(const int index, const vir_bytes addr)
 		return OK;
 	}
 
+	return EINVAL; // EINVAL might be undefined
 	return EINVAL; // EINVAL might be undefined
 }
 
@@ -992,11 +1055,13 @@ int arch_enable_paging(struct proc * caller)
 void release_address_space(struct proc *pr)
 {
 	pr->p_seg.p_cr3_v = NULL; // NULL might be undefined
+	pr->p_seg.p_cr3_v = NULL; // NULL might be undefined
 }
 
 /* computes a checksum of a buffer of a given length. The byte sum must be zero */
 int platform_tbl_checksum_ok(void *ptr, unsigned int length)
 {
+	u8_t total = 0; // u8_t might be undefined
 	u8_t total = 0; // u8_t might be undefined
 	unsigned int i;
 	for (i = 0; i < length; i++)
@@ -1008,6 +1073,7 @@ int platform_tbl_ptr(phys_bytes start,
 					phys_bytes end,
 					unsigned increment,
 					void * buff,
+					unsigned size, // Should this be k_size_t?
 					unsigned size, // Should this be k_size_t?
 					phys_bytes * phys_addr,
 					int ((* cmp_f)(void *)))

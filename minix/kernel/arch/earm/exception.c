@@ -8,6 +8,9 @@
 // #include <signal.h> // Removed
 // #include <string.h> // Removed
 // #include <assert.h> // Replaced
+// #include <signal.h> // Removed
+// #include <string.h> // Removed
+// #include <assert.h> // Replaced
 #include "kernel/proc.h"
 #include "kernel/proto.h"
 #include <machine/vm.h> // Kept for now
@@ -28,7 +31,10 @@ struct ex_s {
 static struct ex_s ex_data[] = {
 	{ "Reset", 0},
 	{ "Undefined instruction", SIGILL}, // SIGILL might be undefined
+	{ "Undefined instruction", SIGILL}, // SIGILL might be undefined
 	{ "Supervisor call", 0},
+	{ "Prefetch Abort", SIGILL}, // SIGILL might be undefined
+	{ "Data Abort", SIGSEGV},    // SIGSEGV might be undefined
 	{ "Prefetch Abort", SIGILL}, // SIGILL might be undefined
 	{ "Data Abort", SIGSEGV},    // SIGSEGV might be undefined
 	{ "Hypervisor call", 0},
@@ -80,6 +86,7 @@ static void pagefault( struct proc *pr,
 
 	if(is_nested) {
 		kprintf_stub("pagefault in kernel at pc 0x%lx address 0x%lx\n", // MODIFIED
+		kprintf_stub("pagefault in kernel at pc 0x%lx address 0x%lx\n", // MODIFIED
 			*saved_lr, pagefault_addr);
 		inkernel_disaster(pr, saved_lr, NULL, is_nested);
 	}
@@ -90,10 +97,12 @@ static void pagefault( struct proc *pr,
 		 * handle.
 		 */
 		kprintf_stub("pagefault for VM on CPU %d, " // MODIFIED
+		kprintf_stub("pagefault for VM on CPU %d, " // MODIFIED
 			"pc = 0x%x, addr = 0x%x, flags = 0x%x, is_nested %d\n",
 			cpuid, pr->p_reg.pc, pagefault_addr, pagefault_status,
 			is_nested);
 		proc_stacktrace(pr);
+		kprintf_stub("pc of pagefault: 0x%lx\n", pr->p_reg.pc); // MODIFIED
 		kprintf_stub("pc of pagefault: 0x%lx\n", pr->p_reg.pc); // MODIFIED
 		panic("pagefault in VM");
 
@@ -131,16 +140,20 @@ data_abort(int is_nested, struct proc *pr, reg_t *saved_lr,
 	} else if (!is_nested) {
 		/* A user process caused some other kind of data abort. */
 		int signum = SIGSEGV; // SIGSEGV might be undefined
+		int signum = SIGSEGV; // SIGSEGV might be undefined
 
 		if (is_align_fault(fs)) {
 			signum = SIGBUS; // SIGBUS might be undefined
+			signum = SIGBUS; // SIGBUS might be undefined
 		} else {
+			kprintf_stub("KERNEL: unknown data abort by proc %d sending " // MODIFIED
 			kprintf_stub("KERNEL: unknown data abort by proc %d sending " // MODIFIED
 			       "SIGSEGV (dfar=0x%lx dfsr=0x%lx fs=0x%lx)\n",
 			       proc_nr(pr), dfar, dfsr, fs);
 		}
 		cause_sig(proc_nr(pr), signum);
 	} else { /* is_nested */
+		kprintf_stub("KERNEL: inkernel data abort - disaster (dfar=0x%lx " // MODIFIED
 		kprintf_stub("KERNEL: inkernel data abort - disaster (dfar=0x%lx " // MODIFIED
 		       "dfsr=0x%lx fs=0x%lx)\n", dfar, dfsr, fs);
 		inkernel_disaster(pr, saved_lr, ep, is_nested);
@@ -154,10 +167,14 @@ static void inkernel_disaster(struct proc *saved_proc,
 #if USE_SYSDEBUG
   if(ep)
 	kprintf_stub("\n%s\n", ep->msg); // MODIFIED
+	kprintf_stub("\n%s\n", ep->msg); // MODIFIED
 
+  kprintf_stub("cpu %d is_nested = %d ", cpuid, is_nested); // MODIFIED
   kprintf_stub("cpu %d is_nested = %d ", cpuid, is_nested); // MODIFIED
 
   if (saved_proc) {
+	  kprintf_stub("scheduled was: process %d (%s), ", saved_proc->p_endpoint, saved_proc->p_name); // MODIFIED
+	  kprintf_stub("pc = 0x%x\n", (unsigned) saved_proc->p_reg.pc); // MODIFIED
 	  kprintf_stub("scheduled was: process %d (%s), ", saved_proc->p_endpoint, saved_proc->p_name); // MODIFIED
 	  kprintf_stub("pc = 0x%x\n", (unsigned) saved_proc->p_reg.pc); // MODIFIED
 	  proc_stacktrace(saved_proc);
@@ -233,6 +250,8 @@ void exception_handler(int is_nested, reg_t *saved_lr, int vector)
 	if (*saved_lr != ifar && !warned) {
 		kprintf_stub("KERNEL: prefetch abort with differing IFAR and LR\n"); // MODIFIED
 		kprintf_stub("KERNEL: IFSR %"PRIx32" IFAR %"PRIx32" LR %"PRIx32" in " // MODIFIED
+		kprintf_stub("KERNEL: prefetch abort with differing IFAR and LR\n"); // MODIFIED
+		kprintf_stub("KERNEL: IFSR %"PRIx32" IFAR %"PRIx32" LR %"PRIx32" in " // MODIFIED
 		    "%s/%d\n", ifsr, ifar, *saved_lr, saved_proc->p_name,
 		    saved_proc->p_endpoint);
 		warned = TRUE;
@@ -262,6 +281,7 @@ void exception_handler(int is_nested, reg_t *saved_lr, int vector)
  *===========================================================================*/
 static void proc_stacktrace_execute(struct proc *whichproc, reg_t v_bp, reg_t pc)
 {
+	kprintf_stub("%-8.8s %6d 0x%lx \n", // MODIFIED
 	kprintf_stub("%-8.8s %6d 0x%lx \n", // MODIFIED
 		whichproc->p_name, whichproc->p_endpoint, pc);
 }

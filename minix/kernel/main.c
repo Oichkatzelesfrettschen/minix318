@@ -45,10 +45,15 @@
 // #include <stdlib.h> // Replaced by katoi placeholder or removed
 // #include <assert.h> // Replaced by KASSERT_PLACEHOLDER
 
+// #include <string.h> // Replaced by kstring.h
+// #include <stdlib.h> // Replaced by katoi placeholder or removed
+// #include <assert.h> // Replaced by KASSERT_PLACEHOLDER
+
 #include <minix/endpoint.h>
 #include <machine/vmparam.h>
 #include <minix/u64.h>
 #include <minix/board.h>
+#include <sys/reboot.h> // Keep for reboot flags like RB_POWERDOWN
 #include <sys/reboot.h> // Keep for reboot flags like RB_POWERDOWN
 #include "clock.h"
 #include "direct_utils.h"
@@ -164,9 +169,12 @@ void kmain(kinfo_t *local_cbi)
 
   /* bss sanity check */
   KASSERT(bss_test == 0);
+  KASSERT(bss_test == 0);
   bss_test = 1;
 
   /* save a global copy of the boot parameters */
+  kmemcpy(&kinfo, local_cbi, sizeof(kinfo)); // MODIFIED
+  kmemcpy(&kmess, kinfo.kmess, sizeof(kmess)); // MODIFIED
   kmemcpy(&kinfo, local_cbi, sizeof(kinfo)); // MODIFIED
   kmemcpy(&kmess, kinfo.kmess, sizeof(kmess)); // MODIFIED
 
@@ -183,6 +191,8 @@ void kmain(kinfo_t *local_cbi)
   /* Kernel may use bits of main memory before VM is started */
   kernel_may_alloc = 1;
 
+  KASSERT(sizeof(kinfo.boot_procs) == sizeof(image));
+  kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
   KASSERT(sizeof(kinfo.boot_procs) == sizeof(image));
   kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
 
@@ -216,6 +226,7 @@ void kmain(kinfo_t *local_cbi)
 	ip->endpoint = rp->p_endpoint;		/* ipc endpoint */
 	rp->p_cpu_time_left = 0;
 	if(i < NR_TASKS)			/* name (tasks only) */
+		kstrlcpy(rp->p_name, ip->proc_name, sizeof(rp->p_name)); // MODIFIED
 		kstrlcpy(rp->p_name, ip->proc_name, sizeof(rp->p_name)); // MODIFIED
 
 	if(i >= NR_TASKS) {
@@ -265,6 +276,7 @@ void kmain(kinfo_t *local_cbi)
             /* Privileges for the root system process. */
             else {
 		KASSERT(isrootsysn(proc_nr));
+		KASSERT(isrootsysn(proc_nr));
                 priv(rp)->s_flags= RSYS_F;        /* privilege flags */
                 priv(rp)->s_init_flags = SRV_I;   /* init flags */
                 priv(rp)->s_trap_mask= SRV_T;     /* allowed traps */
@@ -276,6 +288,7 @@ void kmain(kinfo_t *local_cbi)
             }
 
             /* Fill in target mask. */
+            kmemset(&map, 0, sizeof(map)); // MODIFIED
             kmemset(&map, 0, sizeof(map)); // MODIFIED
 
             if (ipc_to_m == ALL_M) {
@@ -315,8 +328,11 @@ void kmain(kinfo_t *local_cbi)
 
   /* update boot procs info for VM */
   kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
+  kmemcpy(kinfo.boot_procs, image, sizeof(kinfo.boot_procs)); // MODIFIED
 
 #define IPCNAME(n) { \
+	KASSERT((n) >= 0 && (n) <= IPCNO_HIGHEST); \
+	KASSERT(!ipc_call_names[n]);	\
 	KASSERT((n) >= 0 && (n) <= IPCNO_HIGHEST); \
 	KASSERT(!ipc_call_names[n]);	\
 	ipc_call_names[n] = #n; \
@@ -376,6 +392,7 @@ static void announce(void)
 {
   /* Display the MINIX startup banner. */
   kprintf_stub("\nMINIX %s. " // MODIFIED
+  kprintf_stub("\nMINIX %s. " // MODIFIED
 #ifdef PAE
 "(PAE) "
 #endif
@@ -384,6 +401,7 @@ static void announce(void)
 #endif
       "Copyright 2016, Vrije Universiteit, Amsterdam, The Netherlands\n",
       OS_RELEASE);
+  kprintf_stub("MINIX is open source software, see http://www.minix3.org\n"); // MODIFIED
   kprintf_stub("MINIX is open source software, see http://www.minix3.org\n"); // MODIFIED
 }
 
@@ -399,6 +417,7 @@ void prepare_shutdown(const int how)
    * do shutdown work.  Set a watchog timer to call shutdown(). The timer 
    * argument passes the shutdown status. 
    */
+  kprintf_stub("MINIX will now be shut down ...\n"); // MODIFIED
   kprintf_stub("MINIX will now be shut down ...\n"); // MODIFIED
   set_kernel_timer(&shutdown_timer, get_monotonic() + system_hz,
       minix_shutdown, how);
@@ -455,12 +474,14 @@ void cstart(void)
   /* determine verbosity */
   if ((value = env_get(VERBOSEBOOTVARNAME)))
 	  verboseboot = 0; /* FIXME: atoi(value) was here, replace with katoi */ // MODIFIED
+	  verboseboot = 0; /* FIXME: atoi(value) was here, replace with katoi */ // MODIFIED
 
   /* Initialize clock variables. */
   init_clock();
 
   /* Get memory parameters. */
   value = env_get("ac_layout");
+  if(value && (*value != '0')) { /* FIXME: atoi(value) was here, simple check for non-zero for now */ // MODIFIED
   if(value && (*value != '0')) { /* FIXME: atoi(value) was here, simple check for non-zero for now */ // MODIFIED
         kinfo.user_sp = (vir_bytes) USR_STACKTOP_COMPACT;
         kinfo.user_end = (vir_bytes) USR_DATATOP_COMPACT;
@@ -473,10 +494,14 @@ void cstart(void)
   kinfo.nr_tasks = NR_TASKS;
   kstrlcpy(kinfo.release, OS_RELEASE, sizeof(kinfo.release)); // MODIFIED
   kstrlcpy(kinfo.version, OS_VERSION, sizeof(kinfo.version)); // MODIFIED
+  kstrlcpy(kinfo.release, OS_RELEASE, sizeof(kinfo.release)); // MODIFIED
+  kstrlcpy(kinfo.version, OS_VERSION, sizeof(kinfo.version)); // MODIFIED
 
   /* Initialize various user-mapped structures. */
   kmemset(&arm_frclock, 0, sizeof(arm_frclock)); // MODIFIED
+  kmemset(&arm_frclock, 0, sizeof(arm_frclock)); // MODIFIED
 
+  kmemset(&kuserinfo, 0, sizeof(kuserinfo)); // MODIFIED
   kmemset(&kuserinfo, 0, sizeof(kuserinfo)); // MODIFIED
   kuserinfo.kui_size = sizeof(kuserinfo);
   kuserinfo.kui_user_sp = kinfo.user_sp;
@@ -485,18 +510,23 @@ void cstart(void)
   value = env_get("no_apic");
   if(value)
 	config_no_apic = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
+	config_no_apic = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
   else
+	config_no_apic = 1; /* Default if not set */
 	config_no_apic = 1; /* Default if not set */
   value = env_get("apic_timer_x");
   if(value)
 	config_apic_timer_x = 0; /* FIXME: atoi(value) was here, replace with katoi */ // MODIFIED (default to 0, needs proper katoi)
+	config_apic_timer_x = 0; /* FIXME: atoi(value) was here, replace with katoi */ // MODIFIED (default to 0, needs proper katoi)
   else
+	config_apic_timer_x = 1; /* Default if not set */
 	config_apic_timer_x = 1; /* Default if not set */
 #endif
 
 #ifdef USE_WATCHDOG
   value = env_get("watchdog");
   if (value)
+	  watchdog_enabled = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
 	  watchdog_enabled = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
 #endif
 
@@ -506,7 +536,9 @@ void cstart(void)
   value = env_get("no_smp");
   if(value)
 	config_no_smp = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
+	config_no_smp = (*value != '0'); /* FIXME: atoi(value) was here */ // MODIFIED (default to true if value is non-zero)
   else
+	config_no_smp = 0; /* Default if not set */
 	config_no_smp = 0; /* Default if not set */
 #endif
   DEBUGEXTRA(("intr_init(0)\n"));
