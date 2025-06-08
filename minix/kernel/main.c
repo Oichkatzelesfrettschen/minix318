@@ -249,6 +249,12 @@ void kmain(kinfo_t *local_cbi)
 
   cstart();
 
+  // Initialize the chosen Big Kernel Lock implementation
+  // (e.g., CLH BKL, if selected over older spinlock BKL)
+  // This needs to be done before the first BKL_LOCK() call.
+  extern void init_global_clh_bkl(void); // Declaration
+  init_global_clh_bkl(); // Call CLH BKL initialization
+
   BKL_LOCK();
 
   // Initialize the mathematical capability foundation

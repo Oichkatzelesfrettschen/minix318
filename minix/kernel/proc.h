@@ -29,6 +29,10 @@
 #include <klib/include/kstring.h>
 #include "kernel/k_spinlock_irq.h" /* spinlock_irq_t */
 
+#ifdef CONFIG_SMP
+#include <minix/clhlock.h> /* For clh_proc_state_t and clhlock_t */
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,8 +53,11 @@ struct proc {
     unsigned              p_cpu;           /**< Current CPU ID */
 
 #ifdef CONFIG_SMP
+    clhlock_t             p_lock;          /**< Process lock (CLH, MCS, etc. chosen at runtime) */
+    clh_proc_state_t      p_clh_state;     /**< CLH lock state for p_lock if CLH is active */
     bitchunk_t            p_cpu_mask[BITMAP_CHUNKS(CONFIG_MAX_CPUS)];
     bitchunk_t            p_stale_tlb[BITMAP_CHUNKS(CONFIG_MAX_CPUS)];
+
 #endif
 
     /** Scheduling/accounting statistics. */

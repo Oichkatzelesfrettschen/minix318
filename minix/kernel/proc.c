@@ -98,6 +98,13 @@ void proc_init(void)
         ppriv_addr[i]    = sp;
         sp->s_sig_mgr    = NONE;
         sp->s_bak_sig_mgr= NONE;
+
+        /* Initialize new pending notification store */
+        for (int j = 0; j < MAX_PENDING_NOTIFICATIONS; ++j) {
+            sp->s_pending_notifications[j].pn_in_use = 0;
+            sp->s_pending_notifications[j].pn_source = NONE; /* Endpoint NONE */
+            sp->s_pending_notifications[j].pn_badge = 0;
+        }
     }
 
     /* Idle task for each CPU */
