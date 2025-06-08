@@ -84,7 +84,8 @@ kernel_core_sources = files(
     'table.c',
     'usermapped_data.c',
     'utility.c',
-    'watchdog.c'
+    'watchdog.c',
+    '../lib/klib/src/kcapability_dag_test.c' # Added klib DAG tests
 )
 
 # System call handler sources
