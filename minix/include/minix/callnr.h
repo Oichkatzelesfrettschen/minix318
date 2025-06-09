@@ -58,8 +58,10 @@
 #define PM_GETEPINFO		(PM_BASE + 45)
 #define PM_GETPROCNR		(PM_BASE + 46)
 #define PM_GETSYSINFO		(PM_BASE + 47)
+#define PM_GETPID_CAP		(PM_BASE + 48) /* New PM call for getpid via capability */
+#define PM_PID_REPLY		(PM_BASE + 49) /* Reply type from PM when returning a PID */
 
-#define NR_PM_CALLS		48	/* highest number from base plus one */
+#define NR_PM_CALLS		49	/* highest incoming call number from base plus one. Does not include reply types. */
 
 /*===========================================================================*
  *				Calls to VFS				     *

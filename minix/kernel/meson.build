@@ -33,6 +33,23 @@ kernel_link_args = arch_flags
 # This assumes minix/meson.build called subdir('lib/klib')
 capability_klib_dep = dependency('capability_klib', fallback: ['capability_klib', 'capability_klib_dep'])
 
+# Add build option for profiling
+option_enable_profiling = get_option('enable_profiling') # Assuming 'enable_profiling' is defined in meson_options.txt
+if option_enable_profiling
+    add_project_arguments('-DCONFIG_PROFILING=1', language: 'c')
+    message('Kernel profiling enabled.')
+else
+    message('Kernel profiling disabled.')
+endif
+
+# Add build option for MDLM
+option_enable_mdlm = get_option('enable_mdlm') # Assuming 'enable_mdlm' is defined in meson_options.txt
+if option_enable_mdlm
+    add_project_arguments('-DCONFIG_MDLM=1', language: 'c')
+    message('MDLM support enabled.')
+else
+    message('MDLM support disabled.')
+endif
 
 kernel_includes = include_directories(
     'include',
@@ -85,7 +102,10 @@ kernel_core_sources = files(
     'usermapped_data.c',
     'utility.c',
     'watchdog.c',
-    '../lib/klib/src/kcapability_dag_test.c' # Added klib DAG tests
+    'clhlock.c',    # Generic CLH lock implementation
+    'clh_bkl.c',    # CLH BKL specific instance and initialization
+    'capability.c', # Capability table management
+    'profile.c'     # Profiling framework (already added, ensure it's here)
 )
 
 # System call handler sources
@@ -144,7 +164,20 @@ elif arch == 'x86_64'
     kernel_asm_sources = []
 endif
 
-all_c_sources = kernel_core_sources + syscall_sources + arch_sources_list
+# MDLM sources (initially empty, will be populated in later phases)
+mdlm_sources = []
+if option_enable_mdlm
+    # When MDLM source files are created, they will be added here:
+    mdlm_sources += files(
+        'mdlm_cap_dag.c'       // MDLM Capability DAG component
+    #    'mdlm/thread_lattice.c', // Example future file
+    #    'mdlm/cap_dag.c',        // Example future file (Note: user plan had this, might be a typo for proc_dag.c)
+    #    'mdlm/security_lattice.c'// Example future file
+    )
+    message('MDLM sources enabled: mdlm_cap_dag.c') # Updated message
+endif
+
+all_c_sources = kernel_core_sources + syscall_sources + arch_sources_list + mdlm_sources
 linker_script = meson.current_source_dir() / 'arch' / arch_subdir / 'kernel.lds'
 if not run_command('test', '-f', linker_script, check: false).returncode() == 0
     error('Linker script not found: ' + linker_script +

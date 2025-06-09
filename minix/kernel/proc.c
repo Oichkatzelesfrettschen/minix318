@@ -51,7 +51,9 @@ static int mini_send(struct proc *caller, endpoint_t dst, message *m_ptr,
                      int flags);
 static int mini_receive(struct proc *caller, endpoint_t src, message *m_ptr,
                         int flags);
-static int mini_notify(const struct proc *caller, endpoint_t dst);
+// Modifying mini_notify to accept user_m_ptr for badge extraction
+static int mini_notify(const struct proc *caller, endpoint_t dst,
+                       message *user_m_ptr);
 static int mini_senda(struct proc *caller, asynmsg_t *table, size_t size);
 static int try_async(struct proc *caller);
 static int try_one(endpoint_t receive_e, struct proc *src, struct proc *dst);
@@ -91,6 +93,7 @@ void proc_init(void) {
     /* init per-proc spinlock for signals */
     spin_lock_irq_init(&rp->p_sig_lock);
     arch_proc_reset(rp);
+    init_proc_capabilities(rp); // Initialize capability table for the process
   }
 
   /* Clear privilege table */
@@ -100,6 +103,13 @@ void proc_init(void) {
     ppriv_addr[i] = sp;
     sp->s_sig_mgr = NONE;
     sp->s_bak_sig_mgr = NONE;
+
+    /* Initialize new pending notification store */
+    for (int j = 0; j < MAX_PENDING_NOTIFICATIONS; ++j) {
+      sp->s_pending_notifications[j].pn_in_use = 0;
+      sp->s_pending_notifications[j].pn_source = NONE; /* Endpoint NONE */
+      sp->s_pending_notifications[j].pn_badge = 0;
+    }
   }
 
   /* Idle task for each CPU */
@@ -119,7 +129,8 @@ void proc_init(void) {
 static void idle(void) {
   struct proc *p = get_cpulocal_var_ptr(idle_proc);
   get_cpulocal_var(proc_ptr) = p;
-  if (priv(p)->s_flags & BILLABLE) get_cpulocal_var(bill_ptr) = p;
+  if (priv(p)->s_flags & BILLABLE)
+    get_cpulocal_var(bill_ptr) = p;
 
   switch_address_space_idle();
 
@@ -141,7 +152,8 @@ static void idle(void) {
   else {
     volatile int *v = get_cpulocal_var_ptr(idle_interrupted);
     interrupts_enable();
-    while (!*v) arch_pause();
+    while (!*v)
+      arch_pause();
     interrupts_disable();
     *v = 0;
   }
@@ -192,28 +204,37 @@ int do_ipc(reg_t r1, reg_t r2, reg_t r3) {
   }
 
   switch (call_nr) {
-    case SENDREC:
-    case SEND:
-    case RECEIVE:
-    case NOTIFY:
-    case SENDNB:
-      caller->p_accounting.ipc_sync++;
-      return do_sync_ipc(caller, call_nr, (endpoint_t)r2, (message *)r3);
+  case SENDREC:
+  case SEND:
+  case RECEIVE:
+  case NOTIFY:
+  case SENDNB:
+    caller->p_accounting.ipc_sync++;
+    return do_sync_ipc(caller, call_nr, (endpoint_t)r2, (message *)r3);
 
-    case SENDA: {
-      size_t msg_size = (size_t)r2;
-      caller->p_accounting.ipc_async++;
-      if (msg_size > 16 * (NR_TASKS + NR_PROCS)) return EDOM;
-      return mini_senda(caller, (asynmsg_t *)r3, msg_size);
-    }
+  case SENDA: {
+    size_t msg_size = (size_t)r2;
+    caller->p_accounting.ipc_async++;
+    if (msg_size > 16 * (NR_TASKS + NR_PROCS))
+      return EDOM;
+    return mini_senda(caller, (asynmsg_t *)r3, msg_size);
+  }
 
-    case MINIX_KERNINFO:
-      if (!minix_kerninfo_user) return EBADCALL;
-      arch_set_secondary_ipc_return(caller, minix_kerninfo_user);
-      return OK;
-
-    default:
+  case MINIX_KERNINFO:
+    if (!minix_kerninfo_user)
       return EBADCALL;
+    arch_set_secondary_ipc_return(caller, minix_kerninfo_user);
+    return OK;
+
+  case SYS_IPC_SEND_CAP: /* New capability-based send syscall */
+    // r1 is call_nr (SYS_IPC_SEND_CAP)
+    // r2 is cap_idx (int)
+    // r3 is user_msg_ptr (message *)
+    // caller is proc_ptr (struct proc *)
+    return sys_ipc_send_cap(caller, (int)r2, (message *)r3);
+
+  default:
+    return EBADCALL;
   }
 }
 
@@ -230,7 +251,8 @@ static int do_sync_ipc(struct proc *caller, int call_nr, endpoint_t src_dst,
 
   /* map endpoint to slot */
   if (src_dst != ANY) {
-    if (!isokendpt(src_dst, &target_slot)) return EDEADSRCDST;
+    if (!isokendpt(src_dst, &target_slot))
+      return EDEADSRCDST;
     if (!may_send_to(caller, target_slot) && call_nr != RECEIVE)
       return ECALLDENIED;
   } else if (call_nr != RECEIVE) {
@@ -240,34 +262,36 @@ static int do_sync_ipc(struct proc *caller, int call_nr, endpoint_t src_dst,
   }
 
   /* check trap mask */
-  if (!(priv(caller)->s_trap_mask & (1 << call_nr))) return ETRAPDENIED;
+  if (!(priv(caller)->s_trap_mask & (1 << call_nr)))
+    return ETRAPDENIED;
 
   switch (call_nr) {
-    case SENDREC:
-      caller->p_misc_flags |= MF_REPLY_PEND;
-      /* fall through */
-    case SEND:
-      result = mini_send(caller, src_dst, m_ptr, 0);
-      if (call_nr == SEND || result != OK) break;
-      /* fall through for SENDREC */
-    case RECEIVE:
-      if (call_nr == RECEIVE) {
-        caller->p_misc_flags &= ~MF_REPLY_PEND;
-        IPC_STATUS_CLEAR(caller);
-      }
-      result = mini_receive(caller, src_dst, m_ptr, 0);
+  case SENDREC:
+    caller->p_misc_flags |= MF_REPLY_PEND;
+    /* fall through */
+  case SEND:
+    result = mini_send(caller, src_dst, m_ptr, 0);
+    if (call_nr == SEND || result != OK)
       break;
+    /* fall through for SENDREC */
+  case RECEIVE:
+    if (call_nr == RECEIVE) {
+      caller->p_misc_flags &= ~MF_REPLY_PEND;
+      IPC_STATUS_CLEAR(caller);
+    }
+    result = mini_receive(caller, src_dst, m_ptr, 0);
+    break;
 
-    case NOTIFY:
-      result = mini_notify(caller, src_dst);
-      break;
+  case NOTIFY:
+    result = mini_notify(caller, src_dst);
+    break;
 
-    case SENDNB:
-      result = mini_send(caller, src_dst, m_ptr, NON_BLOCKING);
-      break;
+  case SENDNB:
+    result = mini_send(caller, src_dst, m_ptr, NON_BLOCKING);
+    break;
 
-    default:
-      result = EBADCALL;
+  default:
+    result = EBADCALL;
   }
 
   return result;
@@ -289,7 +313,8 @@ static int deadlock(int function, struct proc *caller, endpoint_t peer_e) {
 
     /* no dependency → no cycle */
     next = P_BLOCKEDON(xp);
-    if (next == NONE) return 0;
+    if (next == NONE)
+      return 0;
 
     group_size++;
     if (next == caller->p_endpoint) {
@@ -310,19 +335,19 @@ static int deadlock(int function, struct proc *caller, endpoint_t peer_e) {
  *  Notification macros                                                      *
  *---------------------------------------------------------------------------*/
 /** Zero and setup a notification message for dst_proc from src_id. */
-#define BuildNotifyMessage(msg, src_id, dst_proc)                      \
-  do {                                                                 \
-    kmemset((msg), 0, sizeof(*(msg)));                                 \
-    (msg)->m_type = NOTIFY_MESSAGE;                                    \
-    (msg)->m_notify.timestamp = get_monotonic();                       \
-    if ((src_id) == HARDWARE) {                                        \
-      (msg)->m_notify.interrupts = priv(dst_proc)->s_int_pending;      \
-      priv(dst_proc)->s_int_pending = 0;                               \
-    } else {                                                           \
-      kmemcpy(&(msg)->m_notify.sigset, &priv(dst_proc)->s_sig_pending, \
-              sizeof(k_sigset_t));                                     \
-      k_sigemptyset(&priv(dst_proc)->s_sig_pending);                   \
-    }                                                                  \
+#define BuildNotifyMessage(msg, src_id, dst_proc)                              \
+  do {                                                                         \
+    kmemset((msg), 0, sizeof(*(msg)));                                         \
+    (msg)->m_type = NOTIFY_MESSAGE;                                            \
+    (msg)->m_notify.timestamp = get_monotonic();                               \
+    if ((src_id) == HARDWARE) {                                                \
+      (msg)->m_notify.interrupts = priv(dst_proc)->s_int_pending;              \
+      priv(dst_proc)->s_int_pending = 0;                                       \
+    } else {                                                                   \
+      kmemcpy(&(msg)->m_notify.sigset, &priv(dst_proc)->s_sig_pending,         \
+              sizeof(k_sigset_t));                                             \
+      k_sigemptyset(&priv(dst_proc)->s_sig_pending);                           \
+    }                                                                          \
   } while (0)
 
 /*---------------------------------------------------------------------------*
@@ -333,7 +358,8 @@ static int deadlock(int function, struct proc *caller, endpoint_t peer_e) {
  */
 static int mini_notify(const struct proc *caller, endpoint_t dst_e) {
   int dst_slot;
-  if (!isokendpt(dst_e, &dst_slot)) return EDEADSRCDST;
+  if (!isokendpt(dst_e, &dst_slot))
+    return EDEADSRCDST;
 
   struct proc *dst = proc_addr(dst_slot);
   message m; /* temp buffer */
@@ -358,7 +384,8 @@ static int mini_notify(const struct proc *caller, endpoint_t dst_e) {
  *---------------------------------------------------------------------------*/
 static int has_pending(sys_map_t *map, int src_id, bool async) {
   if (src_id != ANY) {
-    if (get_sys_bit(*map, nr_to_id(src_id))) return src_id;
+    if (get_sys_bit(*map, nr_to_id(src_id)))
+      return src_id;
     return NULL_PRIV_ID;
   }
   for (int i = 0; i < NR_SYS_PROCS; ++i) {
