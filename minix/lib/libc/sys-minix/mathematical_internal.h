@@ -626,9 +626,10 @@ enum math_mode {
 };
 
 /** @brief Kernel policy flags returned by SYS_CAPABILITY_QUERY. */
-#define POLICY_AVAILABLE 0x0001     /**< Kernel supports capability system */
-#define POLICY_MANDATORY_ALL 0x0002 /**< Kernel mandates verification for all  \
-                                     */
+#define POLICY_AVAILABLE 0x0001 /**< Kernel supports capability system */
+#define POLICY_MANDATORY_ALL                                                   \
+  0x0002 /**< Kernel mandates verification for all                             \
+          */
 #define POLICY_MANDATORY_PRIV                                                  \
   0x0004                           /**< Kernel mandates verification for root */
 #define POLICY_CACHE_KERNEL 0x0008 /**< Kernel supports its own caching */
