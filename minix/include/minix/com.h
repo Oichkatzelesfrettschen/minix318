@@ -67,22 +67,9 @@
 #define VM_PROC_NR ((endpoint_t)8)    /* memory server */
 #define PFS_PROC_NR ((endpoint_t)9)   /* pipe filesystem */
 #define MFS_PROC_NR ((endpoint_t)10)  /* minix root filesystem */
-// FIXME TODO: RAMDISKFS_PROC_NR ((endpoint_t) 12) // Example, ensure unique. To
-// be defined for RamdiskFS service.
-#define RAMDISKFS_PROC_NR ((endpoint_t)13) /* Ramdisk Filesystem Service */
 #define LAST_SPECIAL_PROC_NR                                                   \
   11 /* An untyped version for                                                 \
         computation in macros.*/
-// Note: If RAMDISKFS_PROC_NR (13) is a boot module and makes INIT_PROC_NR
-// larger than the actual last special proc, NR_BOOT_MODULES might need
-// adjustment. For now, assuming LAST_SPECIAL_PROC_NR is fixed and INIT_PROC_NR
-// uses it. If RamdiskFS is a boot service, it effectively increases
-// NR_BOOT_MODULES if its endpoint number is considered part of the "special"
-// boot sequence before INIT. Let's adjust LAST_SPECIAL_PROC_NR if RAMDISKFS is
-// considered a static boot service before INIT. However, the prompt implies it
-// might be started by RS_UP or be a boot service. For now, let's just define it
-// and address NR_BOOT_MODULES if it becomes a static service that shifts
-// INIT_PROC_NR. For Phase 0.5, this definition is enough.
 #define INIT_PROC_NR                                                           \
   ((endpoint_t)LAST_SPECIAL_PROC_NR) /* init                                   \
                                    -- goes multiuser */
@@ -297,16 +284,9 @@
 #define SYS_SAFEMEMSET (KERNEL_CALL + 56) /* sys_safememset() */
 
 #define SYS_PADCONF (KERNEL_CALL + 57) /* sys_padconf() */
-#define SYS_UPDATE_SERVICE_EPOCH                                               \
-  (KERNEL_CALL + 58) /* RS updates service epoch in kernel */
-#define SYS_DEBUG_RS_RESTART_PM                                                \
-  (KERNEL_CALL +                                                               \
-   59) /* Test program asks KERNEL to ask RS to simulate PM restart */
-#define SYS_CREATE_USER_CAPABILITY                                             \
-  (KERNEL_CALL + 60) /* Service creates a capability in a client's table */
 
 /* Total */
-#define NR_SYS_CALLS 61 /* number of kernel calls */
+#define NR_SYS_CALLS 58 /* number of kernel calls */
 
 /* Ensure BITMAP_CHUNKS is defined before use */
 #ifndef BITMAP_CHUNKS
@@ -535,11 +515,6 @@
 
 /* Subfunctions for RS_FI. */
 #define RS_FI_CRASH 1
-#define RS_FI_CRASH 1
-
-/* For debugging - KERNEL to RS to ask RS to simulate a service restart (for
- * epoch testing) */
-#define RS_DEBUG_RESTART_SERVICE_RQ (RS_RQ_BASE + 100)
 
 /*===========================================================================*
  *                Messages for the Data Store Server			     *

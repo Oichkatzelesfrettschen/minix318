@@ -43,6 +43,10 @@
 #include <minix/com.h>    // For PM_PROC_NR, needed for pre-populating PM cap
 #include <minix/syslib.h> // For _ENDPOINT_P, needed for PM_SERVICE_ID_FOR_EPOCH
 
+#include "cap_table.h"
+#include <minix/com.h>    // For PM_PROC_NR, needed for pre-populating PM cap
+#include <minix/syslib.h> // For _ENDPOINT_P, needed for PM_SERVICE_ID_FOR_EPOCH
+
 /*---------------------------------------------------------------------------*
  *  Forward declarations                                                   *
  *---------------------------------------------------------------------------*/
