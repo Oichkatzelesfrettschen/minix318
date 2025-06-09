@@ -1,2 +1,63 @@
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+build/
+dist/
+obj/
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Core dumps
+core
+*.core
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Configuration files that might contain sensitive data
+.env
+.env.local
+.env.*.local
+
+# Dependencies (if using package managers)
+node_modules/
+vendor/
+
+# MINIX specific
+*.img
+*.iso
+bootdisk
+
+# Duplicate files (common issue)
+* 2
+* 2.*
+*\ 2*
+
 limine/
 microwindows/
