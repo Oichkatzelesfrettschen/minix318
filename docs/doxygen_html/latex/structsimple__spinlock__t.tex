@@ -1,0 +1,63 @@
+\doxysection{simple\+\_\+spinlock\+\_\+t Struct Reference}
+\hypertarget{structsimple__spinlock__t}{}\label{structsimple__spinlock__t}\index{simple\_spinlock\_t@{simple\_spinlock\_t}}
+
+
+Structure representing a simple spinlock.
+
+
+
+
+{\ttfamily \#include $<$k\+\_\+spinlock.\+h$>$}
+
+\doxysubsubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item
+volatile int \mbox{\hyperlink{structsimple__spinlock__t_ae8d529ab0ac1b69010d98ef8336e9172}{locked}}
+\begin{DoxyCompactList}\small\item\em The lock state. 0 for unlocked, 1 for locked. \end{DoxyCompactList}\item
+unsigned long \mbox{\hyperlink{structsimple__spinlock__t_a849f8cded125ee7192052ca71e67f390}{acquisitions}}
+\begin{DoxyCompactList}\small\item\em Number of times the lock was successfully acquired. \end{DoxyCompactList}\item
+unsigned long \mbox{\hyperlink{structsimple__spinlock__t_a7c66988c5d374d8eaf3b522a1ed7d041}{contentions}}
+\begin{DoxyCompactList}\small\item\em Number of times a thread tried to acquire the lock but found it already held, thus entering a spin-\/wait loop. This indicates contention. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Structure representing a simple spinlock.
+
+The spinlock\textquotesingle{}s state is determined by the {\ttfamily locked} member. It also includes basic statistics for acquisitions and contentions. It is crucial that operations on this structure use the provided {\ttfamily simple\+\_\+spin\+\_\+\texorpdfstring{$\ast$}{*}} functions to ensure atomicity and correct memory ordering.
+
+\doxysubsection{Member Data Documentation}
+\Hypertarget{structsimple__spinlock__t_a849f8cded125ee7192052ca71e67f390}\label{structsimple__spinlock__t_a849f8cded125ee7192052ca71e67f390}
+\index{simple\_spinlock\_t@{simple\_spinlock\_t}!acquisitions@{acquisitions}}
+\index{acquisitions@{acquisitions}!simple\_spinlock\_t@{simple\_spinlock\_t}}
+\doxysubsubsection{\texorpdfstring{acquisitions}{acquisitions}}
+{\footnotesize\ttfamily unsigned long simple\+\_\+spinlock\+\_\+t\+::acquisitions}
+
+
+
+Number of times the lock was successfully acquired.
+
+\Hypertarget{structsimple__spinlock__t_a7c66988c5d374d8eaf3b522a1ed7d041}\label{structsimple__spinlock__t_a7c66988c5d374d8eaf3b522a1ed7d041}
+\index{simple\_spinlock\_t@{simple\_spinlock\_t}!contentions@{contentions}}
+\index{contentions@{contentions}!simple\_spinlock\_t@{simple\_spinlock\_t}}
+\doxysubsubsection{\texorpdfstring{contentions}{contentions}}
+{\footnotesize\ttfamily unsigned long simple\+\_\+spinlock\+\_\+t\+::contentions}
+
+
+
+Number of times a thread tried to acquire the lock but found it already held, thus entering a spin-\/wait loop. This indicates contention.
+
+\Hypertarget{structsimple__spinlock__t_ae8d529ab0ac1b69010d98ef8336e9172}\label{structsimple__spinlock__t_ae8d529ab0ac1b69010d98ef8336e9172}
+\index{simple\_spinlock\_t@{simple\_spinlock\_t}!locked@{locked}}
+\index{locked@{locked}!simple\_spinlock\_t@{simple\_spinlock\_t}}
+\doxysubsubsection{\texorpdfstring{locked}{locked}}
+{\footnotesize\ttfamily volatile int simple\+\_\+spinlock\+\_\+t\+::locked}
+
+
+
+The lock state. 0 for unlocked, 1 for locked.
+
+{\ttfamily volatile} ensures that the compiler does not optimize away reads of this variable, as its value can change unexpectedly due to actions from other CPUs or threads. The atomicity of lock operations is guaranteed by GCC\textquotesingle{}s {\ttfamily \+\_\+\+\_\+sync\+\_\+\texorpdfstring{$\ast$}{*}} builtins, not by {\ttfamily volatile} itself.
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item
+minix/kernel/\mbox{\hyperlink{k__spinlock_8h}{k\+\_\+spinlock.\+h}}\end{DoxyCompactItemize}

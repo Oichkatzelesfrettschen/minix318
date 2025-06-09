@@ -7,16 +7,32 @@
  *    	m_lsys_krn_safecopy.offset	offset within granted space
  *	m_lsys_krn_safecopy.address	address in own address space
  *    	m_lsys_krn_safecopy.bytes	bytes to be copied
+ *    	m_lsys_krn_safecopy.from_to	other endpoint
+ *    	m_lsys_krn_safecopy.gid	grant id
+ *    	m_lsys_krn_safecopy.offset	offset within granted space
+ *	m_lsys_krn_safecopy.address	address in own address space
+ *    	m_lsys_krn_safecopy.bytes	bytes to be copied
  *
  * For the vectored variant (do_vsafecopy):
+ *      m_lsys_krn_vsafecopy.vec_addr   address of vector
+ *      m_lsys_krn_vsafecopy.vec_size   number of significant elements in vector
  *      m_lsys_krn_vsafecopy.vec_addr   address of vector
  *      m_lsys_krn_vsafecopy.vec_size   number of significant elements in vector
  */
 
 // #include <assert.h> // Replaced
+// #include <assert.h> // Replaced
 
 #include "kernel/system.h"
 #include "kernel/vm.h"
+
+// Added kernel headers
+#include <minix/kernel_types.h> // For k_size_t, k_errno_t
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
+
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_size_t, k_errno_t
@@ -31,6 +47,7 @@
 #define MEM_TOP 0xFFFFFFFFUL
 
 static int safecopy(struct proc *, endpoint_t, endpoint_t,
+	cp_grant_id_t, k_size_t, vir_bytes, vir_bytes, int); // MODIFIED size_t
 	cp_grant_id_t, k_size_t, vir_bytes, vir_bytes, int); // MODIFIED size_t
 
 #define HASGRANTTABLE(gr) \
@@ -70,12 +87,16 @@ int verify_grant(
 		 */
 		if(!isokendpt(granter, &proc_nr) ) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 			"grant verify failed: invalid granter %d\n", (int) granter);
+			return(EINVAL); // EINVAL might be undefined
 			return(EINVAL); // EINVAL might be undefined
 		}
 		if(!GRANT_VALID(grant)) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 			"grant verify failed: invalid grant %d\n", (int) grant);
+			return(EINVAL); // EINVAL might be undefined
 			return(EINVAL); // EINVAL might be undefined
 		}
 		granter_proc = proc_addr(proc_nr);
@@ -94,6 +115,7 @@ int verify_grant(
 			}
 			else if(!HASGRANTTABLE(granter_proc) || grantee != priv(granter_proc)->s_grant_endpoint) {
 				return ENOTREADY; // ENOTREADY might be undefined
+				return ENOTREADY; // ENOTREADY might be undefined
 			}
 		}
 
@@ -103,8 +125,10 @@ int verify_grant(
 		 */
 		if(!HASGRANTTABLE(granter_proc)) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 			"grant verify failed: granter %d has no grant table\n",
 			granter);
+			return(EPERM); // EPERM might be undefined
 			return(EPERM); // EPERM might be undefined
 		}
 
@@ -113,11 +137,13 @@ int verify_grant(
 
 		if(priv(granter_proc)->s_grant_entries <= grant_idx) {
 				kprintf_stub( // MODIFIED
+				kprintf_stub( // MODIFIED
 				"verify_grant: grant verify failed in ep %d "
 				"proc %d: grant 0x%x (#%d) out of range "
 				"for table size %d\n",
 					granter, proc_nr, grant, grant_idx,
 					priv(granter_proc)->s_grant_entries);
+			return(EPERM); // EPERM might be undefined
 			return(EPERM); // EPERM might be undefined
 		}
 
@@ -130,7 +156,9 @@ int verify_grant(
 			sizeof(g) * grant_idx,
 			KERNEL, (vir_bytes) &g, sizeof(g)) != OK) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 			"verify_grant: grant verify: data_copy failed\n");
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
@@ -138,13 +166,17 @@ int verify_grant(
 		if((g.cp_flags & (CPF_USED | CPF_VALID)) !=
 			(CPF_USED | CPF_VALID)) {
 			kprintf_stub("verify_grant: grant failed: invalid flags " // MODIFIED
+			kprintf_stub("verify_grant: grant failed: invalid flags " // MODIFIED
 			    "(0x%x, 0x%lx)\n", grant, g.cp_flags);
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
 		if (g.cp_seq != grant_seq) {
 			kprintf_stub("verify_grant: grant failed: invalid sequence " // MODIFIED
+			kprintf_stub("verify_grant: grant failed: invalid sequence " // MODIFIED
 			    "(0x%x, %d vs %d)\n", grant, grant_seq, g.cp_seq);
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
@@ -157,8 +189,10 @@ int verify_grant(
 			/* Stop after a few iterations. There may be a loop. */
 			if (depth == MAX_INDIRECT_DEPTH) {
 				kprintf_stub( // MODIFIED
+				kprintf_stub( // MODIFIED
 					"verify grant: indirect grant verify "
 					"failed: exceeded maximum depth\n");
+				return ELOOP; // ELOOP might be undefined
 				return ELOOP; // ELOOP might be undefined
 			}
 			depth++;
@@ -168,8 +202,10 @@ int verify_grant(
 				grantee != ANY &&
 				g.cp_u.cp_indirect.cp_who_to != ANY) {
 				kprintf_stub( // MODIFIED
+				kprintf_stub( // MODIFIED
 					"verify_grant: indirect grant verify "
 					"failed: bad grantee\n");
+				return EPERM; // EPERM might be undefined
 				return EPERM; // EPERM might be undefined
 			}
 
@@ -183,8 +219,10 @@ int verify_grant(
 	/* Check access of grant. */
 	if(((g.cp_flags & access) != access)) {
 		kprintf_stub( // MODIFIED
+		kprintf_stub( // MODIFIED
 	"verify_grant: grant verify failed: access invalid; want 0x%x, have 0x%x\n",
 			access, g.cp_flags);
+		return EPERM; // EPERM might be undefined
 		return EPERM; // EPERM might be undefined
 	}
 
@@ -195,7 +233,9 @@ int verify_grant(
 		if(MEM_TOP - g.cp_u.cp_direct.cp_len + 1 <
 			g.cp_u.cp_direct.cp_start) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 		"verify_grant: direct grant verify failed: len too long\n");
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
@@ -203,7 +243,9 @@ int verify_grant(
 		if(g.cp_u.cp_direct.cp_who_to != grantee && grantee != ANY
 			&& g.cp_u.cp_direct.cp_who_to != ANY) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 		"verify_grant: direct grant verify failed: bad grantee\n");
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
@@ -211,11 +253,13 @@ int verify_grant(
 		if((offset_in+bytes < offset_in) ||
 		    offset_in+bytes > g.cp_u.cp_direct.cp_len) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 		"verify_grant: direct grant verify failed: bad size or range. "
 		"granted %d bytes @ 0x%lx; wanted %d bytes @ 0x%lx\n",
 				g.cp_u.cp_direct.cp_len,
 				g.cp_u.cp_direct.cp_start,
 				bytes, offset_in);
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
@@ -228,8 +272,10 @@ int verify_grant(
 		 */
 		if(granter != VFS_PROC_NR && granter != MIB_PROC_NR) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 		"verify_grant: magic grant verify failed: granter (%d) "
 		"not allowed\n", granter);
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
@@ -237,7 +283,9 @@ int verify_grant(
 		if(g.cp_u.cp_magic.cp_who_to != grantee && grantee != ANY
 			&& g.cp_u.cp_direct.cp_who_to != ANY) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 		"verify_grant: magic grant verify failed: bad grantee\n");
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
@@ -245,11 +293,13 @@ int verify_grant(
 		if((offset_in+bytes < offset_in) ||
 		    offset_in+bytes > g.cp_u.cp_magic.cp_len) {
 			kprintf_stub( // MODIFIED
+			kprintf_stub( // MODIFIED
 		"verify_grant: magic grant verify failed: bad size or range. "
 		"granted %d bytes @ 0x%lx; wanted %d bytes @ 0x%lx\n",
 				g.cp_u.cp_magic.cp_len,
 				g.cp_u.cp_magic.cp_start,
 				bytes, offset_in);
+			return EPERM; // EPERM might be undefined
 			return EPERM; // EPERM might be undefined
 		}
 
@@ -258,14 +308,18 @@ int verify_grant(
 		*e_granter = g.cp_u.cp_magic.cp_who_from;
 	} else {
 		kprintf_stub( // MODIFIED
+		kprintf_stub( // MODIFIED
 		"verify_grant: grant verify failed: unknown grant type\n");
+		return EPERM; // EPERM might be undefined
 		return EPERM; // EPERM might be undefined
 	}
 
 	/* If requested, store information regarding soft faults. */
 	if (sfinfo != NULL && (sfinfo->try = !!(g.cp_flags & CPF_TRY))) { // MODIFIED (NULL)
+	if (sfinfo != NULL && (sfinfo->try = !!(g.cp_flags & CPF_TRY))) { // MODIFIED (NULL)
 		sfinfo->endpt = granter;
 		sfinfo->addr = priv(granter_proc)->s_grant_table +
+		    sizeof(g) * grant_idx + K_OFFSETOF(cp_grant_t, cp_faulted);
 		    sizeof(g) * grant_idx + K_OFFSETOF(cp_grant_t, cp_faulted);
 		sfinfo->value = grant;
 	}
@@ -281,6 +335,7 @@ static int safecopy(
   endpoint_t granter,
   endpoint_t grantee,
   cp_grant_id_t grantid,
+  k_size_t bytes, // MODIFIED size_t
   k_size_t bytes, // MODIFIED size_t
   vir_bytes g_offset,
   vir_bytes addr,
@@ -298,6 +353,8 @@ static int safecopy(
 	if(granter == NONE || grantee == NONE) {
 		kprintf_stub("safecopy: nonsense processes\n"); // MODIFIED
 		return EFAULT; // EFAULT might be undefined
+		kprintf_stub("safecopy: nonsense processes\n"); // MODIFIED
+		return EFAULT; // EFAULT might be undefined
 	}
 
 	/* Decide who is src and who is dst. */
@@ -312,6 +369,8 @@ static int safecopy(
 	/* Verify permission exists. */
 	if((r=verify_grant(granter, grantee, grantid, bytes, access,
 	    g_offset, &v_offset, &new_granter, &sfinfo)) != OK) {
+		if(r == ENOTREADY) return r; // ENOTREADY might be undefined
+			kprintf_stub( // MODIFIED
 		if(r == ENOTREADY) return r; // ENOTREADY might be undefined
 			kprintf_stub( // MODIFIED
 		"grant %d verify to copy %d->%d by %d failed: err %d\n",
@@ -353,6 +412,7 @@ static int safecopy(
 		 */
 		r = virtual_copy(&v_src, &v_dst, bytes);
 		if (r == EFAULT_SRC || r == EFAULT_DST) { // EFAULT* might be undefined
+		if (r == EFAULT_SRC || r == EFAULT_DST) { // EFAULT* might be undefined
 			/*
 			 * Mark the magic grant as having experienced a soft
 			 * fault during its lifetime.  The exact value does not
@@ -368,10 +428,12 @@ static int safecopy(
 			 */
 			if (r != OK)
 				kprintf_stub("Kernel: writing soft fault marker %d " // MODIFIED
+				kprintf_stub("Kernel: writing soft fault marker %d " // MODIFIED
 				    "into %d at 0x%lx failed (%d)\n",
 				    sfinfo.value, sfinfo.endpt, sfinfo.addr,
 				    r);
 
+			return EFAULT; // EFAULT might be undefined
 			return EFAULT; // EFAULT might be undefined
 		}
 		return r;
@@ -388,6 +450,10 @@ int do_safecopy_to(struct proc * caller, message * m_ptr)
 		(cp_grant_id_t) m_ptr->m_lsys_krn_safecopy.gid,
 		m_ptr->m_lsys_krn_safecopy.bytes, m_ptr->m_lsys_krn_safecopy.offset,
 		(vir_bytes) m_ptr->m_lsys_krn_safecopy.address, CPF_WRITE);
+	return safecopy(caller, m_ptr->m_lsys_krn_safecopy.from_to, caller->p_endpoint,
+		(cp_grant_id_t) m_ptr->m_lsys_krn_safecopy.gid,
+		m_ptr->m_lsys_krn_safecopy.bytes, m_ptr->m_lsys_krn_safecopy.offset,
+		(vir_bytes) m_ptr->m_lsys_krn_safecopy.address, CPF_WRITE);
 }
 
 /*===========================================================================*
@@ -395,6 +461,10 @@ int do_safecopy_to(struct proc * caller, message * m_ptr)
  *===========================================================================*/
 int do_safecopy_from(struct proc * caller, message * m_ptr)
 {
+	return safecopy(caller, m_ptr->m_lsys_krn_safecopy.from_to, caller->p_endpoint,
+		(cp_grant_id_t) m_ptr->m_lsys_krn_safecopy.gid,
+		m_ptr->m_lsys_krn_safecopy.bytes, m_ptr->m_lsys_krn_safecopy.offset,
+		(vir_bytes) m_ptr->m_lsys_krn_safecopy.address, CPF_READ);
 	return safecopy(caller, m_ptr->m_lsys_krn_safecopy.from_to, caller->p_endpoint,
 		(cp_grant_id_t) m_ptr->m_lsys_krn_safecopy.gid,
 		m_ptr->m_lsys_krn_safecopy.bytes, m_ptr->m_lsys_krn_safecopy.offset,
@@ -410,16 +480,17 @@ int do_vsafecopy(struct proc * caller, message * m_ptr)
 	static struct vir_addr src, dst;
 	int r, i, els;
 	k_size_t bytes; // MODIFIED size_t
+	k_size_t bytes; // MODIFIED size_t
 
 	/* Set vector copy parameters. */
 	src.proc_nr_e = caller->p_endpoint;
 	KASSERT(src.proc_nr_e != NONE);
-
 	src.offset = (vir_bytes) m_ptr->m_lsys_krn_vsafecopy.vec_addr;
 	dst.proc_nr_e = KERNEL;
 	dst.offset = (vir_bytes) vec;
 
 	/* No. of vector elements. */
+	els = m_ptr->m_lsys_krn_vsafecopy.vec_size;
 	els = m_ptr->m_lsys_krn_vsafecopy.vec_size;
 	bytes = els * sizeof(struct vscp_vec);
 
@@ -439,7 +510,9 @@ int do_vsafecopy(struct proc * caller, message * m_ptr)
 			granter = vec[i].v_from;
 		} else {
 			kprintf_stub("vsafecopy: %d: element %d/%d: no SELF found\n", // MODIFIED
+			kprintf_stub("vsafecopy: %d: element %d/%d: no SELF found\n", // MODIFIED
 				caller->p_endpoint, i, els);
+			return EINVAL; // EINVAL might be undefined
 			return EINVAL; // EINVAL might be undefined
 		}
 

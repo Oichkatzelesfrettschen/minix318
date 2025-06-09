@@ -6,6 +6,14 @@
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
+// #include <assert.h> // Replaced
+
+// Added kernel headers
+#include <minix/kernel_types.h>
+#include <sys/kassert.h>
+#include <klib/include/kprintf.h>
+#include <klib/include/kstring.h>
+#include <klib/include/kmemory.h>
 
 #include "smp.h"
 #include "interrupt.h"
@@ -46,6 +54,7 @@ void wait_for_APs_to_finish_booting(void)
 	}
 	if (n != ncpus)
 		kprintf_stub("WARNING only %d out of %d cpus booted\n", n, ncpus); // MODIFIED
+		kprintf_stub("WARNING only %d out of %d cpus booted\n", n, ncpus); // MODIFIED
 
 	/* we must let the other CPUs to run in kernel mode first */
 	BKL_UNLOCK();
@@ -85,7 +94,6 @@ static void smp_schedule_sync(struct proc * p, unsigned task)
 	unsigned mycpu = cpuid;
 
 	KASSERT(cpu != mycpu);
-
 	/*
 	 * if some other cpu made a request to the same cpu, wait until it is
 	 * done before proceeding
@@ -126,6 +134,7 @@ void smp_schedule_stop_proc(struct proc * p)
 	else
 		RTS_SET(p, RTS_PROC_STOP);
 	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
+	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
 }
 
 void smp_schedule_vminhibit(struct proc * p)
@@ -134,6 +143,7 @@ void smp_schedule_vminhibit(struct proc * p)
 		smp_schedule_sync(p, SCHED_IPI_VM_INHIBIT);
 	else
 		RTS_SET(p, RTS_VMINHIBIT);
+	KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
 	KASSERT(RTS_ISSET(p, RTS_VMINHIBIT));
 }
 
@@ -145,7 +155,6 @@ void smp_schedule_stop_proc_save_ctx(struct proc * p)
 	 */
 	smp_schedule_sync(p, SCHED_IPI_STOP_PROC | SCHED_IPI_SAVE_CTX);
 	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
-
 }
 
 void smp_schedule_migrate_proc(struct proc * p, unsigned dest_cpu)
@@ -156,7 +165,7 @@ void smp_schedule_migrate_proc(struct proc * p, unsigned dest_cpu)
 	 */
 	smp_schedule_sync(p, SCHED_IPI_STOP_PROC | SCHED_IPI_SAVE_CTX);
 	KASSERT(RTS_ISSET(p, RTS_PROC_STOP));
-
+	
 	/* assign the new cpu and let the process run again */
 	p->p_cpu = dest_cpu;
 	RTS_UNSET(p, RTS_PROC_STOP);

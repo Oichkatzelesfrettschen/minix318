@@ -17,6 +17,7 @@
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
+#include "../../lib/klib/include/klib.h" // For kmemcpy_c23, kstrlen_c23
 
 #if USE_UPDATE
 
@@ -259,7 +260,7 @@ static void adjust_proc_slot(struct proc *rp, struct proc *from_rp)
   rp->p_scheduler = from_rp->p_scheduler;
 #ifdef CONFIG_SMP
   rp->p_cpu = from_rp->p_cpu;
-  kmemcpy(rp->p_cpu_mask, from_rp->p_cpu_mask, // MODIFIED
+  kmemcpy_c23(rp->p_cpu_mask, from_rp->p_cpu_mask, // MODIFIED
 		  sizeof(bitchunk_t) * BITMAP_CHUNKS(CONFIG_MAX_CPUS));
 #endif
 }
