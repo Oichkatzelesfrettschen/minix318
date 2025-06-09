@@ -37,7 +37,6 @@
 #include <minix/clhlock.h> /* For clh_proc_state_t and clhlock_t */
 #endif
 #include "kernel/cap_table.h" // For capability table structures
-#include "kernel/cap_table.h" // For capability table structures
 #include <minix/capability.h> /* For capability_t and MAX_CAPABILITIES_PER_PROC */
 
 #ifdef __cplusplus
