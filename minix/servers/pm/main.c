@@ -26,6 +26,7 @@
 #include <machine/archtypes.h>
 #include <assert.h>
 #include "mproc.h"
+#include <minix/ipc_pmsyscalls.h> // For new message types/macros
 
 #include "kernel/const.h"
 #include "kernel/config.h"
@@ -91,16 +92,25 @@ main(void)
 		result = do_getpid_cap(); /* New handler function */
 	} else if (IS_PM_CALL(call_nr)) {
 		/* If the system call number is valid, perform the call. */
-		call_index = (unsigned int) (call_nr - PM_BASE);
+        if (call_nr == PM_GETPID_CAP_RQ) {
+            // Handle PM_GETPID_CAP_RQ directly
+            // Kernel IPC path should have validated capability.
+            mp->mp_reply.m_type = PM_GETPID_CAP_RS;
+            mp->mp_reply.m_pm_getpid_cap_rs_pid = mp->mp_pid;
+            result = OK;
+        } else {
+            // Existing call vector handling
+            call_index = (unsigned int) (call_nr - PM_BASE);
 
-		if (call_index < NR_PM_CALLS && call_vec[call_index] != NULL) {
+            if (call_index < NR_PM_CALLS && call_vec[call_index] != NULL) {
 #if ENABLE_SYSCALL_STATS
-			calls_stats[call_index]++;
+                calls_stats[call_index]++;
 #endif
 
-			result = (*call_vec[call_index])();
-		} else
-			result = ENOSYS;
+                result = (*call_vec[call_index])();
+            } else
+                result = ENOSYS;
+        }
 	} else
 		result = ENOSYS;
 

@@ -67,11 +67,24 @@
 #define VM_PROC_NR ((endpoint_t)8)    /* memory server */
 #define PFS_PROC_NR ((endpoint_t)9)   /* pipe filesystem */
 #define MFS_PROC_NR ((endpoint_t)10)  /* minix root filesystem */
-#define LAST_SPECIAL_PROC_NR   \
-  11 /* An untyped version for \
+// FIXME TODO: RAMDISKFS_PROC_NR ((endpoint_t) 12) // Example, ensure unique. To
+// be defined for RamdiskFS service.
+#define RAMDISKFS_PROC_NR ((endpoint_t)13) /* Ramdisk Filesystem Service */
+#define LAST_SPECIAL_PROC_NR                                                   \
+  11 /* An untyped version for                                                 \
         computation in macros.*/
-#define INIT_PROC_NR                         \
-  ((endpoint_t)LAST_SPECIAL_PROC_NR) /* init \
+// Note: If RAMDISKFS_PROC_NR (13) is a boot module and makes INIT_PROC_NR
+// larger than the actual last special proc, NR_BOOT_MODULES might need
+// adjustment. For now, assuming LAST_SPECIAL_PROC_NR is fixed and INIT_PROC_NR
+// uses it. If RamdiskFS is a boot service, it effectively increases
+// NR_BOOT_MODULES if its endpoint number is considered part of the "special"
+// boot sequence before INIT. Let's adjust LAST_SPECIAL_PROC_NR if RAMDISKFS is
+// considered a static boot service before INIT. However, the prompt implies it
+// might be started by RS_UP or be a boot service. For now, let's just define it
+// and address NR_BOOT_MODULES if it becomes a static service that shifts
+// INIT_PROC_NR. For Phase 0.5, this definition is enough.
+#define INIT_PROC_NR                                                           \
+  ((endpoint_t)LAST_SPECIAL_PROC_NR) /* init                                   \
                                    -- goes multiuser */
 #define NR_BOOT_MODULES (INIT_PROC_NR + 1)
 
@@ -93,7 +106,7 @@
 /* FIXME the old is_notify(a) should be replaced by is_ipc_notify(status). */
 #define is_ipc_notify(ipc_status) (IPC_STATUS_CALL(ipc_status) == NOTIFY)
 #define is_notify(a) ((unsigned)((a) - NOTIFY_MESSAGE) < 0x100)
-#define is_ipc_asynch(ipc_status) \
+#define is_ipc_asynch(ipc_status)                                              \
   (is_ipc_notify(ipc_status) || IPC_STATUS_CALL(ipc_status) == SENDA)
 
 /*===========================================================================*
@@ -102,79 +115,79 @@
 #define BUSC_RQ_BASE 0x300 /* base for request types */
 #define BUSC_RS_BASE 0x380 /* base for response types */
 
-#define BUSC_PCI_INIT                    \
-  (BUSC_RQ_BASE + 0) /* First message to \
-                      * PCI driver       \
+#define BUSC_PCI_INIT                                                          \
+  (BUSC_RQ_BASE + 0) /* First message to                                       \
+                      * PCI driver                                             \
                       */
-#define BUSC_PCI_FIRST_DEV               \
-  (BUSC_RQ_BASE + 1) /* Get index (and   \
-                      * vid/did) of the  \
-                      * first PCI device \
+#define BUSC_PCI_FIRST_DEV                                                     \
+  (BUSC_RQ_BASE + 1) /* Get index (and                                         \
+                      * vid/did) of the                                        \
+                      * first PCI device                                       \
                       */
-#define BUSC_PCI_NEXT_DEV               \
-  (BUSC_RQ_BASE + 2) /* Get index (and  \
-                      * vid/did) of the \
-                      * next PCI device \
+#define BUSC_PCI_NEXT_DEV                                                      \
+  (BUSC_RQ_BASE + 2) /* Get index (and                                         \
+                      * vid/did) of the                                        \
+                      * next PCI device                                        \
                       */
-#define BUSC_PCI_FIND_DEV                   \
-  (BUSC_RQ_BASE + 3) /* Get index of a      \
-                      * PCI device based on \
-                      * bus/dev/function    \
+#define BUSC_PCI_FIND_DEV                                                      \
+  (BUSC_RQ_BASE + 3) /* Get index of a                                         \
+                      * PCI device based on                                    \
+                      * bus/dev/function                                       \
                       */
-#define BUSC_PCI_IDS                                               \
-  (BUSC_RQ_BASE + 4)                        /* Get vid/did from an \
-                                             * index               \
+#define BUSC_PCI_IDS                                                           \
+  (BUSC_RQ_BASE + 4)                        /* Get vid/did from an             \
+                                             * index                           \
                                              */
 #define BUSC_PCI_RESERVE (BUSC_RQ_BASE + 7) /* Reserve a PCI dev */
-#define BUSC_PCI_ATTR_R8                \
-  (BUSC_RQ_BASE + 8) /* Read 8-bit      \
-                      * attribute value \
+#define BUSC_PCI_ATTR_R8                                                       \
+  (BUSC_RQ_BASE + 8) /* Read 8-bit                                             \
+                      * attribute value                                        \
                       */
-#define BUSC_PCI_ATTR_R16               \
-  (BUSC_RQ_BASE + 9) /* Read 16-bit     \
-                      * attribute value \
+#define BUSC_PCI_ATTR_R16                                                      \
+  (BUSC_RQ_BASE + 9) /* Read 16-bit                                            \
+                      * attribute value                                        \
                       */
-#define BUSC_PCI_ATTR_R32                \
-  (BUSC_RQ_BASE + 10) /* Read 32-bit     \
-                       * attribute value \
+#define BUSC_PCI_ATTR_R32                                                      \
+  (BUSC_RQ_BASE + 10) /* Read 32-bit                                           \
+                       * attribute value                                       \
                        */
-#define BUSC_PCI_ATTR_W8                 \
-  (BUSC_RQ_BASE + 11) /* Write 8-bit     \
-                       * attribute value \
+#define BUSC_PCI_ATTR_W8                                                       \
+  (BUSC_RQ_BASE + 11) /* Write 8-bit                                           \
+                       * attribute value                                       \
                        */
-#define BUSC_PCI_ATTR_W16                \
-  (BUSC_RQ_BASE + 12) /* Write 16-bit    \
-                       * attribute value \
+#define BUSC_PCI_ATTR_W16                                                      \
+  (BUSC_RQ_BASE + 12) /* Write 16-bit                                          \
+                       * attribute value                                       \
                        */
-#define BUSC_PCI_ATTR_W32                                      \
-  (BUSC_RQ_BASE + 13)                       /* Write 32-bit    \
-                                             * attribute value \
+#define BUSC_PCI_ATTR_W32                                                      \
+  (BUSC_RQ_BASE + 13)                       /* Write 32-bit                    \
+                                             * attribute value                 \
                                              */
 #define BUSC_PCI_RESCAN (BUSC_RQ_BASE + 14) /* Rescan bus */
-#define BUSC_PCI_DEV_NAME_S                \
-  (BUSC_RQ_BASE + 15) /* Get the name of a \
-                       * PCI device        \
-                       * (safecopy)        \
+#define BUSC_PCI_DEV_NAME_S                                                    \
+  (BUSC_RQ_BASE + 15) /* Get the name of a                                     \
+                       * PCI device                                            \
+                       * (safecopy)                                            \
                        */
-#define BUSC_PCI_SLOT_NAME_S                 \
-  (BUSC_RQ_BASE + 16) /* Get the name of a   \
-                       * PCI slot (safecopy) \
+#define BUSC_PCI_SLOT_NAME_S                                                   \
+  (BUSC_RQ_BASE + 16) /* Get the name of a                                     \
+                       * PCI slot (safecopy)                                   \
                        */
-#define BUSC_PCI_SET_ACL                   \
-  (BUSC_RQ_BASE + 17) /* Set the ACL for a \
-                       * driver (safecopy) \
+#define BUSC_PCI_SET_ACL                                                       \
+  (BUSC_RQ_BASE + 17) /* Set the ACL for a                                     \
+                       * driver (safecopy)                                     \
                        */
-#define BUSC_PCI_DEL_ACL                     \
-  (BUSC_RQ_BASE + 18) /* Delete the ACL of a \
-                       * driver              \
+#define BUSC_PCI_DEL_ACL                                                       \
+  (BUSC_RQ_BASE + 18) /* Delete the ACL of a                                   \
+                       * driver                                                \
                        */
-#define BUSC_PCI_GET_BAR                     \
-  (BUSC_RQ_BASE + 19) /* Get Base Address    \
-                       * Register properties \
+#define BUSC_PCI_GET_BAR                                                       \
+  (BUSC_RQ_BASE + 19) /* Get Base Address                                      \
+                       * Register properties                                   \
                        */
-#define IOMMU_MAP                            \
-  (BUSC_RQ_BASE + 32) /* Ask IOMMU to map    \
-                       * a segment of memory \
+#define IOMMU_MAP                                                              \
+  (BUSC_RQ_BASE + 32) /* Ask IOMMU to map                                      \
+                       * a segment of memory                                   \
                        */
 
 #define BUSC_I2C_RESERVE (BUSC_RQ_BASE + 64) /* reserve i2c device */
@@ -284,18 +297,16 @@
 #define SYS_SAFEMEMSET (KERNEL_CALL + 56) /* sys_safememset() */
 
 #define SYS_PADCONF (KERNEL_CALL + 57) /* sys_padconf() */
-
-#define SYS_MATH_OPEN \
-  (KERNEL_CALL + 58) /* Mathematical open with capability checks */
-#define SYS_CAPABILITY_QUERY \
-  (KERNEL_CALL + 59) /* Query kernel capability policy */
-
-/* Message field for SYS_CAPABILITY_QUERY response */
-#define M_POLICY_FIELD m1_i1 /* message field for capability policy return */
+#define SYS_UPDATE_SERVICE_EPOCH                                               \
+  (KERNEL_CALL + 58) /* RS updates service epoch in kernel */
+#define SYS_DEBUG_RS_RESTART_PM                                                \
+  (KERNEL_CALL +                                                               \
+   59) /* Test program asks KERNEL to ask RS to simulate PM restart */
+#define SYS_CREATE_USER_CAPABILITY                                             \
+  (KERNEL_CALL + 60) /* Service creates a capability in a client's table */
 
 /* Total */
-#undef NR_SYS_CALLS
-#define NR_SYS_CALLS 60 /* number of kernel calls (was 59) */
+#define NR_SYS_CALLS 61 /* number of kernel calls */
 
 /* Ensure BITMAP_CHUNKS is defined before use */
 #ifndef BITMAP_CHUNKS
@@ -305,9 +316,9 @@
 #define SYS_CALL_MASK_SIZE BITMAP_CHUNKS(NR_SYS_CALLS)
 
 /* Basic kernel calls allowed to every system process. */
-#define SYS_BASIC_CALLS                                                   \
-  SYS_EXIT, SYS_SAFECOPYFROM, SYS_SAFECOPYTO, SYS_VSAFECOPY, SYS_GETINFO, \
-      SYS_TIMES, SYS_SETALARM, SYS_SETGRANT, SYS_DIAGCTL, SYS_STATECTL,   \
+#define SYS_BASIC_CALLS                                                        \
+  SYS_EXIT, SYS_SAFECOPYFROM, SYS_SAFECOPYTO, SYS_VSAFECOPY, SYS_GETINFO,      \
+      SYS_TIMES, SYS_SETALARM, SYS_SETGRANT, SYS_DIAGCTL, SYS_STATECTL,        \
       SYS_SAFEMEMSET
 
 /* Field names for SYS_DEVIO, SYS_VDEVIO, SYS_SDEVIO. */
@@ -377,8 +388,8 @@
 #define SYS_PRIV_SET_SYS 3  /* Set a system privilege structure */
 #define SYS_PRIV_SET_USER 4 /* Set a user privilege structure */
 #define SYS_PRIV_ADD_IO 5   /* Add I/O range (struct io_range) */
-#define SYS_PRIV_ADD_MEM                                                  \
-  6                                /* Add memory range (struct mem_range) \
+#define SYS_PRIV_ADD_MEM                                                       \
+  6                                /* Add memory range (struct mem_range)      \
                                     */
 #define SYS_PRIV_ADD_IRQ 7         /* Add IRQ */
 #define SYS_PRIV_QUERY_MEM 8       /* Verify memory privilege. */
@@ -479,10 +490,10 @@
 #define SYS_STATE_CLEAR_IPC_FILTERS 5 /* clear IPC filters */
 
 /* Subfunctions for SYS_SCHEDCTL */
-#define SCHEDCTL_FLAG_KERNEL               \
-  1 /* mark kernel scheduler and remove    \
-     * RTS_NO_QUANTUM; otherwise caller is \
-     * marked scheduler                    \
+#define SCHEDCTL_FLAG_KERNEL                                                   \
+  1 /* mark kernel scheduler and remove                                        \
+     * RTS_NO_QUANTUM; otherwise caller is                                     \
+     * marked scheduler                                                        \
      */
 
 /* Field names for SYS_PADCONF */
@@ -524,6 +535,11 @@
 
 /* Subfunctions for RS_FI. */
 #define RS_FI_CRASH 1
+#define RS_FI_CRASH 1
+
+/* For debugging - KERNEL to RS to ask RS to simulate a service restart (for
+ * epoch testing) */
+#define RS_DEBUG_RESTART_SERVICE_RQ (RS_RQ_BASE + 100)
 
 /*===========================================================================*
  *                Messages for the Data Store Server			     *
@@ -594,9 +610,9 @@
 
 /* Additional parameters for PM_EXEC */
 #define VFS_PM_PATH m7_p1 /* executable */
-#define VFS_PM_PATH_LEN                                      \
-  m7_i2                        /* length of path including   \
-                                * terminating null character \
+#define VFS_PM_PATH_LEN                                                        \
+  m7_i2                        /* length of path including                     \
+                                * terminating null character                   \
                                 */
 #define VFS_PM_FRAME m7_p2     /* arguments and environment */
 #define VFS_PM_FRAME_LEN m7_i3 /* size of frame */
@@ -621,9 +637,9 @@
  *                Messages used from VFS to file servers		     *
  *===========================================================================*/
 
-#define FS_BASE                                 \
-  0xA00 /* Requests sent by VFS to filesystem   \
-         * implementations. See <minix/vfsif.h> \
+#define FS_BASE                                                                \
+  0xA00 /* Requests sent by VFS to filesystem                                  \
+         * implementations. See <minix/vfsif.h>                                \
          */
 
 /*===========================================================================*
@@ -811,8 +827,8 @@
 #define VPF_FLAGS m1_i2
 
 /* Basic vm calls allowed to every process. */
-#define VM_BASIC_CALLS                                             \
-  VM_BRK, VM_MMAP, VM_MUNMAP, VM_MAP_PHYS, VM_UNMAP_PHYS, VM_INFO, \
+#define VM_BASIC_CALLS                                                         \
+  VM_BRK, VM_MMAP, VM_MUNMAP, VM_MAP_PHYS, VM_UNMAP_PHYS, VM_INFO,             \
       VM_GETRUSAGE /* VM_GETRUSAGE is to be removed from this list ASAP */
 
 /*===========================================================================*
@@ -859,8 +875,8 @@
 /* those are from USBD to driver */
 #define USB_COMPLETE_URB (USB_BASE + 6)
 #define USB_ANNOUCE_DEV (USB_BASE + 7) /* Announce a new USB Device */
-#define USB_WITHDRAW_DEV                           \
-  (USB_BASE + 8) /* Withdraw a allready anncounced \
+#define USB_WITHDRAW_DEV                                                       \
+  (USB_BASE + 8) /* Withdraw a allready anncounced                             \
                    USB device*/
 #define USB_GRANT_ID m4_l1
 #define USB_GRANT_SIZE m4_l2
