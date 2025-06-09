@@ -79,25 +79,108 @@
 #include <minix/kernel_types.h>
 #include <minix/profile.h> // For k_prof_init()
 #include <sys/kassert.h>
-#ifdef CONFIG_MDLM
-#include <minix/mdlm_cap_dag.h> // For mdlm_cap_dag_init
-#endif
-
-// Includes for Capability DAG
-#include "../lib/klib/include/klib.h" // For kprintf_stub, kpanic, and kcapability_dag_run_mathematical_tests
-#include <minix/kcap.h> // For INITIAL_KERNEL_CAPABILITY_CAPACITY and kernel_capability_dag extern
-#include <minix/kcapability_dag.h> // For kcapability_dag_t and kcapability_dag_create
-
-// Includes for Capability DAG
-#include "../lib/klib/include/klib.h" // For kprintf_stub, kpanic, and kcapability_dag_run_mathematical_tests
-#include <minix/kcap.h> // For INITIAL_KERNEL_CAPABILITY_CAPACITY and kernel_capability_dag extern
-#include <minix/kcapability_dag.h> // For kcapability_dag_t and kcapability_dag_create
 
 /* dummy for linking */
 char ***_penviron;
 
 /* Prototype declarations for PRIVATE functions. */
 static void announce(void);
+
+// Definition of the global DAG pointer is NOT here, will be in kcap.c or
+// similar. extern struct kcapability_dag* kernel_capability_dag; // Already in
+// kcap.h
+
+/**
+ * @brief Initializes the mathematical capability framework.
+ *
+ * This function is called early during kernel startup to:
+ * 1. Run mathematical verification tests for the Capability DAG implementation.
+ * 2. Create and initialize the global kernel_capability_dag instance.
+ * It panics if either the tests fail (implicitly via KASSERT in tests) or
+ * if the global DAG cannot be created.
+ */
+void kernel_initialize_mathematical_foundation(void) {
+  // Use kprintf_stub from klib.h for early kernel messages
+  kprintf_stub("Initializing mathematical capability framework...\n");
+
+  /*
+   * Run mathematical verification tests to prove that our capability
+   * DAG implementation maintains all required mathematical properties
+   * in the actual kernel environment.
+   * KASSERTs within the tests will panic on failure.
+   */
+  kcapability_dag_run_mathematical_tests();
+
+  kprintf_stub("Capability DAG mathematical tests passed.\n");
+
+  /*
+   * Initialize the global kernel capability DAG that will manage
+   * all system-wide capability relationships.
+   * Note: kernel_capability_dag is declared extern in kcap.h
+   * and will be defined globally in a separate .c file (e.g. kcap.c).
+   */
+  kernel_capability_dag =
+      kcapability_dag_create(INITIAL_KERNEL_CAPABILITY_CAPACITY);
+
+  if (!kernel_capability_dag) {
+    kpanic("Failed to initialize kernel capability DAG - mathematical "
+           "foundation compromised");
+  }
+
+  // Assuming kprintf_stub or a kprintf that can handle _BitInt directly or via
+  // casting For safety, let's cast node_capacity for kprintf_stub.
+  kprintf_stub("Mathematical capability framework initialized successfully.\n");
+  kprintf_stub("Kernel capability DAG created with %u node capacity.\n",
+               (unsigned int)kernel_capability_dag->node_capacity);
+}
+
+// Definition of the global DAG pointer is NOT here, will be in kcap.c or
+// similar. extern struct kcapability_dag* kernel_capability_dag; // Already in
+// kcap.h
+
+/**
+ * @brief Initializes the mathematical capability framework.
+ *
+ * This function is called early during kernel startup to:
+ * 1. Run mathematical verification tests for the Capability DAG implementation.
+ * 2. Create and initialize the global kernel_capability_dag instance.
+ * It panics if either the tests fail (implicitly via KASSERT in tests) or
+ * if the global DAG cannot be created.
+ */
+void kernel_initialize_mathematical_foundation(void) {
+  // Use kprintf_stub from klib.h for early kernel messages
+  kprintf_stub("Initializing mathematical capability framework...\n");
+
+  /*
+   * Run mathematical verification tests to prove that our capability
+   * DAG implementation maintains all required mathematical properties
+   * in the actual kernel environment.
+   * KASSERTs within the tests will panic on failure.
+   */
+  kcapability_dag_run_mathematical_tests();
+
+  kprintf_stub("Capability DAG mathematical tests passed.\n");
+
+  /*
+   * Initialize the global kernel capability DAG that will manage
+   * all system-wide capability relationships.
+   * Note: kernel_capability_dag is declared extern in kcap.h
+   * and will be defined globally in a separate .c file (e.g. kcap.c).
+   */
+  kernel_capability_dag =
+      kcapability_dag_create(INITIAL_KERNEL_CAPABILITY_CAPACITY);
+
+  if (!kernel_capability_dag) {
+    kpanic("Failed to initialize kernel capability DAG - mathematical "
+           "foundation compromised");
+  }
+
+  // Assuming kprintf_stub or a kprintf that can handle _BitInt directly or via
+  // casting For safety, let's cast node_capacity for kprintf_stub.
+  kprintf_stub("Mathematical capability framework initialized successfully.\n");
+  kprintf_stub("Kernel capability DAG created with %u node capacity.\n",
+               (unsigned int)kernel_capability_dag->node_capacity);
+}
 
 // Definition of the global DAG pointer is NOT here, will be in kcap.c or
 // similar. extern struct kcapability_dag* kernel_capability_dag; // Already in
@@ -276,6 +359,9 @@ void kmain(kinfo_t *local_cbi) {
   init_global_clh_bkl();                 // Call CLH BKL initialization
 
   BKL_LOCK();
+
+  // Initialize the mathematical capability foundation
+  kernel_initialize_mathematical_foundation();
 
   DEBUGEXTRA(("main()\n"));
 
