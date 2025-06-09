@@ -22,21 +22,23 @@
  * @since C23
  */
 
-#include "klib.h" /* Assuming a generic klib header */
-/* TODO: Re-evaluate if a more specific header like kernel/klib.h is better */
-/* Or if individual klib components should be included directly. */
+#include <stddef.h>    /* For size_t */
+#include <sys/debug.h> /* For KASSERT */
+#include <sys/types.h> /* For basic types */
+
+/* MINIX kernel library headers */
+#include <lib/libkern/libkern.h>
+
+/* Define k_size_t if not already defined */
+#ifndef k_size_t
+#define k_size_t size_t
+#endif
 
 /* C23 standard headers for specific features */
 /* #include <stdbit.h>    */ /* C23 bit manipulation functions (e.g.,
                                 stdc_leading_zeros) */
 /* #include <stdckdint.h> */ /* C23 checked integer arithmetic (e.g., ckd_add)
                               */
-/* #include <stdbit.h>    */ /* C23 bit manipulation functions (e.g.,
-                                stdc_leading_zeros) */
-/* #include <stdckdint.h> */ /* C23 checked integer arithmetic (e.g., ckd_add)
-                              */
-// Or directly: #include <stddef.h> for size_t
-// And a header for KASSERT, e.g. #include <sys/debug.h> or <kernel/kernel.h>
 
 /**
  * @brief Calculates the length of a null-terminated string.
