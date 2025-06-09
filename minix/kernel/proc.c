@@ -285,6 +285,10 @@ static int do_sync_ipc(struct proc *caller, int call_nr, endpoint_t src_dst,
   case NOTIFY:
     result = mini_notify(caller, src_dst);
     break;
+  case NOTIFY:
+    // Pass m_ptr (user's message) to mini_notify for badge extraction
+    result = mini_notify(caller, src_dst, m_ptr);
+    break;
 
   case SENDNB:
     result = mini_send(caller, src_dst, m_ptr, NON_BLOCKING);
@@ -349,6 +353,31 @@ static int deadlock(int function, struct proc *caller, endpoint_t peer_e) {
       k_sigemptyset(&priv(dst_proc)->s_sig_pending);                           \
     }                                                                          \
   } while (0)
+/** Zero and setup a notification message for dst_proc from src_proc_nr,
+ * including badge. */
+#define BuildNotifyMessageWithBadge(msg, src_proc_nr_or_hw, dst_proc_ptr,      \
+                                    badge_val)                                 \
+  do {                                                                         \
+    kmemset((msg), 0, sizeof(*(msg)));                                         \
+    (msg)->m_type = NOTIFY_MESSAGE;                                            \
+    /* m_source will be set by the caller of this macro (e.g. mini_receive     \
+     * from pending) */                                                        \
+    (msg)->m_notify.timestamp = get_monotonic();                               \
+    (msg)->m_notify.badge = (badge_val);                                       \
+    if ((src_proc_nr_or_hw) == HARDWARE) {                                     \
+      (msg)->m_notify.interrupts = priv(dst_proc_ptr)->s_int_pending;          \
+      priv(dst_proc_ptr)->s_int_pending = 0;                                   \
+      (msg)->m_notify.sigset = 0; /* Clear */                                  \
+    } else if ((src_proc_nr_or_hw) == SYSTEM) {                                \
+      kmemcpy(&(msg)->m_notify.sigset, &priv(dst_proc_ptr)->s_sig_pending,     \
+              sizeof(k_sigset_t));                                             \
+      k_sigemptyset(&priv(dst_proc_ptr)->s_sig_pending);                       \
+      (msg)->m_notify.interrupts = 0; /* Clear */                              \
+    } else { /* General notification from a process */                         \
+      (msg)->m_notify.interrupts = 0;                                          \
+      (msg)->m_notify.sigset = 0;                                              \
+    }                                                                          \
+  } while (0)
 
 /*---------------------------------------------------------------------------*
  *  Notification delivery                                                   *
@@ -360,49 +389,161 @@ static int mini_notify(const struct proc *caller, endpoint_t dst_e) {
   int dst_slot;
   if (!isokendpt(dst_e, &dst_slot))
     return EDEADSRCDST;
+  static int mini_notify(const struct proc *caller, endpoint_t dst_e,
+                         message *user_m_ptr) {
+    int dst_slot;
+    u32_t badge_value = 0;
 
-  struct proc *dst = proc_addr(dst_slot);
-  message m; /* temp buffer */
+    if (!isokendpt(dst_e, &dst_slot))
+      return EDEADSRCDST;
 
-  if (WILLRECEIVE(caller->p_endpoint, dst, 0, &m) &&
-      !(dst->p_misc_flags & MF_REPLY_PEND)) {
-    BuildNotifyMessage(&dst->p_delivermsg, proc_nr(caller), dst);
-    dst->p_delivermsg.m_source = caller->p_endpoint;
-    dst->p_misc_flags |= MF_DELIVERMSG;
-    IPC_STATUS_ADD_CALL(dst, NOTIFY);
-    RTS_UNSET(dst, RTS_RECEIVING);
+    struct proc *dst = proc_addr(dst_slot);
+    message m; /* temp buffer */
+
+    if (WILLRECEIVE(caller->p_endpoint, dst, 0, &m) &&
+        !(dst->p_misc_flags & MF_REPLY_PEND)) {
+      BuildNotifyMessage(&dst->p_delivermsg, proc_nr(caller), dst);
+      dst->p_delivermsg.m_source = caller->p_endpoint;
+      dst->p_misc_flags |= MF_DELIVERMSG;
+      IPC_STATUS_ADD_CALL(dst, NOTIFY);
+      RTS_UNSET(dst, RTS_RECEIVING);
+      return OK;
+    }
+    struct proc *dst_ptr =
+        proc_addr(dst_slot); // Renamed to dst_ptr for clarity
+
+    // Extract badge from user_m_ptr. Assuming user sets m_notify.badge.
+    // If kernel internal call (user_m_ptr is NULL), badge remains 0.
+    if (user_m_ptr != NULL) {
+      badge_value = user_m_ptr->m_notify.badge;
+    }
+
+    // Attempt immediate delivery
+    if (WILLRECEIVE(
+            caller->p_endpoint, dst_ptr, 0,
+            NULL) && // Pass NULL for message, not needed for WILLRECEIVE check
+        !(dst_ptr->p_misc_flags &
+          MF_REPLY_PEND)) { // Not busy with SENDREC reply object
+
+      // Build message directly into dst_ptr->p_delivermsg
+      BuildNotifyMessageWithBadge(
+          &dst_ptr->p_delivermsg,
+          proc_nr(caller), /* Use proc_nr for src_id type calls */
+          dst_ptr, badge_value);
+      dst_ptr->p_delivermsg.m_source =
+          caller->p_endpoint; // Set the true source endpoint
+      dst_ptr->p_misc_flags |= MF_DELIVERMSG;
+      IPC_STATUS_ADD_CALL(dst_ptr, NOTIFY);
+      RTS_UNSET(dst_ptr, RTS_RECEIVING); // Unblock receiver
+      return OK;
+    }
+
+    /* queue for later delivery */
+    set_sys_bit(priv(dst)->s_notify_pending, priv(caller)->s_id);
+    return OK;
+    // Immediate delivery failed, try to queue using new s_pending_notifications
+    // array
+    struct priv *dst_priv = priv(dst_ptr);
+    int i;
+    int stored = 0;
+    for (i = 0; i < MAX_PENDING_NOTIFICATIONS; ++i) {
+      if (!dst_priv->s_pending_notifications[i].pn_in_use) {
+        dst_priv->s_pending_notifications[i].pn_source = caller->p_endpoint;
+        dst_priv->s_pending_notifications[i].pn_badge = badge_value;
+        dst_priv->s_pending_notifications[i].pn_in_use = 1;
+        stored = 1;
+        break;
+      }
+    }
+
+    if (!stored) {
+      // Notification queue is full, drop the notification.
+      // Optional: kprintf warning about dropped notification.
+      kprintf("mini_notify: Pending notification queue for %d full, dropping "
+              "notification from %d with badge %u\n",
+              dst_e, caller->p_endpoint, badge_value);
+    }
+
+    // NOTIFY is best-effort, so return OK even if dropped or if it replaced
+    // s_notify_pending logic. The old set_sys_bit for s_notify_pending is now
+    // fully replaced.
     return OK;
   }
 
-  /* queue for later delivery */
-  set_sys_bit(priv(dst)->s_notify_pending, priv(caller)->s_id);
-  return OK;
-}
-
-/*---------------------------------------------------------------------------*
- *  Pending check helpers                                                    *
- *---------------------------------------------------------------------------*/
-static int has_pending(sys_map_t *map, int src_id, bool async) {
-  if (src_id != ANY) {
-    if (get_sys_bit(*map, nr_to_id(src_id)))
-      return src_id;
-    return NULL_PRIV_ID;
-  }
-  for (int i = 0; i < NR_SYS_PROCS; ++i) {
-    if (get_sys_bit(*map, i)) {
-      struct proc *p = proc_addr(id_to_nr(i));
-      if (async && RTS_ISSET(p, RTS_VMINHIBIT)) {
-        p->p_misc_flags |= MF_SENDA_VM_MISS;
-        continue;
-      }
-      return i;
+  /*---------------------------------------------------------------------------*
+   *  Pending check helpers                                                    *
+   *---------------------------------------------------------------------------*/
+  static int has_pending(sys_map_t * map, int src_id, bool async) {
+    if (src_id != ANY) {
+      if (get_sys_bit(*map, nr_to_id(src_id)))
+        return src_id;
+      return NULL_PRIV_ID;
     }
-  }
-  return NULL_PRIV_ID;
-}
-static void unset_notify_pending(struct proc *caller, int src_id) {
-  unset_sys_bit(priv(caller)->s_notify_pending, src_id);
-}
+    for (int i = 0; i < NR_SYS_PROCS; ++i) {
+      if (get_sys_bit(*map, i)) {
+        struct proc *p = proc_addr(id_to_nr(i));
+        if (async && RTS_ISSET(p, RTS_VMINHIBIT)) {
+          p->p_misc_flags |= MF_SENDA_VM_MISS;
+          continue;
+        }
+        return i;
+      }
+    }
+    return NULL_PRIV_ID;
+    static int has_pending(sys_map_t * map, int src_id, bool async) {
+      // This function was for the old sys_map_t s_notify_pending and
+      // s_asyn_pending. It might need to be adapted or is partially deprecated
+      // if s_notify_pending is fully removed. For now, keep its logic for
+      // s_asyn_pending if that's still in use. If only s_notify_pending is
+      // changed, then this function's use for notifications will be replaced by
+      // iterating the new s_pending_notifications array.
+      if (src_id != ANY) {
+        // Assuming 'map' could be s_asyn_pending. If it was s_notify_pending,
+        // this path is dead for notifications.
+        if (get_sys_bit(*map, nr_to_id(src_id)))
+          return src_id;
+        return NULL_PRIV_ID;
+      }
+      for (int i = 0; i < NR_SYS_PROCS; ++i) {
+        if (get_sys_bit(*map, i)) {
+          struct proc *p = proc_addr(id_to_nr(i));
+          if (async &&
+              RTS_ISSET(p, RTS_VMINHIBIT)) { // async seems to relate to SENDA /
+                                             // s_asyn_pending
+            p->p_misc_flags |= MF_SENDA_VM_MISS;
+            continue;
+          }
+          return i;
+        }
+      }
+      return NULL_PRIV_ID;
+    }
+    static void unset_notify_pending(struct proc * caller, int src_id) {
+      unset_sys_bit(priv(caller)->s_notify_pending, src_id);
+      static void unset_notify_pending(struct proc * caller, int src_id) {
+        // This function was for the old s_notify_pending.
+        // It should be removed or adapted if a similar "clear one specific
+        // source" is needed for the new s_pending_notifications array (which
+        // would involve finding it and clearing pn_in_use). For now, commenting
+        // out its body as direct bit manipulation is no longer correct for
+        // notifications.
+        /* unset_sys_bit(priv(caller)->s_notify_pending, src_id); */
+        // New logic: Iterate s_pending_notifications, find matching src_id, and
+        // clear it. This function might not be directly called anymore if
+        // mini_receive clears slots directly.
+        struct priv *caller_priv = priv(caller);
+        for (int i = 0; i < MAX_PENDING_NOTIFICATIONS; ++i) {
+          if (caller_priv->s_pending_notifications[i].pn_in_use &&
+              caller_priv->s_pending_notifications[i].pn_source ==
+                  _ENDPOINT(0, src_id)) { // Assuming src_id is proc_nr
+            caller_priv->s_pending_notifications[i].pn_in_use = 0;
+            caller_priv->s_pending_notifications[i].pn_source = NONE;
+            caller_priv->s_pending_notifications[i].pn_badge = 0;
+            // break; // Assuming only one match, or clear all from this source?
+            // The old unset_sys_bit only cleared one bit.
+          }
+        }
+      }
 
 /*---------------------------------------------------------------------------*
  *  Asynchronous send (mini_senda)                                           *
@@ -412,6 +553,10 @@ static void unset_notify_pending(struct proc *caller, int src_id) {
   kprintf_stub("kernel:%s:%d: asyn failed for %s in %s (%zu/%zu)\n", __FILE__, \
                __LINE__, field, (caller)->p_name, (size_t)entry,               \
                (size_t)(caller)->p_priv->s_asynsize)
+#define ASCOMPLAIN(caller, entry, field)                                       \
+  kprintf("kernel:%s:%d: asyn failed for %s in %s (%zu/%zu)\n", __FILE__,      \
+          __LINE__, field, (caller)->p_name, (size_t)entry,                    \
+          (size_t)(caller)->p_priv->s_asynsize)
 
 /* ... Implementation of try_deliver_senda, try_async, try_one,
    cancel_async, mini_senda follows the same pattern: retrieve table,
@@ -427,3 +572,157 @@ static void unset_notify_pending(struct proc *caller, int src_id) {
  *  Context switch: switch_to_user                                           *
  *---------------------------------------------------------------------------*/
 /* switch_to_user and FPU exception handler omitted for brevity */
+
+// Placeholder for mini_receive modification - this is complex and needs full
+// context The diff below will only focus on mini_notify and related helpers for
+// now. The actual modification of mini_receive to iterate
+// s_pending_notifications will be done in the next diff block.
+
+/*===========================================================================*
+ * MDLM and Capability PoC Functions                                         *
+ *===========================================================================*/
+#include <minix/capability.h>
+#include <minix/ipc_mdlm.h> // For ipc_state_t (if used directly by proc) and CONFIG_MDLM
+#include <minix/syslib.h> // For data_copy
+#ifdef CONFIG_MDLM
+#include <minix/mdlm_cap_dag.h> // For mdlm_cap_dag_access_check
+#endif
+#include <minix/profile.h> // For Profiling Macros
+
+      // Note: The old static pm_capability_instance and the cap_lookup stub
+      // that were here are now removed. The actual cap_lookup is in
+      // capability.c and uses per-process tables. init_proc_capabilities (in
+      // capability.c) sets up initial capabilities.
+
+      // The old mdlm_access_check stub is removed.
+      // Calls will now go to mdlm_cap_dag_access_check from mdlm_cap_dag.c
+
+#ifdef CONFIG_MDLM
+// No local stub for mdlm_access_check anymore.
+#endif
+
+      // Core IPC fast send logic (skeleton)
+      static int ipc_fast_send(struct proc * caller_ptr, capability_t * cap,
+                               message * msg) {
+        if (!cap) {
+          return EINVAL; // No capability provided
+        }
+
+        // Target endpoint from capability
+        endpoint_t target_ep = cap->target;
+        int target_proc_nr;
+
+        // Validate target endpoint and get process number
+        // isokendpt also fills in the process number (slot)
+        if (!isokendpt(target_ep, &target_proc_nr)) {
+          return EDEADSRCDST;
+        }
+
+        // For this PoC, we are simplifying. A real fast path might have its own
+        // streamlined checks and delivery logic, possibly bypassing some parts
+        // of mini_send. Here, we'll just print and conceptually call mini_send.
+        // kprintf("IPC: ipc_fast_send from %d to %d (proc %d), type %d\n",
+        //         caller_ptr->p_endpoint, target_ep, target_proc_nr,
+        //         msg->m_type);
+
+        // For the getpid() PoC, the target is PM.
+        // The actual message delivery for this PoC would be to make PM handle a
+        // GETPID request. This simplified ipc_fast_send will just use
+        // mini_send. A true "fast path" might avoid some overhead of mini_send
+        // if certain conditions are met. (e.g. if receiver is already waiting,
+        // copy directly, no full queue/state changes) This is a placeholder for
+        // where that optimized logic would go. For now, it demonstrates the
+        // capability check and then calls the existing path.
+        return mini_send(caller_ptr, target_ep, msg, 0 /* flags */);
+      }
+
+      // New syscall handler for capability-based send
+      // This would be registered or called from do_ipc if it were a real
+      // syscall. Parameters: cap_idx (from user), user_msg_ptr (pointer to user
+      // message) Caller is implicit (current_proc from get_cpulocal_var).
+      int sys_ipc_send_cap(struct proc * caller_ptr, int cap_idx,
+                           message *user_msg_ptr) {
+        capability_t *cap;
+        message k_message; // Kernel copy of the message
+        int result;
+
+        PROF_START(PROF_ID_IPC_SYSCALL_ENTRY);
+
+        PROF_START(PROF_ID_IPC_MSG_COPY);
+        // 1. Copy message from user space to kernel space
+        // In MINIX, data_copy is typically used. It's available via syslib.h
+        // for user space, but in kernel, direct memory copy or specific
+        // kernel_phys_copy might be used if dealing with physical addresses, or
+        // direct struct copy if virtual addresses are fine. Let's assume
+        // data_copy or equivalent is available/adapted for kernel->kernel or
+        // user->kernel. For copying from user caller_ptr to kernel's k_message:
+        result =
+            data_copy(caller_ptr->p_endpoint, (vir_bytes)user_msg_ptr, KERNEL,
+                      (vir_bytes)&k_message, (phys_bytes)sizeof(message));
+        if (result != OK) {
+          kprintf(
+              "sys_ipc_send_cap: data_copy failed from user %d with error %d\n",
+              caller_ptr->p_endpoint, result);
+          PROF_END(PROF_ID_IPC_MSG_COPY);
+          PROF_END(PROF_ID_IPC_SYSCALL_ENTRY);
+          return result; // Propagate EFAULT or other error from data_copy
+        }
+        PROF_END(PROF_ID_IPC_MSG_COPY);
+        k_message.m_source =
+            caller_ptr
+                ->p_endpoint; // Set source endpoint in kernel message copy
+
+        PROF_START(PROF_ID_IPC_CAP_LOOKUP);
+        cap = cap_lookup(caller_ptr->p_endpoint, cap_idx);
+        PROF_END(PROF_ID_IPC_CAP_LOOKUP);
+
+        if (!cap) {
+          PROF_END(PROF_ID_IPC_SYSCALL_ENTRY);
+          return EINVAL; // Invalid capability index or lookup failed
+        }
+
+#ifdef CONFIG_MDLM
+        PROF_START(PROF_ID_IPC_MDLM_CHECK);
+        if (!mdlm_cap_dag_access_check(caller_ptr, cap,
+                                       OP_SEND)) { // Updated call
+          PROF_END(PROF_ID_IPC_MDLM_CHECK);
+          PROF_END(PROF_ID_IPC_SYSCALL_ENTRY);
+          return EACCES; // MDLM permission denied
+        }
+        PROF_END(PROF_ID_IPC_MDLM_CHECK);
+#endif
+
+        PROF_START(PROF_ID_IPC_FAST_SEND);
+        result = ipc_fast_send(caller_ptr, cap, &k_message);
+        PROF_END(PROF_ID_IPC_FAST_SEND);
+
+        PROF_END(PROF_ID_IPC_SYSCALL_ENTRY);
+        return result;
+      }
+
+      // Skeleton for ipc_fast_reply
+      // This function is intended to be called by a syscall handler for replies
+      // in the new IPC mechanism. For the getpid() PoC, the app calls
+      // SYS_IPC_SEND_CAP, then a regular RECEIVE. PM calls a regular send to
+      // reply. So this ipc_fast_reply might not be directly used by PM in this
+      // specific PoC flow, but is part of the conceptual design. If the app
+      // were to use a new SYS_IPC_RECEIVE_CAP, that new syscall might
+      // internally note that it's expecting a reply via this path, and a
+      // corresponding SYS_IPC_REPLY_CAP from PM would then perhaps call
+      // ipc_fast_reply. For now, it's a conceptual counterpart to
+      // ipc_fast_send.
+      static int ipc_fast_reply(struct proc * replier_ptr,
+                                endpoint_t original_caller_ep,
+                                message * reply_msg) {
+        // kprintf("IPC: ipc_fast_reply from %d to %d, type %d\n",
+        //         replier_ptr->p_endpoint, original_caller_ep,
+        //         reply_msg->m_type);
+
+        // Ensure the reply message has its source set correctly.
+        reply_msg->m_source = replier_ptr->p_endpoint;
+
+        // For this PoC, just use mini_send to send the reply.
+        // A more optimized version might have different logic.
+        return mini_send(replier_ptr, original_caller_ep, reply_msg,
+                         0 /* flags for blocking send */);
+      }

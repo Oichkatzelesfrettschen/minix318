@@ -380,6 +380,7 @@ void kmain(kinfo_t *local_cbi) {
    * privilege structures for the system processes and the ipc filter pool.
    */
   proc_init(); // This now calls init_proc_capabilities for each process
+  proc_init(); // This now calls init_proc_capabilities for each process
   IPCF_POOL_INIT();
 
 #ifdef CONFIG_MDLM
