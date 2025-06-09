@@ -27,7 +27,12 @@
 
 #include "const.h"                 /* local kernel constants */
 #include "kernel/k_spinlock_irq.h" /* spinlock_irq_t */
-#include "priv.h"                  /* privilege structure */
+
+#ifdef CONFIG_SMP
+#include <minix/clhlock.h> /* For clh_proc_state_t and clhlock_t */
+#endif
+#include "priv.h"             /* privilege structure */
+#include <minix/capability.h> /* For capability_t and MAX_CAPABILITIES_PER_PROC */
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +57,8 @@ struct proc {
   bitchunk_t p_cpu_mask[BITMAP_CHUNKS(CONFIG_MAX_CPUS)];
   bitchunk_t p_stale_tlb[BITMAP_CHUNKS(CONFIG_MAX_CPUS)];
 #endif
+  /* Capability table for this process */
+  capability_t p_capabilities[MAX_CAPABILITIES_PER_PROC];
 
   /** Scheduling/accounting statistics. */
   struct {
@@ -160,35 +167,38 @@ struct proc {
 #define proc_is_runnable(p) ((p)->p_rts_flags == 0)
 
 /** Retrieve blocking endpoint: send or receive. */
-#define P_BLOCKEDON(p)              \
-  (((p)->p_rts_flags & RTS_SENDING) \
-       ? (p)->p_sendto_e            \
+#define P_BLOCKEDON(p)                                                         \
+  (((p)->p_rts_flags & RTS_SENDING)                                            \
+       ? (p)->p_sendto_e                                                       \
        : (((p)->p_rts_flags & RTS_RECEIVING) ? (p)->p_getfrom_e : NONE))
 
 /** Test if specific RTS flags are set. */
 #define RTS_ISSET(rp, f) (((rp)->p_rts_flags & (f)) == (f))
 
 /** Set RTS flags and dequeue if becoming non-runnable. */
-#define RTS_SET(rp, f)                                      \
-  do {                                                      \
-    u32_t _old = (rp)->p_rts_flags;                         \
-    (rp)->p_rts_flags |= (f);                               \
-    if ((_old) == 0 && (rp)->p_rts_flags != 0) dequeue(rp); \
+#define RTS_SET(rp, f)                                                         \
+  do {                                                                         \
+    u32_t _old = (rp)->p_rts_flags;                                            \
+    (rp)->p_rts_flags |= (f);                                                  \
+    if ((_old) == 0 && (rp)->p_rts_flags != 0)                                 \
+      dequeue(rp);                                                             \
   } while (0)
 
 /** Clear RTS flags and enqueue if becoming runnable. */
-#define RTS_UNSET(rp, f)                                  \
-  do {                                                    \
-    u32_t _old = (rp)->p_rts_flags;                       \
-    (rp)->p_rts_flags &= ~(f);                            \
-    if (_old != 0 && (rp)->p_rts_flags == 0) enqueue(rp); \
+#define RTS_UNSET(rp, f)                                                       \
+  do {                                                                         \
+    u32_t _old = (rp)->p_rts_flags;                                            \
+    (rp)->p_rts_flags &= ~(f);                                                 \
+    if (_old != 0 && (rp)->p_rts_flags == 0)                                   \
+      enqueue(rp);                                                             \
   } while (0)
 
 /** Replace RTS flags wholesale. */
-#define RTS_SETFLAGS(rp, f)                              \
-  do {                                                   \
-    if ((rp)->p_rts_flags == 0 && (f) != 0) dequeue(rp); \
-    (rp)->p_rts_flags = (f);                             \
+#define RTS_SETFLAGS(rp, f)                                                    \
+  do {                                                                         \
+    if ((rp)->p_rts_flags == 0 && (f) != 0)                                    \
+      dequeue(rp);                                                             \
+    (rp)->p_rts_flags = (f);                                                   \
   } while (0)
 
 /*---------------------------------------------------------------------------*

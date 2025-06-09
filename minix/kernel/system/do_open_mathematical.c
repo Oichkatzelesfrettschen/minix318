@@ -1053,74 +1053,167 @@ int do_open_mathematical(struct proc *caller, message *m_ptr) {
                 (unsigned long long)(*current_directory_cap_ptr)
                     ->capability_id);
             return SUCCESS;
-            if (!component_cap) {
-              kprintf_stub(
-                  "validate_directory_traversal_mathematical: Component '%s' "
-                  "not found under cap ID %llu\n",
-                  token,
-                  (unsigned long long)current_directory_cap->capability_id);
-              return -ENOENT; // Or -EACCES if not found implies lack of
-                              // permission
-            }
-
-            // Conceptually, kcapability_dag_validate_derivation could be used
-            // if the DAG models explicit "search/traverse" capabilities derived
-            // from parent dir to child entry. bool can_traverse =
-            // kcapability_dag_validate_derivation(dag, current_directory_cap,
-            // component_cap); if (!can_traverse) return -EACCES; For this
-            // simpler stub, direct rights check on current_directory_cap and
-            // finding component_cap is enough.
-
-            current_directory_cap =
-                component_cap; // Move to the next directory in the path
           }
 
-          kprintf_stub("validate_directory_traversal_mathematical: Path '%s' "
-                       "successfully traversed.\n",
-                       path);
-          return SUCCESS; // Successfully traversed the whole path
-        }
+          static int validate_file_access_mathematical(
+              kcapability_dag_t * dag,
+              kcapability_dag_node_t *
+                  file_or_dir_cap,          // This should be the capability of
+                                            // the actual file/dir if it exists
+              const char *path_or_filename, // Can be full path for logging, or
+                                            // just filename
+              int flags) {
+            KASSERT(dag != NULL, "validate_file_access: dag is NULL");
+            KASSERT(
+                file_or_dir_cap != NULL,
+                "validate_file_access: file_or_dir_cap is NULL"); // This must
+                                                                  // be non-NULL
+                                                                  // if checking
+                                                                  // existing
+            KASSERT(path_or_filename != NULL,
+                    "validate_file_access: path_or_filename is NULL");
 
-        static int validate_file_access_mathematical(
-            kcapability_dag_t * dag, kcapability_dag_node_t * proc_cap,
-            const char *path, int flags) {
-          kprintf_stub("STUB: validate_file_access_mathematical for path '%s', "
-                       "flags %x\n",
-                       path, flags);
-          // KASSERT(0, "STUB: validate_file_access_mathematical");
-          (void)dag;
-          (void)proc_cap;
-          (void)path;
-          (void)flags;
-          return -EACCES; // Deny by default for stub
-        }
+            kprintf_stub("validate_file_access_mathematical: Validating access "
+                         "for '%s', "
+                         "flags %x, cap ID %llu, cap rights %llx\n",
+                         path_or_filename, flags,
+                         (unsigned long long)file_or_dir_cap->capability_id,
+                         (unsigned long long)file_or_dir_cap->rights_mask);
 
-        static kcapability_dag_node_t *create_file_capability_mathematical(
-            kcapability_dag_t * dag, kcapability_dag_node_t * proc_cap,
-            const char *path, int flags, mode_t mode) {
-          kprintf_stub(
-              "STUB: create_file_capability_mathematical for path '%s', flags "
-              "%x, mode %o\n",
-              path, flags, mode);
-          // KASSERT(0, "STUB: create_file_capability_mathematical");
-          (void)dag;
-          (void)proc_cap;
-          (void)path;
-          (void)flags;
-          (void)mode;
-          return NULL; // Fail by default for stub
-        }
+            _BitInt(64) required_rights = 0wb;
+            bool read_wanted = false;
+            bool write_wanted = false;
+            int access_mode = flags & O_ACCMODE;
+            if (access_mode == O_RDONLY) {
+              read_wanted = true;
+            } else if (access_mode == O_WRONLY) {
+              write_wanted = true;
+            } else if (access_mode == O_RDWR) {
+              read_wanted = true;
+              write_wanted = true;
+            }
+            if (read_wanted) {
+              required_rights |= CAP_RIGHT_READ;
+            }
+            if (write_wanted) {
+              required_rights |= CAP_RIGHT_WRITE;
+            }
+            if ((file_or_dir_cap->rights_mask & required_rights) ==
+                required_rights) {
+              kprintf_stub(
+                  "validate_file_access_mathematical: Access GRANTED for '%s'. "
+                  "Required: %llx, Has: %llx\n",
+                  path_or_filename, (unsigned long long)required_rights,
+                  (unsigned long long)file_or_dir_cap->rights_mask);
+              return SUCCESS;
+            } else {
+              kprintf_stub(
+                  "validate_file_access_mathematical: Access DENIED for '%s'. "
+                  "Required: %llx, Has: %llx\n",
+                  path_or_filename, (unsigned long long)required_rights,
+                  (unsigned long long)file_or_dir_cap->rights_mask);
+              return -EACCES;
+            }
+          }
 
-        static int allocate_file_descriptor_for_capability(
-            struct proc * caller, kcapability_dag_node_t * file_cap) {
-          kprintf_stub(
-              "STUB: allocate_file_descriptor_for_capability for caller %d\n",
-              caller->p_endpoint);
-          // KASSERT(0, "STUB: allocate_file_descriptor_for_capability");
-          (void)caller;
-          (void)file_cap;
-          return -1; // Fail by default for stub
-        }
+          static const char *get_filename_from_path(const char *path) {
+            if (!path)
+              return NULL;
+            const char *filename = path;
+            const char *p = path;
+            while (*p) {
+              if (*p == '/') {
+                filename = p + 1;
+              }
+              p++;
+            }
+            return filename;
+          }
+
+          static kcapability_dag_node_t *create_file_capability_mathematical(
+              kcapability_dag_t * dag, kcapability_dag_node_t * parent_dir_cap,
+              const char *path, int flags, mode_t mode) {
+            KASSERT(dag != NULL, "create_file_cap: dag is NULL");
+            KASSERT(parent_dir_cap != NULL,
+                    "create_file_cap: parent_dir_cap is NULL");
+            KASSERT(path != NULL, "create_file_cap: path is NULL");
+            _BitInt(64) new_file_rights = 0wb;
+            if (mode & S_IRUSR)
+              new_file_rights |= CAP_RIGHT_READ;
+            if (mode & S_IWUSR)
+              new_file_rights |= CAP_RIGHT_WRITE;
+            new_file_rights &= parent_dir_cap->rights_mask;
+            if (new_file_rights == 0wb &&
+                (mode &
+                 (S_IRUSR |
+                  S_IWUSR))) { // Log if requested rights became 0 after masking
+              kprintf_stub("create_file_capability_mathematical: Calculated "
+                           "new_file_rights are 0 "
+                           "for path '%s' mode %o under parent cap %llu after "
+                           "parent mask.\n",
+                           path, mode,
+                           (unsigned long long)parent_dir_cap->capability_id);
+            }
+            _BitInt(16) new_file_sec_level = parent_dir_cap->security_level;
+            static _BitInt(64) next_cap_id_debug = 2000wb;
+            _BitInt(64) new_cap_id = next_cap_id_debug++;
+            const char *filename = get_filename_from_path(path);
+            kcapability_dag_node_t *new_file_cap = kcapability_dag_node_create(
+                new_cap_id, new_file_rights, new_file_sec_level, filename);
+            if (!new_file_cap) {
+              kprintf_stub("create_file_capability_mathematical: "
+                           "kcapability_dag_node_create failed for path '%s'\n",
+                           path);
+              return NULL;
+            }
+            new_file_cap->resource_ptr = (void *)path;
+            kprintf_stub(
+                "create_file_capability_mathematical: Conceptual: new_file_cap "
+                "(ID %llu) for filename '%s' would be added to dag's main "
+                "store "
+                "here if not already handled by node_create.\n",
+                (unsigned long long)new_cap_id, filename ? filename : "");
+            if (kcapability_dag_add_edge(dag, parent_dir_cap, new_file_cap) !=
+                SUCCESS) {
+              kprintf_stub("create_file_capability_mathematical: "
+                           "kcapability_dag_add_edge failed for path '%s'\n",
+                           path);
+              new_file_cap->reference_count = 0wb;
+              kcapability_dag_node_destroy(new_file_cap);
+              return NULL;
+            }
+            kprintf_stub(
+                "create_file_capability_mathematical: File capability created "
+                "and linked for path '%s', cap ID %llu\n",
+                path, (unsigned long long)new_file_cap->capability_id);
+            return new_file_cap;
+          }
+
+          static int allocate_file_descriptor_for_capability(
+              struct proc * caller, kcapability_dag_node_t * file_cap) {
+            KASSERT(caller != NULL, "allocate_fd_for_cap: caller proc is NULL");
+            KASSERT(file_cap != NULL, "allocate_fd_for_cap: file_cap is NULL");
+            int fd = -1;
+            for (int i = 0; i < NO_FILES; i++) {
+              if (caller->p_filp[i] == NULL) {
+                fd = i;
+                break;
+              }
+            }
+            if (fd == -1) {
+              kprintf_stub(
+                  "allocate_fd_for_capability: No free file descriptors for "
+                  "caller %d (Max %d)\n",
+                  caller->p_endpoint, NO_FILES);
+              return -EMFILE;
+            }
+            kprintf_stub(
+                "allocate_fd_for_capability: Conceptually allocated FD %d for "
+                "capability ID %llu for caller %d\n",
+                fd, (unsigned long long)file_cap->capability_id,
+                caller->p_endpoint);
+            return fd;
+          }
 /**
  * @file do_open_mathematical.c
  * @brief Mathematical implementation of POSIX open() system call
@@ -1134,8 +1227,289 @@ int do_open_mathematical(struct proc *caller, message *m_ptr) {
 
 // Kernel core definitions (proc, message, error codes, system call numbers)
 #include "kernel/kernel.h" // Assuming this provides struct proc, message, EPERM etc.
-// May need specific includes like "kernel/proc.h", "kernel/message.h"
-// and "sys/errno.h" if not aggregated in kernel.h
+        // May need specific includes like "kernel/proc.h", "kernel/message.h"
+        // and "sys/errno.h" if not aggregated in kernel.h
+#include "kernel/proc.h" // Explicitly include for struct proc if not in kernel.h
+#include <sys/errno.h> // For EPERM, EACCES, ENOMEM (standard POSIX error codes)
+
+// Kernel library (for kprintf, KASSERT, potentially kmalloc/kfree if used
+// directly here)
+#include "../../lib/klib/include/klib.h"
+
+// Capability DAG API and global DAG pointer
+#include <minix/kcap.h> // For extern kernel_capability_dag and constants
+#include <minix/kcapability_dag.h>
+
+// Standard library types, e.g. for mode_t if not in kernel.h
+#include <sys/types.h> // For mode_t (often found here or sys/stat.h)
+
+        // Forward declarations for static helper stubs (to be defined in the
+        // next step)
+        static kcapability_dag_node_t *
+        kcapability_dag_lookup_process_capability(kcapability_dag_t * dag,
+                                                  endpoint_t proc_ep);
+        static int validate_directory_traversal_mathematical(
+            kcapability_dag_t * dag, kcapability_dag_node_t * proc_cap,
+            const char *path);
+        static int validate_file_access_mathematical(
+            kcapability_dag_t * dag, kcapability_dag_node_t * proc_cap,
+            const char *path, int flags);
+        static kcapability_dag_node_t *create_file_capability_mathematical(
+            kcapability_dag_t * dag, kcapability_dag_node_t * proc_cap,
+            const char *path, int flags, mode_t mode);
+        static int allocate_file_descriptor_for_capability(
+            struct proc * caller, kcapability_dag_node_t * file_cap);
+
+        /**
+         * @brief Implement open() system call using mathematical capability
+         * validation.
+         *
+         * This function transforms the traditional open() system call into a
+         * mathematical operation that constructs proofs of authorization by
+         * interacting with the global kernel_capability_dag, rather than
+         * performing ad-hoc permission checks. This approach aims for formal
+         * security guarantees.
+         *
+         * @param caller Pointer to the calling process's proc structure.
+         * @param m_ptr  Pointer to the message containing system call
+         * parameters. Expected to conform to VFS's m_lc_vfs_open message
+         * structure.
+         * @return File descriptor on success, or a negative error code (e.g.,
+         * -EPERM, -EACCES).
+         *
+         * @pre caller and m_ptr must be valid pointers.
+         * @pre kernel_capability_dag must have been initialized.
+         */
+        int do_open_mathematical(struct proc * caller, message * m_ptr) {
+          KASSERT(caller != NULL, "do_open_mathematical: caller proc is NULL");
+          KASSERT(m_ptr != NULL,
+                  "do_open_mathematical: message pointer is NULL");
+          KASSERT(
+              kernel_capability_dag != NULL,
+              "do_open_mathematical: kernel_capability_dag not initialized");
+
+          /*
+           * Extract parameters from the POSIX open() call.
+           * The mathematical approach treats these as inputs to a theorem-
+           * proving procedure rather than just function parameters.
+           * These message fields are based on typical MINIX VFS open call.
+           */
+          // Assuming m_lc_vfs_open structure fields from <minix/vfsif.h> or
+          // similar for message structure For example: m_m7.m7_p1 (pathname
+          // pointer), m_m7.m7_i1 (flags), m_m7.m7_i2 (mode) This needs to align
+          // with how VFS actually sends open messages. Using generic names for
+          // now, assuming they are correctly mapped from m_ptr. char* pathname
+          // = (char*)m_ptr->pathname_ptr; // Example if pointer is passed int
+          // flags = m_ptr->flags_val; mode_t mode = m_ptr->mode_val; For the
+          // purpose of this conceptual implementation, we'll use the provided
+          // example structure: This assumes message structure is defined
+          // elsewhere like: typedef struct { char* name; size_t namelen; int
+          // flags; mode_t mode; } m_lc_vfs_open_t; And m_ptr is cast or
+          // union-accessed to this. Let's use the field names as if they were
+          // directly available in m_ptr for this example. This part will
+          // require actual message field definitions from MINIX for a real
+          // build.
+
+          char *pathname = (char *)m_ptr->m_lc_vfs_path
+                               .name; // Common pattern for path in VFS messages
+          int flags = m_ptr->m_lc_vfs_path.flags; // Common pattern for flags
+          mode_t mode =
+              (mode_t)m_ptr->m_lc_vfs_path.mode; // Common pattern for mode
+
+          kprintf_stub(
+              "do_open_mathematical: Called for path '%s', flags %x, mode %o\n",
+              pathname, flags, mode);
+
+          /*
+           * Mathematical approach: Break down the open operation into a
+           * sequence of mathematical proofs about capability relationships:
+           * 1. Prove the calling process has appropriate directory traversal
+           * capabilities.
+           * 2. Prove the calling process has appropriate file access
+           * capabilities.
+           * 3. Create new capability relationships for the opened file handle.
+           */
+
+          /* Lookup the calling process's capability node in the kernel DAG */
+          kcapability_dag_node_t *process_capability =
+              kcapability_dag_lookup_process_capability(kernel_capability_dag,
+                                                        caller->p_endpoint);
+
+          if (!process_capability) {
+            kprintf_stub(
+                "do_open_mathematical: No capability node for caller %d\n",
+                caller->p_endpoint);
+            return -EPERM; /* No capability node means no permissions */
+          }
+
+          /*
+           * Validate directory traversal permissions through mathematical
+           * capability derivation proof construction.
+           */
+          int traversal_result = validate_directory_traversal_mathematical(
+              kernel_capability_dag, process_capability, pathname);
+
+          if (traversal_result !=
+              SUCCESS) { // Assuming SUCCESS is 0, errors are negative
+            kprintf_stub(
+                "do_open_mathematical: Directory traversal denied for path "
+                "'%s' by caller %d (err: %d)\n",
+                pathname, caller->p_endpoint, traversal_result);
+            return traversal_result; // traversal_result likely EACCES or
+                                     // similar
+          }
+
+          /*
+           * Validate file access permissions through mathematical
+           * capability validation.
+           */
+          int access_result = validate_file_access_mathematical(
+              kernel_capability_dag, process_capability, pathname, flags);
+
+          if (access_result != SUCCESS) {
+            kprintf_stub(
+                "do_open_mathematical: File access denied for path '%s', "
+                "flags %x by caller %d (err: %d)\n",
+                pathname, flags, caller->p_endpoint, access_result);
+            return access_result; /* Mathematical proof of access authorization
+                                   * failed
+                                   */
+          }
+
+          /*
+           * Create new capability relationships for the file handle.
+           * This involves adding new nodes and edges to the capability DAG
+           * while maintaining all mathematical invariants.
+           */
+          kcapability_dag_node_t *file_capability =
+              create_file_capability_mathematical(kernel_capability_dag,
+                                                  process_capability, pathname,
+                                                  flags, mode);
+
+          if (!file_capability) {
+            kprintf_stub(
+                "do_open_mathematical: Failed to create file capability for "
+                "path '%s' by caller %d\n",
+                pathname, caller->p_endpoint);
+            return -ENOMEM; /* Failed to create mathematical capability
+                               relationship */
+          }
+
+          /*
+           * Return the file descriptor that represents the mathematical
+           * capability relationship we just established.
+           */
+          int fd =
+              allocate_file_descriptor_for_capability(caller, file_capability);
+          if (fd < 0) {
+            kprintf_stub("do_open_mathematical: Failed to allocate FD for file "
+                         "capability of path '%s' by caller %d (err: %d)\n",
+                         pathname, caller->p_endpoint, fd);
+            // Need to clean up file_capability if fd allocation fails and it's
+            // not otherwise managed. For now, assume
+            // create_file_capability_mathematical handles errors or returns
+            // managed node. If file_capability was added to DAG, it might need
+            // removal or refcount decrement.
+            // kcapability_dag_node_destroy(file_capability); // Or some
+            // decrement ref count mechanism
+            return fd; // Propagate error
+          }
+
+          kprintf_stub(
+              "do_open_mathematical: Success for path '%s', fd %d granted to "
+              "caller %d\n",
+              pathname, fd, caller->p_endpoint);
+          return fd;
+        }
+        kprintf_stub(
+            "do_open_mathematical: Success for path '%s', fd %d granted to "
+            "caller %d\n",
+            pathname, fd, caller->p_endpoint);
+        return fd;
+      }
+
+      // Stub implementations for helper functions (to be defined in the next
+      // step)
+      static kcapability_dag_node_t *kcapability_dag_lookup_process_capability(
+          kcapability_dag_t * dag, endpoint_t proc_ep) {
+        kprintf_stub("STUB: kcapability_dag_lookup_process_capability called "
+                     "for ep %d\n",
+                     proc_ep);
+        // KASSERT(0, "STUB: kcapability_dag_lookup_process_capability"); //
+        // Comment out KASSERT(0) for now
+        (void)dag;
+        (void)proc_ep;
+        return NULL; // Default stub: process has no capability node
+      }
+
+      static int validate_directory_traversal_mathematical(
+          kcapability_dag_t * dag, kcapability_dag_node_t * proc_cap,
+          const char *path) {
+        kprintf_stub(
+            "STUB: validate_directory_traversal_mathematical for path '%s'\n",
+            path);
+        // KASSERT(0, "STUB: validate_directory_traversal_mathematical");
+        (void)dag;
+        (void)proc_cap;
+        (void)path;
+        return -EACCES; // Deny by default for stub
+      }
+
+      static int validate_file_access_mathematical(
+          kcapability_dag_t * dag, kcapability_dag_node_t * proc_cap,
+          const char *path, int flags) {
+        kprintf_stub(
+            "STUB: validate_file_access_mathematical for path '%s', flags %x\n",
+            path, flags);
+        // KASSERT(0, "STUB: validate_file_access_mathematical");
+        (void)dag;
+        (void)proc_cap;
+        (void)path;
+        (void)flags;
+        return -EACCES; // Deny by default for stub
+      }
+
+      static kcapability_dag_node_t *create_file_capability_mathematical(
+          kcapability_dag_t * dag, kcapability_dag_node_t * proc_cap,
+          const char *path, int flags, mode_t mode) {
+        kprintf_stub(
+            "STUB: create_file_capability_mathematical for path '%s', flags "
+            "%x, mode %o\n",
+            path, flags, mode);
+        // KASSERT(0, "STUB: create_file_capability_mathematical");
+        (void)dag;
+        (void)proc_cap;
+        (void)path;
+        (void)flags;
+        (void)mode;
+        return NULL; // Fail by default for stub
+      }
+
+      static int allocate_file_descriptor_for_capability(
+          struct proc * caller, kcapability_dag_node_t * file_cap) {
+        kprintf_stub(
+            "STUB: allocate_file_descriptor_for_capability for caller %d\n",
+            caller->p_endpoint);
+        // KASSERT(0, "STUB: allocate_file_descriptor_for_capability");
+        (void)caller;
+        (void)file_cap;
+        return -1; // Fail by default for stub
+      }
+/**
+ * @file do_open_mathematical.c
+ * @brief Mathematical implementation of POSIX open() system call
+ *
+ * This module demonstrates how POSIX system calls can be implemented as
+ * mathematical operations on capability structures, providing both correctness
+ * guarantees and performance benefits through mathematical optimization.
+ * This is a conceptual implementation focusing on the integration points
+ * with the capability DAG.
+ */
+
+// Kernel core definitions (proc, message, error codes, system call numbers)
+#include "kernel/kernel.h" // Assuming this provides struct proc, message, EPERM etc.
+      // May need specific includes like "kernel/proc.h", "kernel/message.h"
+      // and "sys/errno.h" if not aggregated in kernel.h
 #include "kernel/proc.h" // Explicitly include for struct proc if not in kernel.h
 #include <sys/errno.h> // For EPERM, EACCES, ENOMEM (standard POSIX error codes)
 

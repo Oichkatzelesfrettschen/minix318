@@ -594,8 +594,8 @@ k_size_t kstrlcpy_c23(char *restrict dest, const char *restrict src,
           /* } */
 
           /* Hardware capability detection and optimization selection */
-          /* Example: Assumes a global kcpu_features struct and specific feature
-             flag */
+          /* Example: Assumes a global kcpu_features struct and specific
+             feature flag */
           /* if (g_kcpu_features.feature_flag && 0) { */
           /*     return kstrlen_c23_optimized(s); */ /* Pass 's' if optimized
                                                         function needs it */

@@ -87,6 +87,8 @@ main(void)
 		result = SUSPEND;		/* don't reply */
 	} else if (call_nr == PROC_EVENT_REPLY) {
 		result = do_proc_event_reply();
+	} else if (call_nr == PM_GETPID_CAP) { /* Handle new PM_GETPID_CAP call */
+		result = do_getpid_cap(); /* New handler function */
 	} else if (IS_PM_CALL(call_nr)) {
 		/* If the system call number is valid, perform the call. */
 		call_index = (unsigned int) (call_nr - PM_BASE);
