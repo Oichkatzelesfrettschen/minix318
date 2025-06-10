@@ -1,0 +1,72 @@
+#ifndef _MAGIC_COMMON_H
+#define _MAGIC_COMMON_H
+
+/* LLVM-20 Magic constants and configuration */
+#define LLVM_VERSION_MAJOR 20
+#define MAGIC_LLVM20_COMPAT 1
+
+/* Magic constants. */
+#define MAGIC_PREFIX magic_
+#define MAGIC_PREFIX_STR "magic_"
+#define MAGIC_ASR_PREFIX magic_asr_
+#define MAGIC_ASR_PREFIX_STR "magic_asr_"
+
+#ifdef __MINIX
+#define GLOBAL_VARS_IN_SECTION 1
+#define MAGIC_USE_MINIX_EXTENSIONS 1
+#define MAGIC_MINIX_MEMORY_PROTECTION 1
+#else
+#define GLOBAL_VARS_IN_SECTION 0
+#define MAGIC_USE_MINIX_EXTENSIONS 0
+#endif
+
+/* Magic configuration for LLVM-20. */
+#ifndef MAGIC_OUTPUT_CTL
+#define MAGIC_OUTPUT_CTL 0
+#endif
+#define MAGIC_CHECK_LEVEL 1
+#define MAGIC_FLATTEN_FUNCTION_ARGS 0
+#define MAGIC_CHECK_INVARIANTS 1
+#define MAGIC_SHRINK_TYPE_STR 1
+#define MAGIC_MAX_NAME_LEN 128
+#define MAGIC_MAX_TYPE_STR_LEN 512
+#define MAGIC_MAX_RECURSIVE_TYPES 2048
+#define MAGIC_NAMED_ALLOC_USE_DBG_INFO 1
+
+/* LLVM-20 Enhanced instrumentation settings */
+#define MAGIC_INSTRUMENT_MEM_FUNCS 1
+#define MAGIC_INSTRUMENT_STACK 1
+#define MAGIC_INSTRUMENT_HEAP_TRACKING 1
+#define MAGIC_INSTRUMENT_TYPE_SAFETY 1
+#define MAGIC_FORCE_DYN_MEM_ZERO_INIT 1
+#define MAGIC_USE_DYN_MEM_WRAPPERS 1
+
+/* LLVM-20 enhanced profiling and debugging settings */
+#define MAGIC_USE_ENHANCED_DEBUGGING 1
+#define MAGIC_THREAD_SAFE 1
+#define MAGIC_ATOMIC_OPERATIONS 1
+#define MAGIC_LOCKFREE_DATASTRUCTURES 1
+#define MAGIC_LOOKUP_CACHE_OPTIMIZATION 1
+
+/* LLVM-20 Enhanced type flags. */
+#define MAGIC_TYPE_EXTERNAL 0x001
+#define MAGIC_TYPE_IS_ROOT 0x002
+#define MAGIC_TYPE_DYNAMIC 0x004
+#define MAGIC_TYPE_LLVM20_ENHANCED 0x100
+#define MAGIC_TYPE_ATOMIC_SAFE 0x200
+#define MAGIC_TYPE_MEMORY_TAGGED 0x400
+
+/* LLVM-20 Enhanced state flags for sentries and functions. */
+#define MAGIC_STATE_LLVM20_INSTRUMENTED 0x40000000
+#define MAGIC_STATE_ENHANCED_TRACKING 0x80000000
+
+/* LLVM-20 Compatibility and feature detection */
+#define MAGIC_LLVM20_FEATURE_DETECTION 1
+#define MAGIC_ENHANCED_TYPE_ANALYSIS 1
+#define MAGIC_IMPROVED_MEMORY_TRACKING 1
+#define MAGIC_ATOMIC_MEMORY_OPERATIONS 1
+
+/* Version string for identification */
+#define MAGIC_VERSION_STRING "MAGIC_LLVM20_MINIX318_2025"
+
+#endif /* _MAGIC_COMMON_H */
