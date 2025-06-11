@@ -85,6 +85,11 @@ int main(void)
 	  default:				/* heartbeat notification */
 	      if (rproc_ptr[who_p] != NULL) {	/* mark heartbeat time */ 
 		  rproc_ptr[who_p]->r_alive_tm = m.m_notify.timestamp;
+            // ADDED FOR PHASE 0.25 DEMO:
+            if (rproc_ptr[who_p]->r_pub->endpoint == PM_PROC_NR) {
+                printf("RS: Heartbeat from PM (PID %d, EP %d). Current PM Epoch in RS: %u\n",
+                       rproc_ptr[who_p]->r_pid, PM_PROC_NR, rproc_ptr[who_p]->r_epoch);
+            }
 	      } else {
 		  printf("RS: warning: got unexpected notify message from %d\n",
 		      m.m_source);
@@ -115,9 +120,48 @@ int main(void)
 	  /* Ready messages. */
 	  case RS_INIT: 	result = do_init_ready(&m); 	break;
 	  case RS_LU_PREPARE: 	result = do_upd_ready(&m); 	break;
+      case RS_DEBUG_RESTART_SERVICE_RQ: {
+            // This message comes from the KERNEL, triggered by SYS_DEBUG_RS_RESTART_PM
+            // m_in.m1_i1 contains the endpoint of the service to "restart" (PM_PROC_NR)
+            endpoint_t service_to_restart_ep = m_in.m1_i1;
+            int service_to_restart_p = _ENDPOINT_P(service_to_restart_ep);
+            struct rproc *rp_to_restart = NULL;
+
+            if (rs_isokendpt(service_to_restart_ep, &service_to_restart_p) == OK) {
+                rp_to_restart = rproc_ptr[service_to_restart_p];
+            }
+
+            if (rp_to_restart != NULL && (rp_to_restart->r_flags & RS_IN_USE)) {
+                // Increment epoch
+                rp_to_restart->r_epoch++;
+                if (rp_to_restart->r_epoch == 0) rp_to_restart->r_epoch = 1; // Handle wrap
+
+                printf("RS: DEBUG: Simulating restart for %s (EP %d), new epoch %u.\n",
+                       rp_to_restart->r_pub->label, service_to_restart_ep, rp_to_restart->r_epoch);
+
+                // Call the function to notify kernel of new epoch
+                // rs_kernel_update_epoch() was defined in manager.c
+                rs_kernel_update_epoch(rp_to_restart->r_pub->endpoint, rp_to_restart->r_epoch);
+
+                result = OK;
+            } else {
+                printf("RS: DEBUG: Service EP %d not found or not in use for simulated restart.\n",
+                       service_to_restart_ep);
+                result = ESRCH;
+            }
+            // This is a request from KERNEL (SYSTEM), reply to it.
+            // The kernel's do_debug_rs_restart_pm used mini_send (asynchronous from KERNEL's perspective),
+            // so RS should not reply to KERNEL for this specific debug message type,
+            // as KERNEL is not blocked waiting for a reply on this path.
+            // If KERNEL had used a true sendrec, a reply would be needed.
+            // For now, we assume KERNEL is not waiting. So, set result to EDONTREPLY.
+            result = EDONTREPLY; // Kernel (SYSTEM task) typically doesn't expect replies for such notifies.
+                                 // If it did a sendrec_kern, this would be different.
+            break;
+      }
           default: 
               printf("RS: warning: got unexpected request %d from %d\n",
-                  m.m_type, m.m_source);
+                  m.m_type, m_in.m_source); // Corrected to use m_in.m_source
               result = ENOSYS;
           }
 
@@ -432,6 +476,46 @@ static int sef_cb_init_fresh(int UNUSED(type), sef_init_info_t *UNUSED(info))
   /* Set alarm to periodically check service status. */
   if (OK != (s=sys_setalarm(RS_DELTA_T, 0)))
       panic("couldn't set alarm: %d", s);
+
+  /* Phase 0.25, Step 3 Integration: Ensure PM's initial epoch (1) is registered with the kernel. */
+  struct rproc *pm_rp = rproc_ptr[_ENDPOINT_P(PM_PROC_NR)];
+  if (pm_rp && (pm_rp->r_flags & RS_IN_USE)) {
+      if (pm_rp->r_epoch == 0) {
+          // This case should ideally not be hit if alloc_slot correctly set it to 1.
+          // If r_epoch is 0 here, it means it wasn't initialized to 1 by alloc_slot
+          // or init_slot for some reason for PM.
+          printf("RS: WARNING: PM's initial r_epoch was 0 in sef_cb_init_fresh, forcing to 1 before kernel update.\n");
+          pm_rp->r_epoch = 1;
+      }
+      // Now call rs_kernel_update_epoch, which is defined in manager.c
+      // The first argument to rs_kernel_update_epoch is the service endpoint,
+      // which is PM_PROC_NR. The second is the epoch.
+      printf("RS: INFO: Registering PM's (EP %d) initial epoch %u with kernel via rs_kernel_update_epoch.\n",
+             PM_PROC_NR, pm_rp->r_epoch);
+      rs_kernel_update_epoch(PM_PROC_NR, pm_rp->r_epoch);
+  } else {
+      // This would be a critical failure, as PM is essential.
+      panic("RS: PM process (EP %d) not found or not in use at the end of sef_cb_init_fresh when trying to update its epoch with kernel!", PM_PROC_NR);
+  }
+
+  // Phase 0.5, Step 6 Integration: Ensure RamdiskFS's initial epoch is registered with the kernel.
+  // This assumes RAMDISKFS_PROC_NR is defined and RamdiskFS might be a boot service.
+  // If it's started dynamically via RS_UP, its epoch will be handled by start_service/clone_slot.
+  struct rproc *ramdiskfs_rp = rproc_ptr[_ENDPOINT_P(RAMDISKFS_PROC_NR)];
+  if (ramdiskfs_rp && (ramdiskfs_rp->r_flags & RS_IN_USE) &&
+      (ramdiskfs_rp->r_pub->endpoint == RAMDISKFS_PROC_NR)) { // Double check endpoint match
+      if (ramdiskfs_rp->r_epoch == 0) {
+          ramdiskfs_rp->r_epoch = 1;
+          printf("RS: WARNING: RamdiskFS's (EP %d) r_epoch was 0, forcing to 1 for initial kernel update.\n", RAMDISKFS_PROC_NR);
+      }
+      printf("RS: INFO: Calling rs_kernel_update_epoch for RamdiskFS (EP %d) with initial epoch %u.\n",
+             RAMDISKFS_PROC_NR, ramdiskfs_rp->r_epoch);
+      rs_kernel_update_epoch(RAMDISKFS_PROC_NR, ramdiskfs_rp->r_epoch);
+  } else {
+      // If RamdiskFS is not a static boot service, this is not an error here.
+      // It would be started by RS_UP later, and its epoch handled there.
+      printf("RS: INFO: RamdiskFS (EP %d) not found as a static boot service, will be managed dynamically if started by RS_UP.\n", RAMDISKFS_PROC_NR);
+  }
 
 #if USE_LIVEUPDATE
   /* Now create a new RS instance and let the current

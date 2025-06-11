@@ -67,6 +67,7 @@ struct rproc {
   long r_backoff;		/* number of periods to wait before revive */
   unsigned r_flags; 		/* status and policy flags */
   int r_init_err;               /* error code at initialization time */
+  uint32_t r_epoch;             /* epoch number for capability validation */
 
   long r_period;		/* heartbeat period (or zero) */
   clock_t r_check_tm;		/* timestamp of last check */

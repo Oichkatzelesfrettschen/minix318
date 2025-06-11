@@ -17,6 +17,7 @@
 #include "kernel/proc.h"         /**< struct proc (for proc_stacktrace()) */
 #include "kernel/protect.h"      /**< disable_interrupts(), restore_interrupts() */
 #include <sys/kassert.h>         /**< KASSERT() macro */
+#include "../../lib/klib/include/klib.h" /**< kstrlen_c23 */
 
 #ifdef TEST_SPINLOCK
 
@@ -48,7 +49,11 @@ void test_basic_spinlock(void)
     KASSERT(lock.locked == 0,
             "T1: spinlock should be unlocked after simple_spin_unlock()");
 
-    kprintf_stub("T1: test_basic_spinlock PASSED\n");
+    const char *test_msg = "T1: test_basic_spinlock PASSED";
+    size_t len = kstrlen_c23(test_msg);
+    // kprintf_stub("%s (len: %u)\n", test_msg, (unsigned)len); // Modified kprintf
+    // For simplicity if kprintf_stub doesn't support %u or %zu easily:
+    kprintf_stub("T1: test_basic_spinlock PASSED (length calculated by kstrlen_c23)\n");
 }
 
 /**

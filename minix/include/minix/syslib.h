@@ -6,7 +6,9 @@
 #include <sys/types.h>
 #include <sys/sigtypes.h>
 
-#include <minix/ipc.h>
+#include <lib.h> /* Central internal libc header */
+
+/* #include <minix/ipc.h> Already included via lib.h */
 #include <minix/u64.h>
 #include <minix/devio.h>
 

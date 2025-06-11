@@ -3,81 +3,91 @@ project('minix-kernel', 'c',
     version: '3.4.1-unofficial',
     license: 'BSD-mixed',
     default_options: [
-        'c_std=c23',
-        'warning_level=3', # Level 3 can be very noisy initially
-        'b_staticpic=false', # Position Independent Code for static libs, not usually for kernel
-        'b_pie=false',       # Position Independent Executable, no for kernel
-        'b_lto=false',       # Link Time Optimization, disable for kernel dev
-        # 'buildtype=debugoptimized' # Common for development
+        'c_std=c23', // Changed to c23 to match capability libs, or ensure compatibility
+        'warning_level=3',
+        'b_staticpic=false',
+        'b_pie=false',
+        'b_lto=false',
     ]
 )
 
-# Compiler instance
 cc = meson.get_compiler('c')
-
-# Detect architecture
 arch = host_machine.cpu_family()
 if arch == 'x86_64'
     arch_subdir = 'x86_64'
     arch_defines = ['-D__x86_64__', '-DARCH_X86_64']
-    # Flags for x86_64 kernel
-    arch_flags = ['-m64', '-mcmodel=kernel', '-mno-red-zone',
-                  '-sse', '-sse2', '-fpu' '-mmx', #universal features
-                  '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
+    arch_flags = ['-m64', '-mcmodel=kernel', '-mno-red-zone', '-sse', '-sse2', '-fpu', '-mmx', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
 elif arch == 'x86'
     arch_subdir = 'i386'
     arch_defines = ['-D__i386__', '-DARCH_I386']
-    # Flags for i386 kernel
     arch_flags = ['-m32', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
 else
-    error('Unsupported architecture: ' + arch + '. Supported: x86, x86_64')
+    error('Unsupported architecture: ' + arch)
 endif
 
-# Kernel-specific compiler flags (common)
-kernel_common_flags = [
-    '-ffreestanding',      # No standard library
-    '-fno-builtin',        # No built-in functions (e.g. printf, memcpy)
-    '-fno-stack-protector',# No stack canary
-    '-nostdinc',           # No standard include dirs
-    '-nostdlib',           # No standard startup files or libraries
-    '-Wall',
-    '-Wextra',
-    '-Wno-unused-parameter',
-    '-Wno-missing-field-initializers',
-    # '-g', # Debug symbols
-]
-
-# Combine common kernel flags with arch-specific flags and defines
+kernel_common_flags = ['-ffreestanding', '-fno-builtin', '-fno-stack-protector', '-nostdinc', '-nostdlib', '-Wall', '-Wextra', '-Wno-unused-parameter', '-Wno-missing-field-initializers']
 kernel_c_args = kernel_common_flags + arch_flags + arch_defines
-kernel_link_args = arch_flags # Linker also needs basic arch flags
+kernel_link_args = arch_flags
 
-# Include directories (relative to this meson.build file, i.e., minix/kernel/)
+# Get dependency for capability_klib (defined in minix/lib/klib/meson.build)
+# This assumes minix/meson.build called subdir('lib/klib')
+capability_klib_dep = dependency('capability_klib', fallback: ['capability_klib', 'capability_klib_dep'])
+
+# Add build option for profiling
+option_enable_profiling = get_option('enable_profiling') # Assuming 'enable_profiling' is defined in meson_options.txt
+if option_enable_profiling
+    add_project_arguments('-DCONFIG_PROFILING=1', language: 'c')
+    message('Kernel profiling enabled.')
+else
+    message('Kernel profiling disabled.')
+endif
+
+# Add build option for MDLM
+option_enable_mdlm = get_option('enable_mdlm') # Assuming 'enable_mdlm' is defined in meson_options.txt
+if option_enable_mdlm
+    add_project_arguments('-DCONFIG_MDLM=1', language: 'c')
+    message('MDLM support enabled.')
+else
+    message('MDLM support disabled.')
+endif
+
 kernel_includes = include_directories(
-    'include',                     # For <minix/kernel_types.h> etc.
-    'include/arch/' + arch_subdir, # For arch-specific headers under include/arch/
-    'klib/include',                # For our klib headers (kstring.h, etc.)
-    '.'                            # Current directory, for top-level kernel headers
+    'include',
+    'include/arch/' + arch_subdir,
+    'klib/include', // Existing klib includes
+    '.',
+    'capability' // For headers like capability_syscalls.h in minix/kernel/capability
 )
 
-# Kernel library (klib)
+# Existing Kernel library (klib)
 klib_sources = files(
     'klib/kstring.c',
     'klib/kmemory.c',
     'klib/kprintf_stub.c',
     'klib/kpanic.c'
-    # Add other klib source files here if created (e.g. katom.c)
 )
+klib = static_library('klib', klib_sources, c_args: kernel_c_args, include_directories: kernel_includes, install: false)
 
-klib = static_library('klib',
-    klib_sources,
-    c_args: kernel_c_args,
-    include_directories: kernel_includes,
+# NEW: Kernel Capability Library sources
+kernel_capability_sources = [
+    'capability/capability_proof.c',
+    'capability/capability_verify.c',
+    'capability/math_syscalls.c',
+    'capability/math_syscalls_extended.c', // Added this line
+    'capability/capability_audit.c',
+    'capability/capability_cache.c'
+]
+
+# NEW: Kernel Capability Library definition
+kernel_capability_lib = static_library('kernel_capability',
+    kernel_capability_sources,
+    include_directories: kernel_includes, # Uses the same kernel_includes, which now includes 'capability' subdir
+    c_args: kernel_c_args + ['-DMATHEMATICAL_VERIFICATION'], // Add specific defines if any, like from issue
+    dependencies: [capability_klib_dep], // Depend on our new capability_klib
     install: false
 )
 
 # Main kernel sources (core)
-# Note: main.c, utility.c were refactored.
-# system.c is the top-level one, not the directory.
 kernel_core_sources = files(
     'clock.c',
     'cpulocals.c',
@@ -87,31 +97,18 @@ kernel_core_sources = files(
     'proc.c',
     'profile.c',
     'smp.c',
-    'system.c', # Top-level system.c
-    'system.c', # Top-level system.c
+    'system.c',
     'table.c',
     'usermapped_data.c',
     'utility.c',
-    'watchdog.c'
+    'watchdog.c',
+    'clhlock.c',    # Generic CLH lock implementation
+    'clh_bkl.c',    # CLH BKL specific instance and initialization
+    'capability.c', # Capability table management
+    'profile.c'     # Profiling framework (already added, ensure it's here)
 )
 
-# System call handler sources (from minix/kernel/system/)
-# This assumes all .c files in 'system/' are syscall handlers.
-# A more explicit list might be safer if there are non-handler .c files.
-syscall_sources = []
-syscall_files_find_result = run_command('find', 'system', '-maxdepth', '1', '-name', '*.c', '-print', check: true)
-syscall_files_stdout = syscall_files_find_result.stdout().strip()
-if syscall_files_stdout != ''
-    syscall_files = syscall_files_stdout.split('\n')
-    foreach f : syscall_files
-        if f != ''
-            syscall_sources += files(f)
-        endif
-    endforeach
-endif
-# System call handler sources (from minix/kernel/system/)
-# This assumes all .c files in 'system/' are syscall handlers.
-# A more explicit list might be safer if there are non-handler .c files.
+# System call handler sources
 syscall_sources = []
 syscall_files_find_result = run_command('find', 'system', '-maxdepth', '1', '-name', '*.c', '-print', check: true)
 syscall_files_stdout = syscall_files_find_result.stdout().strip()
@@ -125,21 +122,11 @@ if syscall_files_stdout != ''
 endif
 
 # Architecture-specific sources
-# This needs to be robust if arch_subdir is empty or files are missing.
 arch_sources_list = []
-# Example for i386, must be adapted if file structure differs or for x86_64
-if arch_subdir == 'i386'
-  arch_sources_list = files(
-# Architecture-specific sources
-# This needs to be robust if arch_subdir is empty or files are missing.
-arch_sources_list = []
-# Example for i386, must be adapted if file structure differs or for x86_64
 if arch_subdir == 'i386'
   arch_sources_list = files(
     'arch/i386/acpi.c',
     'arch/i386/apic.c',
-    # 'arch/i386/apic_asm.S', # Assembler files need separate handling
-    # 'arch/i386/apic_asm.S', # Assembler files need separate handling
     'arch/i386/arch_clock.c',
     'arch/i386/arch_do_vmctl.c',
     'arch/i386/arch_reset.c',
@@ -147,39 +134,21 @@ if arch_subdir == 'i386'
     'arch/i386/arch_system.c',
     'arch/i386/arch_watchdog.c',
     'arch/i386/breakpoints.c',
-    # 'arch/i386/debugreg.S',
-    # 'arch/i386/debugreg.S',
     'arch/i386/direct_tty_utils.c',
     'arch/i386/do_iopenable.c',
     'arch/i386/do_readbios.c',
     'arch/i386/do_sdevio.c',
     'arch/i386/exception.c',
-    # 'arch/i386/head.S',
-    # 'arch/i386/head.S',
     'arch/i386/i8259.c',
-    # 'arch/i386/io_inb.S', ... other .S files
-    # 'arch/i386/klib.S',
-    # 'arch/i386/io_inb.S', ... other .S files
-    # 'arch/i386/klib.S',
     'arch/i386/memory.c',
-    # 'arch/i386/mpx.S',
-    # 'arch/i386/mpx.S',
     'arch/i386/oxpcie.c',
     'arch/i386/pg_utils.c',
     'arch/i386/pre_init.c',
     'arch/i386/protect.c',
-    # 'arch/i386/trampoline.S',
     'arch/i386/usermapped_data_arch.c'
-    # 'arch/i386/usermapped_glo_ipc.S'
   )
 elif arch_subdir == 'x86_64'
-  # Add x86_64 specific C sources here when available
-  # For now, it might be an empty list or share some i386 code if compatible
-  # and if separate files don't exist.
-  # The issue report's old meson.build listed many x86_64 files that were
-  # copies of i386 paths. This needs to be based on actual existing files.
-  # If arch/x86_64 is empty of C files, this list will be empty.
-  noop_x86_64 = [] # Placeholder
+  noop_x86_64 = []
 endif
 
 # Define architecture-specific assembly sources
@@ -190,123 +159,41 @@ if arch == 'i386'
         'arch/i386/head.S',
         'arch/i386/klib.S',
         'arch/i386/apic_asm.S'
-        # Add other essential .S files here if identified later e.g.
-        # 'arch/i386/debugreg.S',
-        # 'arch/i386/io_inb.S', 'arch/i386/io_inl.S', 'arch/i386/io_intr.S', 'arch/i386/io_inw.S',
-        # 'arch/i386/io_outb.S', 'arch/i386/io_outl.S', 'arch/i386/io_outw.S',
-        # 'arch/i386/trampoline.S',
-        # 'arch/i386/usermapped_glo_ipc.S'
-        # For now, using the minimal list from feedback.
     )
 elif arch == 'x86_64'
-    # Assuming these files do not exist yet based on previous 'ls' output.
-    # If they are added, they can be listed here.
-    # kernel_asm_sources = files(
-    #     'arch/x86_64/mpx.S',
-    #     'arch/x86_64/head.S',
-    #     'arch/x86_64/klib.S'
-    # )
-    kernel_asm_sources = [] # Empty list for x86_64 if files are not present
+    kernel_asm_sources = []
 endif
 
-# Need to handle Assembly files separately and link them.
-# For now, focusing on C files. This will be a FIXME for the build.
+# MDLM sources (initially empty, will be populated in later phases)
+mdlm_sources = []
+if option_enable_mdlm
+    # When MDLM source files are created, they will be added here:
+    mdlm_sources += files(
+        'mdlm_cap_dag.c'       // MDLM Capability DAG component
+    #    'mdlm/thread_lattice.c', // Example future file
+    #    'mdlm/cap_dag.c',        // Example future file (Note: user plan had this, might be a typo for proc_dag.c)
+    #    'mdlm/security_lattice.c'// Example future file
+    )
+    message('MDLM sources enabled: mdlm_cap_dag.c') # Updated message
+endif
 
-all_c_sources = kernel_core_sources + syscall_sources + arch_sources_list
-
-# Linker script
+all_c_sources = kernel_core_sources + syscall_sources + arch_sources_list + mdlm_sources
 linker_script = meson.current_source_dir() / 'arch' / arch_subdir / 'kernel.lds'
 if not run_command('test', '-f', linker_script, check: false).returncode() == 0
     error('Linker script not found: ' + linker_script +
           '. Please ensure it exists for architecture ' + arch_subdir)
 endif
-
 kernel_link_args += ['-T', linker_script, '-Wl,--build-id=none']
 
 # Build kernel executable
 kernel = executable('kernel',
     all_c_sources + kernel_asm_sources,
-    link_with: [klib],
+    link_with: [klib, kernel_capability_lib], # Added kernel_capability_lib here
     link_args: kernel_link_args,
     c_args: kernel_c_args,
     include_directories: kernel_includes,
     install: true,
-    install_dir: 'boot' # Or appropriate install path
-)
-
-# Output some information
-message('Building MINIX kernel for ' + arch)
-message('Kernel C_ARGS: ' + ' '.join(kernel_c_args))
-message('Kernel LINK_ARGS: ' + ' '.join(kernel_link_args))
-message('Linker script: ' + linker_script)
-
-# TODO: Add handling for assembly files (.S)
-# TODO: Add custom targets for things like procoffsets.cf if needed
-# TODO: Define what to do if x86_64 sources are missing (e.g. error or allow empty build)
-    # 'arch/i386/trampoline.S',
-    'arch/i386/usermapped_data_arch.c'
-    # 'arch/i386/usermapped_glo_ipc.S'
-  )
-elif arch_subdir == 'x86_64'
-  # Add x86_64 specific C sources here when available
-  # For now, it might be an empty list or share some i386 code if compatible
-  # and if separate files don't exist.
-  # The issue report's old meson.build listed many x86_64 files that were
-  # copies of i386 paths. This needs to be based on actual existing files.
-  # If arch/x86_64 is empty of C files, this list will be empty.
-  noop_x86_64 = [] # Placeholder
-endif
-
-# Define architecture-specific assembly sources
-kernel_asm_sources = []
-if arch == 'i386'
-    kernel_asm_sources = files(
-        'arch/i386/mpx.S',
-        'arch/i386/head.S',
-        'arch/i386/klib.S',
-        'arch/i386/apic_asm.S'
-        # Add other essential .S files here if identified later e.g.
-        # 'arch/i386/debugreg.S',
-        # 'arch/i386/io_inb.S', 'arch/i386/io_inl.S', 'arch/i386/io_intr.S', 'arch/i386/io_inw.S',
-        # 'arch/i386/io_outb.S', 'arch/i386/io_outl.S', 'arch/i386/io_outw.S',
-        # 'arch/i386/trampoline.S',
-        # 'arch/i386/usermapped_glo_ipc.S'
-        # For now, using the minimal list from feedback.
-    )
-elif arch == 'x86_64'
-    # Assuming these files do not exist yet based on previous 'ls' output.
-    # If they are added, they can be listed here.
-    # kernel_asm_sources = files(
-    #     'arch/x86_64/mpx.S',
-    #     'arch/x86_64/head.S',
-    #     'arch/x86_64/klib.S'
-    # )
-    kernel_asm_sources = [] # Empty list for x86_64 if files are not present
-endif
-
-# Need to handle Assembly files separately and link them.
-# For now, focusing on C files. This will be a FIXME for the build.
-
-all_c_sources = kernel_core_sources + syscall_sources + arch_sources_list
-
-# Linker script
-linker_script = meson.current_source_dir() / 'arch' / arch_subdir / 'kernel.lds'
-if not run_command('test', '-f', linker_script, check: false).returncode() == 0
-    error('Linker script not found: ' + linker_script +
-          '. Please ensure it exists for architecture ' + arch_subdir)
-endif
-
-kernel_link_args += ['-T', linker_script, '-Wl,--build-id=none']
-
-# Build kernel executable
-kernel = executable('kernel',
-    all_c_sources + kernel_asm_sources,
-    link_with: [klib],
-    link_args: kernel_link_args,
-    c_args: kernel_c_args,
-    include_directories: kernel_includes,
-    install: true,
-    install_dir: 'boot' # Or appropriate install path
+    install_dir: 'boot'
 )
 
 # Output some information

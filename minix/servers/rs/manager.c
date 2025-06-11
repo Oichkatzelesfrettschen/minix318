@@ -974,6 +974,8 @@ int start_service(struct rproc *rp, int init_flags)
   if(r != OK) {
       return r;
   }
+  // Service successfully started, inform kernel of its epoch
+  rs_kernel_update_epoch(rpub->endpoint, rp->r_epoch);
 
   if(rs_verbose)
       printf("RS: %s started with major %d\n", srv_to_string(rp),
@@ -1285,6 +1287,8 @@ void restart_service(struct rproc *rp)
       kill_service(rp, "unable to let the replica run", r);
       return;
   }
+  // Restarted service (replica) successfully started, inform kernel of its epoch
+  rs_kernel_update_epoch(replica_rp->r_pub->endpoint, replica_rp->r_epoch);
 
   /* See if the old version needs to be detached. */
   if((rp->r_pub->sys_flags & SF_DET_RESTART)
@@ -1794,6 +1798,54 @@ endpoint_t source;
   return edit_slot(rp, rs_start, source);
 }
 
+// Static function to inform the kernel about an epoch update for a service
+static void rs_kernel_update_epoch(endpoint_t service_ep, uint32_t epoch) {
+    message m;
+    // This assumes a new syscall to kernel, e.g., KERNEL_CALL + some offset,
+    // or a new call to SYSTEM task if it handles such meta-operations.
+    // For Phase 0.25, RS sends the service_id (derived from endpoint or other mapping)
+    // directly as the first parameter, and epoch as the second.
+    // The kernel handler do_update_service_epoch expects these in m1_i1 and m1_i2.
+
+    memset(&m, 0, sizeof(m));
+
+    // IMPORTANT: The kernel handler for SYS_UPDATE_SERVICE_EPOCH expects a service_id
+    // (index for global_service_epochs) in m.m1_i1, not a raw endpoint_t.
+    // RS needs to have a mapping from the service's endpoint_t to this service_id.
+    // For Phase 0.25, we'll assume _ENDPOINT_P(service_ep) is used by RS as the service_id
+    // if it's non-negative and within MAX_SERVICE_EPOCHS bounds.
+    // This matches the placeholder logic in the kernel's do_update_service_epoch.
+    int service_id = _ENDPOINT_P(service_ep);
+
+    // Basic validation on RS side before making the call.
+    // Kernel will also validate.
+    if (service_id < 0 || service_id >= MAX_SERVICE_EPOCHS) {
+        printf("RS: ERROR: Invalid service_id %d derived from EP %d for epoch update.\n",
+               service_id, service_ep);
+        return;
+    }
+    if (epoch == 0) { // Assuming epoch 0 is invalid/reserved.
+        printf("RS: ERROR: Attempting to set invalid epoch 0 for service_id %d (EP %d).\n",
+               service_id, service_ep);
+        return;
+    }
+
+    m.m1_i1 = service_id;
+    m.m1_i2 = (int)epoch; // Cast to int if m1_i2 is int; uint32_t should be fine.
+
+    int result = _kernel_call(SYS_UPDATE_SERVICE_EPOCH, &m);
+
+    if (result != OK) {
+        printf("RS: WARNING: Kernel call SYS_UPDATE_SERVICE_EPOCH for SID %d (EP %d) to epoch %u failed with error %d\n",
+               service_id, service_ep, epoch, result);
+    } else {
+        if (rs_verbose) {
+            printf("RS: INFO: Successfully called kernel to update epoch for SID %d (EP %d) to %u\n",
+                   service_id, service_ep, epoch);
+        }
+    }
+}
+
 /*===========================================================================*
  *				clone_slot				     *
  *===========================================================================*/
@@ -1845,6 +1897,10 @@ struct rproc **clone_rpp;
   /* Clear instance flags. */
   clone_rp->r_priv.s_flags &= ~(LU_SYS_PROC | RST_SYS_PROC);
   clone_rp->r_priv.s_init_flags = 0;
+
+  // Increment epoch for the new instance
+  clone_rp->r_epoch = rp->r_epoch + 1;
+  if (clone_rp->r_epoch == 0) clone_rp->r_epoch = 1; // Handle wrap-around, ensure epoch is never 0
 
   *clone_rpp = clone_rp;
   return OK;
@@ -2079,6 +2135,7 @@ struct rproc **rpp;
 	return ENOMEM;
   }
 
+  (*rpp)->r_epoch = 1; // Initialize epoch for a newly allocated slot
   return OK;
 }
 

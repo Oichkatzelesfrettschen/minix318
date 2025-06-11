@@ -44,7 +44,52 @@ void arch_spinlock_unlock(atomic_t * sl);
 
 #endif /* CONFIG_SMP */
 
-#define BKL_LOCK()	spinlock_lock(&big_kernel_lock)
-#define BKL_UNLOCK()	spinlock_unlock(&big_kernel_lock)
+// Make sure this doesn't conflict with other includes of kernel.h
+// #include "kernel/kernel.h" // Already included at the top
+
+#if defined(CONFIG_SMP)
+// CLH BKL specific includes and declarations
+#include <minix/clhlock.h> // Provides clhlock_t, clh_node_t
+
+// External declarations for the global CLH BKL instance and qnode getter
+extern clhlock_t global_bkl_clh_instance; // Defined in clh_bkl.c
+extern clh_node_t *get_this_cpu_bkl_qnode(void); // Defined in clh_bkl.c
+
+// External declarations for CLH core lock operations
+// These are assumed to be implemented in a file like clhlock.c or clh_bkl.c
+extern void clh_core_acquire(clhlock_t *lock, clh_node_t *my_node);
+extern void clh_core_release(clhlock_t *lock, clh_node_t *my_node);
+
+// Assume profiling functions and constants are declared elsewhere
+// extern void ktzprofile_event(int event_type);
+// enum KTRACE_EVENTS { KTRACE_BKL_TRY, KTRACE_BKL_ACQUIRE, KTRACE_BKL_RELEASE, ... };
+
+#undef BKL_LOCK
+#define BKL_LOCK() \
+    do { \
+        /* ktzprofile_event(KTRACE_BKL_TRY); // Profiling call */ \
+        clh_core_acquire(&global_bkl_clh_instance, get_this_cpu_bkl_qnode()); \
+        /* ktzprofile_event(KTRACE_BKL_ACQUIRE); // Profiling call */ \
+    } while (0)
+
+#undef BKL_UNLOCK
+#define BKL_UNLOCK() \
+    do { \
+        /* ktzprofile_event(KTRACE_BKL_RELEASE); // Profiling call */ \
+        clh_core_release(&global_bkl_clh_instance, get_this_cpu_bkl_qnode()); \
+    } while (0)
+
+#else /* !CONFIG_SMP */
+
+// For non-SMP, BKL typically does nothing or very little (e.g., just disable interrupts)
+// The original non-SMP BKL_LOCK/UNLOCK were no-ops because spinlock_lock/unlock were no-ops.
+// We maintain that behavior.
+#undef BKL_LOCK
+#define BKL_LOCK()         do { /* ktzprofile_event(KTRACE_BKL_TRY); */ /* ktzprofile_event(KTRACE_BKL_ACQUIRE); */ } while (0)
+
+#undef BKL_UNLOCK
+#define BKL_UNLOCK()       do { /* ktzprofile_event(KTRACE_BKL_RELEASE); */ } while (0)
+
+#endif /* CONFIG_SMP */
 
 #endif /* __SPINLOCK_H__ */

@@ -25,6 +25,16 @@
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
 
+#ifndef MAX_PENDING_NOTIFICATIONS
+#define MAX_PENDING_NOTIFICATIONS 4 // Default if not set elsewhere, defines the size of the pending notifications array.
+#endif
+
+// Structure to store information about a pending notification, including its badge.
+struct pending_notification_info {
+    endpoint_t pn_source;   // Source endpoint of the notification
+    u32_t      pn_badge;    // Associated badge
+    int        pn_in_use;   // Flag indicating if this slot is used (1 if used, 0 if free)
+};
 
 struct priv {
   proc_nr_t s_proc_nr;		/* number of associated process */
@@ -47,7 +57,8 @@ struct priv {
 
   endpoint_t s_sig_mgr;		/* signal manager for system signals */
   endpoint_t s_bak_sig_mgr;	/* backup signal manager for system signals */
-  sys_map_t s_notify_pending;  	/* bit map with pending notifications */
+  /* sys_map_t s_notify_pending; */  	/* DEPRECATED: old bit map with pending notifications */
+  struct pending_notification_info s_pending_notifications[MAX_PENDING_NOTIFICATIONS]; /* New store for pending notifications with badges */
   sys_map_t s_asyn_pending;	/* bit map with pending asyn messages */
   irq_id_t s_int_pending;	/* pending hardware interrupts */
   k_sigset_t s_sig_pending;	/* pending signals */ // MODIFIED sigset_t to k_sigset_t
