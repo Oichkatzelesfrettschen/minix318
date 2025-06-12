@@ -1,18 +1,17 @@
 # minix/lib/libc/meson.build
-project('minix_libc', 'c')
 
 libc_include_dirs = include_directories(
-    '.',                            // For internal libc headers if any
-    '../../include',                // For <mathposix.h>, <minix/ipc.h>, <minix/callnr.h> etc.
-                                    // Adjust if mathposix.h is in minix/include/minix/
-    '../../include/posix'           // If POSIX headers like <sys/types.h> are there
+    '.',                            # For internal libc headers if any
+    '../../include',                # For <mathposix.h>, <minix/ipc.h>, <minix/callnr.h> etc.
+                                    # Adjust if mathposix.h is in minix/include/minix/
+    '../../include/posix'           # If POSIX headers like <sys/types.h> are there
 )
 
 libc_sources = files(
-    'sys-minix/mathematical_posix.c', // Moved in previous step
-    'sys-minix/mathematical_init.c', // Added this line
-    'sys-minix/math_control.c'        // Will be created in a future step
-    // Other libc sources would be listed here in a full libc build
+    'sys-minix/mathematical_posix.c', # Moved in previous step
+    'sys-minix/mathematical_init.c', # Added this line
+    'sys-minix/math_control.c'        # Will be created in a future step
+    # Other libc sources would be listed here in a full libc build
 )
 
 # Compiler arguments for libc (might differ from kernel)

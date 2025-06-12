@@ -38,13 +38,12 @@ struct dag_node;
 // process table defined in proc.c
 extern struct ptable ptable;
 
+#include "fastipc.h"
+#include "ipc.h"
 #include "kernel/exo_cpu.h"
 #include "kernel/exo_disk.h"
 #include "kernel/exo_ipc.h"
-#include "ipc.h"
 #include "kernel/exo_mem.h"
-#include "fastipc.h"
-#include "ipc.h"
 
 // bio.c
 void binit(void);
