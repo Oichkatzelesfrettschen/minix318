@@ -5,6 +5,15 @@ option(
     'arch',
     type : 'combo',
     choices : ['i386', 'x86_64', 'arm32', 'arm64'],
-    value : 'x86_64',
+    value : 'i386',
     description : 'Target architecture'
+)
+
+# Generic compilation options
+
+option(
+    'opt_level',
+    type : 'string',
+    value : '3',
+    description : 'Optimization level used as -O<level>'
 )

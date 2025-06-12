@@ -18,6 +18,7 @@ struct dag_node_list {
 };
 
 /**
+
  * @brief Node representing a schedulable unit in the DAG scheduler.
  */
 struct dag_node {

@@ -24,4 +24,3 @@ static inline void khash_final(khash_state_t* state, void* out_hash) { (void)sta
 // void recompute_proof_hash(const struct capability_proof* proof, _BitInt(256)* computed_hash);
 
 
-#endif // KCRYPTO_H
