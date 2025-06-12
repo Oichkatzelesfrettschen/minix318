@@ -1,77 +1,107 @@
+#------------------------------------------------------------------------------
 # minix/lib/klib/meson.build
-# project('capability_klib', 'c') # Renamed project (legacy)
+#
+# Static libraries for MINIX kernel:
+#  - capability_klib : capability‐verification, math syscalls, auditing, cache
+#  - klib            : core kernel support (memory, strings, panic, debug, etc.)
+#------------------------------------------------------------------------------
 
-klib_sources = [
-    'src/kmemory_c23.c',
-    'src/kstring_c23.c',
-    'src/kcapability_dag.c',
-    'src/kcapability_dag_test.c',
-    'src/kcapability_posix.c',
-    'src/kcrypto.c',
-    'src/khelpers.c'
-]
+# Allow overriding optimization level in parent project
+opt_level = get_option('opt_level')
 
-klib_include_dirs = include_directories(['include', '../../kernel/include'])
-
-capability_klib = static_library('capability_klib', # Renamed library
-    klib_sources,
-    include_directories: klib_include_dirs,
-    c_args: [
-        '-DKERNEL_SPACE',
-        '-DKDEBUG',
-        '-DMATHEMATICAL_VERIFICATION',
-        '-O' + get_option('opt_level')
-    ]
-    # pic: false # Explicitly false if this lib is kernel only and won't be linked to user space directly
+#------------------------------------------------------------------------------  
+# Include directories  
+#------------------------------------------------------------------------------  
+# Kernel headers (for both libraries)
+common_includes = include_directories(
+  'include',               # lib/klib public headers
+  '../../kernel/include'   # kernel headers for capability
 )
 
-capability_klib_dep = declare_dependency( # Renamed dependency variable
-    include_directories: klib_include_dirs,
-    link_with: capability_klib
-)
-
-# project('klib', 'c',
-#   default_options : ['warning_level=2', 'c_std=c23'])
-
-# Common C arguments for klib
-klib_c_args = [
-  '-ffreestanding',
-  '-fno-builtin',
-  '-Wall',
-  '-Wextra',
-  '-O' + get_option('opt_level'),
-  '-Werror', # Treat warnings as errors
-  '-D_MINIX_KERNEL',
-  '-D_KLIB'
+#------------------------------------------------------------------------------  
+# capability_klib  
+#------------------------------------------------------------------------------  
+# Sources for the capability verification & math‐syscall library
+cap_klib_sources = [
+  'src/kmemory_c23.c',           # memory helpers in C23
+  'src/kstring_c23.c',           # string routines in C23
+  'src/kcapability_dag.c',       # capability‐DAG implementation
+  'src/kcapability_dag_test.c',  # self‐tests for DAG
+  'src/kcapability_posix.c',     # POSIX compatibility shims
+  'src/kcrypto.c',               # basic cryptographic utilities
+  'src/khelpers.c'               # miscellaneous helpers
 ]
 
-# Include directory for klib's own headers
+# Compiler arguments for capability_klib
+cap_klib_c_args = [
+  '-std=c23',                    # enforce C23
+  '-DKERNEL_SPACE',              # kernel‐only build
+  '-DKDEBUG',                    # enable debug macros
+  '-DMATHEMATICAL_VERIFICATION', # enable verification hooks
+  '-O' + opt_level               # optimization level from top‐level
+]
+
+# Build the static capability library
+capability_klib = static_library(
+  'capability_klib',             # library name
+  cap_klib_sources,
+  include_directories : common_includes,
+  c_args              : cap_klib_c_args,
+  install             : false     # not installed to user‐space
+)
+
+# Exportable dependency object for Meson subprojects
+capability_klib_dep = declare_dependency(
+  include_directories : common_includes,
+  link_with           : capability_klib
+)
+
+#------------------------------------------------------------------------------  
+# klib (core kernel support)  
+#------------------------------------------------------------------------------  
+# Sources for the core kernel support library
+core_klib_sources = [
+  'src/kmemory_c23.c',                   # duplicated for core, reuses C23
+  'src/kstring_c23.c',                   # as above
+  'src/kcore.c',                         # core routines (alloc, free)
+  'src/kconv.c',                         # numeric conversions
+  'src/kdebug.c',                        # debug print & panic
+  'src/kcapability_dag.c',               # shared with capability lib
+  'src/kassert_metrics.c',               # assertion & metrics stubs
+  'arch/i386/kcpu_detect_features_arch.c' # arch‐specific CPU detection
+]
+
+# Compiler arguments for core klib
+core_klib_c_args = [
+  '-std=c23',            # unify on C23
+  '-ffreestanding',      # freestanding, no libc
+  '-fno-builtin',        # no implicit builtins
+  '-Wall',               # all warnings
+  '-Wextra',             # extra warnings
+  '-Werror',             # treat warnings as errors
+  '-O' + opt_level,      # optimization
+  '-D_MINIX_KERNEL',     # kernel‐mode build
+  '-D_KLIB'              # klib build flag
+]
+
+# Include directory for klib public headers
 klib_inc = include_directories('include')
 
-# Source files for klib
-klib_sources = [
-  'src/kmemory_c23.c',
-  'src/kstring_c23.c',
-  'src/kcore.c',
-  'src/kconv.c',
-  'src/kdebug.c',
-  'src/kcapability_dag.c',
-  'src/kassert_metrics.c', # Assertion metrics collection stubs
-  'arch/i386/kcpu_detect_features_arch.c'
-]
-
-# Static library definition
-klib_lib = static_library('klib', klib_sources,
-  c_args : klib_c_args,
-  include_directories : klib_inc
+# Build the static core library
+klib_lib = static_library(
+  'klib', 
+  core_klib_sources,
+  include_directories : klib_inc,
+  c_args              : core_klib_c_args,
+  install             : false
 )
 
-# Dependency object for other Meson projects to use
+# Exportable dependency for other Meson projects
 klib_dep = declare_dependency(
-  link_with : klib_lib,
+  link_with           : klib_lib,
   include_directories : klib_inc
 )
 
-# For subproject access if klib_inc is needed directly by the parent project
-# This makes 'klib_include_dir' available via klib_proj.get_variable() (legacy)
-# meson.override_variable('klib_include_dir', klib_inc)
+#------------------------------------------------------------------------------
+# EOF: minix/lib/klib/meson.build
+#------------------------------------------------------------------------------

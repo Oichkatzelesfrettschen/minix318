@@ -2,61 +2,86 @@
 #include "exo.h"
 #include "types.h"
 
+/**
+ * @file dag.h
+ * @brief Interfaces for the weighted DAG scheduler.
+ */
+
 struct dag_node;
 
+/**
+ * @brief Linked list element for DAG nodes.
+ */
 struct dag_node_list {
-  struct dag_node *node;
-  struct dag_node_list *next;
+  struct dag_node *node; /**< Child node in the list. */
+  struct dag_node_list *next; /**< Next element in the list. */
 };
 
 /**
- * @brief Representation of a task scheduled by the DAG scheduler.
- *
- * The structure stores dependency and scheduling metadata for a
- * single execution context. All fields originate from the legacy
- * scheduler implementation and are preserved verbatim.
+
+ * @brief Node representing a schedulable unit in the DAG scheduler.
  */
 struct dag_node {
-  /** execution context capability */
-  exo_cap ctx;
-  /** unresolved dependencies */
-  int pending;
-  /** priority used for ordering */
-  int priority;
-  /** weight used by weighted schedulers */
-  int weight;
-  /** list of children depending on this node */
-  struct dag_node_list *children;
-  /** next pointer used for ready queue */
-  struct dag_node *next;
-  /** array of parent dependencies */
-  struct dag_node **deps;
-  /** number of dependency entries */
-  int ndeps;
-  /** non-zero once execution completes */
-  int done;
+  exo_cap ctx;                    /**< Capability to resume the task. */
+  int pending;                    /**< Number of unfinished dependencies. */
+  int priority;                   /**< Historical priority field. */
+  int weight;                     /**< Scheduling weight. */
+  struct dag_node_list *children; /**< Child nodes depending on this node. */
+  struct dag_node *next;          /**< Internal link used by the scheduler. */
+  struct dag_node **deps;         /**< Array of parent dependencies. */
+  int ndeps;                      /**< Number of entries in @c deps. */
+  int done;                       /**< Set once the node has run. */
+
 };
 
 /**
- * @brief Initialize a DAG node.
+ * @brief Initialize a DAG node with an execution context.
  *
- * All fields are cleared and the execution context is set to @p ctx.
+ * @param n   Node to initialize.
+ * @param ctx Execution context capability.
  */
 void dag_node_init(struct dag_node *n, exo_cap ctx);
 
-/** Set the scheduling priority for @p n. */
+/**
+ * @brief Set the scheduling priority for a node.
+ *
+ * @param n        Node to update.
+ * @param priority Priority value.
+ */
 void dag_node_set_priority(struct dag_node *n, int priority);
+/**
+ * @brief Set the scheduling weight of a node.
+ *
+ * Higher-weighted nodes are chosen before lower-weighted ones.
 
-/** Assign a weight used by weighted schedulers. */
+
+/**
+ * @brief Set the relative weight for a node.
+ *
+ * @param n      Node to update.
+ * @param weight Weight used when ordering nodes.
+
+ */
 void dag_node_set_weight(struct dag_node *n, int weight);
 
 /**
- * @brief Record that @p child depends on @p parent.
+ * @brief Declare a dependency between two nodes.
+ *
+ * @param parent Node that must finish first.
+ * @param child  Node that depends on @p parent.
  */
 void dag_node_add_dep(struct dag_node *parent, struct dag_node *child);
 
-/** Queue @p node if it has no pending dependencies. */
-void dag_sched_submit(struct dag_node *node);
+/**
+ * @brief Submit a node to the DAG scheduler.
+ *
+ * Nodes with no pending dependencies are added to the ready queue.
+ *
+ * @param n Node to submit.
+ */
+void dag_sched_submit(struct dag_node *n);
 
-/** Initialize internal state of the DAG scheduler. */
+/**
+ * @brief Initialize the DAG scheduler subsystem.
+ */
 void dag_sched_init(void);

@@ -1,10 +1,15 @@
 .data
-/ C library -- wait
-
-/ pid = wait(&status);
-/
-/ pid == -1 if error
-/ status indicates fate of process
+/**
+ * @file wait.s
+ * @brief C library -- wait
+ *
+ * pid = wait();
+ * or,
+ * pid = wait(&status);
+ *
+ * @return pid == -1 if error
+ *         status indicates fate of process
+ */
 
 .globl	_wait, cerror
 
