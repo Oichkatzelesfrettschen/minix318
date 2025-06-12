@@ -1,0 +1,175 @@
+/*
+ * CDDL HEADER START
+ *
+ * The contents of this file are subject to the terms of the
+ * Common Development and Distribution License, Version 1.0 only
+ * (the "License").  You may not use this file except in compliance
+ * with the License.
+ *
+ * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ * or http://www.opensolaris.org/os/licensing.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ *
+ * When distributing Covered Code, include this CDDL HEADER in each
+ * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ * If applicable, add the following below this CDDL HEADER, with the
+ * fields enclosed by brackets "[]" replaced with your own identifying
+ * information: Portions Copyright [yyyy] [name of copyright owner]
+ *
+ * CDDL HEADER END
+ */
+
+/*
+ * WARNING!
+ *	  Do NOT add or modify entries to this list before the end of legacy
+ *	  entries marker. Amending this list may damage programs because data
+ *	  is copied into reserved arrays at runtime. See bug 4097669.
+ *
+ * The table is organized with the first column being the error number.
+ * The second column is the error's name. If the error should be skipped
+ * from the list, it has the magic name 'SKIP'. This generally is for
+ * the XENIX errors. The third column to the end of the file is the
+ * string that shows up when you run strerror().
+ */
+
+1	EPERM	Not owner
+2	ENOENT	No such file or directory
+3	ESRCH	No such process
+4	EINTR	Interrupted system call
+5	EIO	I/O error
+6	ENXIO	No such device or address
+7	E2BIG	Arg list too long
+8	ENOEXEC	Exec format error
+9	EBADF	Bad file number
+10	ECHILD	No child processes
+11	EAGAIN	Resource temporarily unavailable
+12	ENOMEM	Not enough space
+13	EACCES	Permission denied
+14	EFAULT	Bad address
+15	ENOTBLK	Block device required
+16	EBUSY	Device busy
+17	EEXIST	File exists
+18	EXDEV	Cross-device link
+19	ENODEV	No such device
+20	ENOTDIR	Not a directory
+21	EISDIR	Is a directory
+22	EINVAL	Invalid argument
+23	ENFILE	File table overflow
+24	EMFILE	Too many open files
+25	ENOTTY	Inappropriate ioctl for device
+26	ETXTBSY	Text file busy
+27	EFBIG	File too large
+28	ENOSPC	No space left on device
+29	ESPIPE	Illegal seek
+30	EROFS	Read-only file system
+31	EMLINK	Too many links
+32	EPIPE	Broken pipe
+33	EDOM	Argument out of domain
+34	ERANGE	Result too large
+35	ENOMSG	No message of desired type
+36	EIDRM	Identifier removed
+37	ECHRNG	Channel number out of range
+38	EL2NSYNC	Level 2 not synchronized
+39	EL3HLT	Level 3 halted
+40	EL3RST	Level 3 reset
+41	ELNRNG	Link number out of range
+42	EUNATCH	Protocol driver not attached
+43	ENOCSI	No CSI structure available
+44	EL2HLT	Level 2 halted
+45	EDEADLK	Deadlock situation detected/avoided
+46	ENOLCK	No record locks available
+47	ECANCELED	Operation canceled
+48	ENOTSUP	Operation not supported
+49	EDQUOT	Disc quota exceeded
+50	EBADE	Bad exchange descriptor
+51	EBADR	Bad request descriptor
+52	EXFULL	Message tables full
+53	ENOANO	Anode table overflow
+54	EBADRQC	Bad request code
+55	EBADSLT	Invalid slot
+56	EDEADLOCK	File locking deadlock
+57	EBFONT	Bad font file format
+58	EOWNERDEAD	Owner of the lock died
+59	ENOTRECOVERABLE	Lock is not recoverable
+60	ENOSTR	Not a stream device
+61	ENODATA	No data available
+62	ETIME	Timer expired
+63	ENOSR	Out of stream resources
+64	ENONET	Machine is not on the network
+65	ENOPKG	Package not installed
+66	EREMOTE	Object is remote
+67	ENOLINK	Link has been severed
+68	EADV	Advertise error
+69	ESRMNT	Srmount error
+70	ECOMM	Communication error on send
+71	EPROTO	Protocol error
+/*
+ * The trailing space on the next line is historic but must now be preserved
+ * since to do otherwise would change the size of, and offset into, the
+ * copy-relocated data in the 32-bit library. The string is replaced by a
+ * cleaned version later in the list for non-legacy use.
+ */
+72	ELOCKUNMAPPED	Locked lock was unmapped 
+73	ENOTACTIVE	Facility is not active
+74	EMULTIHOP	Multihop attempted
+77	EBADMSG	Not a data message
+78	ENAMETOOLONG	File name too long
+79	EOVERFLOW	Value too large for defined data type
+80	ENOTUNIQ	Name not unique on network
+81	EBADFD	File descriptor in bad state
+82	EREMCHG	Remote address changed
+83	ELIBACC	Can not access a needed shared library
+84	ELIBBAD	Accessing a corrupted shared library
+85	ELIBSCN	.lib section in a.out corrupted
+86	ELIBMAX	Attempting to link in more shared libraries than system limit
+87	ELIBEXEC	Can not exec a shared library directly
+88	EILSEQ	Illegal byte sequence
+89	ENOSYS	Operation not applicable
+90	ELOOP	Number of symbolic links encountered during path name traversal exceeds MAXSYMLINKS
+93	ENOTEMPTY	Directory not empty
+94	EUSERS	Too many users
+95	ENOTSOCK	Socket operation on non-socket
+96	EDESTADDRREQ	Destination address required
+97	EMSGSIZE	Message too long
+98	EPROTOTYPE	Protocol wrong type for socket
+99	ENOPROTOOPT	Option not supported by protocol
+120	EPROTONOSUPPORT	Protocol not supported
+121	ESOCKTNOSUPPORT	Socket type not supported
+122	EOPNOTSUPP	Operation not supported on transport endpoint
+123	EPFNOSUPPORT	Protocol family not supported
+124	EAFNOSUPPORT	Address family not supported by protocol family
+125	EADDRINUSE	Address already in use
+126	EADDRNOTAVAIL	Cannot assign requested address
+127	ENETDOWN	Network is down
+128	ENETUNREACH	Network is unreachable
+129	ENETRESET	Network dropped connection because of reset
+130	ECONNABORTED	Software caused connection abort
+131	ECONNRESET	Connection reset by peer
+132	ENOBUFS	No buffer space available
+133	EISCONN	Transport endpoint is already connected
+134	ENOTCONN	Transport endpoint is not connected
+135	SKIP	Structure needs cleaning
+137	SKIP	Not a name file
+138	SKIP	Not available
+139	SKIP	Is a name file
+140	SKIP	Remote I/O error
+141	SKIP	Reserved for future use
+142
+143	ESHUTDOWN	Cannot send after socket shutdown
+144	ETOOMANYREFS	Too many references: cannot splice
+145	ETIMEDOUT	Connection timed out
+146	ECONNREFUSED	Connection refused
+147	EHOSTDOWN	Host is down
+148	EHOSTUNREACH	No route to host
+149	EALREADY	Operation already in progress
+150	EINPROGRESS	Operation now in progress
+151	ESTALE	Stale NFS file handle
+/*
+ * Entries after this line are not used to generate the legacy data exported in
+ * the 32-bit library.
+ */
+== End of legacy entries ==
+72	ELOCKUNMAPPED	Locked lock was unmapped
+91	ERESTART	Restartable system call
+92	ESTRPIPE	If pipe/FIFO, don't sleep in stream head

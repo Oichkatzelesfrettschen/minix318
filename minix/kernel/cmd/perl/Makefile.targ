@@ -1,0 +1,53 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+#
+# Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright (c) 2016 Racktop Systems.
+# Copyright (c) 2018, Joyent, Inc.
+
+# Link against libc as per solaris specs
+PICS = $(MODULE).o
+LDLIBS += -lc
+# Allow for undefined symbols satisfied by perl
+ZDEFS =
+
+$(ROOTPERLEXT) := FILEMODE = 0555
+$(ROOTPERLMOD) := FILEMODE = 0444
+
+SMATCH=off
+
+.KEEP_STATE:
+
+$(PERLEXT): $(MODULE).o
+	$(BUILD.SO)
+
+$(MODULE).o: $(MODULE).c
+	$(COMPILE.c) $(PCFLAGS) $(C_PICFLAGS) -I$(PERLINCDIR) $< -o $@
+
+$(MODULE).c: $(PERLXS)
+	$(XSUBPP) $(XSUBPPFLAGS) $(PERLXS) -output $@
+
+$(ROOTPERLMODDIR):
+	$(INS.dir)
+
+$(ROOTPERLMOD): $(PERLMOD) $(ROOTPERLMODDIR)
+	$(RM) $@; $(INS) -s -m $(FILEMODE) -f $(@D) $(PERLMOD)
+
+$(ROOTPERLEXTDIR):
+	$(INS.dir)
+
+$(ROOTPERLEXT): $(PERLEXT) $(ROOTPERLEXTDIR)
+	$(RM) $@; $(INS) -s -m $(FILEMODE) -f $(@D) $(PERLEXT)
+
+clean:
+	$(RM) $(CLEANFILES)
+
+clobber: clean
