@@ -130,9 +130,10 @@
 #define MAGIC_WALK_UNIONS_AS_VOID_ARRAYS_DEFAULT 1
 
 /* Magic debug and output control macros */
-#define MAGIC_DEBUG_SELECT(D,ND) (MAGIC_OUTPUT_CTL>=1 ? (ND) : (D))
-#define MAGIC_OUTPUT_SELECT(D,ND,NO) (MAGIC_OUTPUT_CTL>=2 ? (NO) : MAGIC_DEBUG_SELECT(D,ND))
-#define MAGIC_DEBUG_SET(D) MAGIC_DEBUG_SELECT(D,0)
+#define MAGIC_DEBUG_SELECT(D, ND) (MAGIC_OUTPUT_CTL >= 1 ? (ND) : (D))
+#define MAGIC_OUTPUT_SELECT(D, ND, NO)                                         \
+  (MAGIC_OUTPUT_CTL >= 2 ? (NO) : MAGIC_DEBUG_SELECT(D, ND))
+#define MAGIC_DEBUG_SET(D) MAGIC_DEBUG_SELECT(D, 0)
 #define MAGIC_LLVM20_DEBUG_ENHANCED(D) (MAGIC_USE_ENHANCED_DEBUGGING ? (D) : 0)
 
 /* Magic system integration */
@@ -223,10 +224,10 @@
 #define MAGIC_STATE_ENHANCED_TRACKING 0x80000000
 
 /* Magic memory functions for LLVM-20 with enhanced MINIX support */
-#define MAGIC_MEMA_FUNCS \
-    __X(malloc), __X(calloc), __X(realloc), __X(reallocarray), \
-    __X(posix_memalign), __X(valloc), __X(memalign), __X(aligned_alloc), \
-    __X(mmap), __X(brk), __X(sbrk), __X(shmat), __X(mmap64)
+#define MAGIC_MEMA_FUNCS                                                       \
+  __X(malloc), __X(calloc), __X(realloc), __X(reallocarray),                   \
+      __X(posix_memalign), __X(valloc), __X(memalign), __X(aligned_alloc),     \
+      __X(mmap), __X(brk), __X(sbrk), __X(shmat), __X(mmap64)
 
 #ifdef __MINIX
 #define MAGIC_MEMA_EXTRA_FUNCS , __X(vm_map_cacheblock), __X(vm_malloc_debug)
