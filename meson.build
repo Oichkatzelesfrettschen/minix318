@@ -22,3 +22,9 @@ add_project_arguments('-O' + get_option('opt_level'), language: 'c')
 
 # Add the MINIX source directory to the build.
 subdir('minix')
+
+# Build the microkernel capability routing demo.
+executable(
+  'microkernel_rcrs_demo',
+  'microkernel_rcrs_demo.c',
+)
