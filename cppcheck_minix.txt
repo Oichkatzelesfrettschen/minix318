@@ -1,0 +1,2 @@
+cppcheck: could not stat file './kernel/inkernel/include/port_mgr.c' (errno: 2)
+cppcheck: error: could not find or open any of the paths given.

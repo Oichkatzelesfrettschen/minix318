@@ -1,0 +1,26 @@
+Checking minix/alloc.c ...
+minix/alloc.c:5:0: information: Include file: "../param.h" not found. [missingInclude]
+#include "../param.h"
+^
+minix/alloc.c:6:0: information: Include file: "../systm.h" not found. [missingInclude]
+#include "../systm.h"
+^
+minix/alloc.c:7:0: information: Include file: "../filsys.h" not found. [missingInclude]
+#include "../filsys.h"
+^
+minix/alloc.c:8:0: information: Include file: "../conf.h" not found. [missingInclude]
+#include "../conf.h"
+^
+minix/alloc.c:9:0: information: Include file: "../buf.h" not found. [missingInclude]
+#include "../buf.h"
+^
+minix/alloc.c:10:0: information: Include file: "../inode.h" not found. [missingInclude]
+#include "../inode.h"
+^
+minix/alloc.c:11:0: information: Include file: "../user.h" not found. [missingInclude]
+#include "../user.h"
+^
+minix/alloc.c:308:15: error: syntax error [syntaxError]
+   ip->i_flag =| ILOCK;
+              ^
+nofile:0:0: information: Active checkers: There was critical errors (use --checkers-report=<filename> to see details) [checkersReport]
