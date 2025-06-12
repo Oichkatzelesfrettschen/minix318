@@ -1,0 +1,41 @@
+File: ./alloc.c
+  AllocationSites: 12 (alloc: 7, free: 5)
+  ThreadingFeatures: Not obvious
+  DebuggingFeatures: Present (count: 16)
+  AlignmentFeatures: Present (keywords: 0, macros/const: 5)
+  ZeroingFeatures: Present (count: 1)
+
+File: ./malloc.c
+  AllocationSites: 13 (alloc: 10, free: 3)
+  ThreadingFeatures: Not obvious
+  DebuggingFeatures: Present (count: 16)
+  AlignmentFeatures: Present (keywords: 0, macros/const: 5)
+  ZeroingFeatures: Present (count: 1)
+
+File: ./minix/kernel/kalloc.c
+  AllocationSites: 6 (alloc: 3, free: 3)
+  ThreadingFeatures: Not obvious
+  DebuggingFeatures: Present (count: 1)
+  AlignmentFeatures: Not obvious
+  ZeroingFeatures: Not obvious
+
+File: ./minix/kernel/malloc.c
+  AllocationSites: 1 (alloc: 1, free: 0)
+  ThreadingFeatures: Not obvious
+  DebuggingFeatures: Not obvious
+  AlignmentFeatures: Not obvious
+  ZeroingFeatures: Not obvious
+
+File: ./minix/lib/libmalloc/common/malloc.c
+  AllocationSites: 63 (alloc: 28, free: 35)
+  ThreadingFeatures: Present (count: 57)
+  DebuggingFeatures: Present (count: 21)
+  AlignmentFeatures: Present (keywords: 3, macros/const: 12)
+  ZeroingFeatures: Present (count: 3)
+
+File: ./minix/kernel/bootstrap/kalloc.c
+  AllocationSites: 8 (alloc: 3, free: 5)
+  ThreadingFeatures: Present (count: 13)
+  DebuggingFeatures: Present (count: 2)
+  AlignmentFeatures: Not obvious
+  ZeroingFeatures: Not obvious

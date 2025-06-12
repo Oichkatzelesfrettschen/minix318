@@ -1,0 +1,46 @@
+digraph AllocationHierarchy {
+    rankdir=LR;
+    node [shape=box, style=rounded];
+
+    subgraph cluster_kernel {
+        label = "Kernel Space";
+        "Kernel Code" [shape=ellipse];
+        "MINIX Kernel Kalloc (kalloc.c)" [style="filled", fillcolor=lightblue];
+        "MINIX Bootstrap Kalloc (bootstrap/kalloc.c)" [style="filled", fillcolor=lightgreen];
+        "MINIX Kernel Malloc (old) (malloc.c)" [style="filled", fillcolor=lightgray];
+        "Zone Allocator (zalloc.c)";
+        "Page Allocator (vm_*)";
+    }
+
+    subgraph cluster_userspace {
+        label = "Userspace / Libc";
+        "User Application" [shape=ellipse];
+        "Libc Malloc (libmalloc/common/malloc.c)" [style="filled", fillcolor=orange];
+        "Root ./malloc.c (wrapper)";
+        "Root ./alloc.c (UCB)";
+        "sbrk (syscall)";
+    }
+
+    # Kernel dependencies
+    "Kernel Code" -> "MINIX Kernel Kalloc (kalloc.c)";
+    "MINIX Kernel Kalloc (kalloc.c)" -> "Zone Allocator (zalloc.c)";
+    "MINIX Kernel Kalloc (kalloc.c)" -> "Page Allocator (vm_*)"; # via kmem_alloc_wired
+    "Kernel Code" -> "MINIX Bootstrap Kalloc (bootstrap/kalloc.c)";
+    "MINIX Bootstrap Kalloc (bootstrap/kalloc.c)" -> "Page Allocator (vm_*)"; # via vm_map
+    "Kernel Code" -> "MINIX Kernel Malloc (old) (malloc.c)";
+
+    # Userspace dependencies
+    "User Application" -> "Libc Malloc (libmalloc/common/malloc.c)";
+    "User Application" -> "Root ./malloc.c (wrapper)";
+    "User Application" -> "Root ./alloc.c (UCB)";
+
+    "Libc Malloc (libmalloc/common/malloc.c)" -> "sbrk (syscall)";
+    "Root ./alloc.c (UCB)" -> "sbrk (syscall)";
+    "Root ./malloc.c (wrapper)" -> "MINIX Kernel Kalloc (kalloc.c)"; # As it calls kalloc()
+
+    # Relationships between kernel and userspace allocators (e.g. sbrk is kernel interface)
+    "sbrk (syscall)" -> "Kernel Code" [style=dotted, label="kernel trap"];
+
+    label = "High-Level Allocator Hierarchy (MINIX318)";
+    fontsize=20;
+}

@@ -1,0 +1,1391 @@
+======================================================================
+Analyzing function: malloc (context: ./malloc.c)
+======================================================================
+
+>>> Functions CALLING malloc (limit 50):
+alloc.c malloc 62 malloc(nbytes)
+libos/sh/options.h malloc 39 unsigned char malloc;
+libos/umalloc.c malloc 64 malloc(size_t nbytes)
+malloc.c malloc 72 malloc(nbytes)
+malloc.c malloc 204 char *malloc(unsigned nbytes) { return kalloc(nbytes); }
+minix/include/process.h malloc 35 #define malloc(X) gc_malloc(X)
+minix/kernel/boot/include/stdlib.h malloc 98 void *malloc(size_t) __malloc_like __result_use_check __alloc_size(1);
+minix/kernel/boot/libsa/stand.h malloc 442 #define malloc(x) Malloc(x, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h malloc 449 #define malloc(x) Malloc(x, NULL, 0)
+minix/kernel/bootstrap/kalloc.c malloc 253 void *malloc(vm_size_t size)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h malloc 41 #define malloc _fmalloc
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h malloc 72 #define malloc(a) my_malloc(a, __FILE__, __LINE__)
+minix/kernel/cmd/sgs/rtld/common/malloc.c malloc 159 malloc(size_t size)
+minix/kernel/common/tsol/ltos.c malloc 57 #define malloc(l) kmem_alloc(l, KM_NOSLEEP)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 254 #define malloc(s) (_VMFL_(Vmregion), _ast_malloc((size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 267 #define malloc(s) (_VMFL_(Vmregion), malloc((size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 280 #define malloc(s) (_VMFL_(Vmregion), _VMNM_(mallo,/,*,*,/,c)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 32 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 60 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 174 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 509 extern Void_t* malloc(reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 511 extern Void_t* malloc(size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 908 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 1066 #define malloc ______malloc
+minix/kernel/inkernel/utils.c malloc 49 malloc( size )
+minix/kernel/malloc.c malloc 28 malloc(mp, size)
+minix/kernel/stand/lib/sa/malloc.c malloc 36 malloc(size_t size)
+minix/lib/libbsdmalloc/common/malloc.bsd43.c malloc 96 malloc(size_t nbytes)
+minix/lib/libmagicrt/include/magic_real_mem.h malloc 6 #define malloc magic_real_malloc
+minix/lib/libmalloc/common/malloc.c malloc 181 malloc(size_t nbytes)
+minix/lib/libmapmalloc/common/textmem.c malloc 94 malloc(size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c malloc 234 malloc(size_t bytes)
+minix/lib/libpkg/common/nhash.c malloc 41 #define malloc bkmem_alloc
+minix/lib/libpkg/common/nhash.h malloc 63 #define malloc bkmem_alloc
+minix/lib/libsasl/lib/saslint.h malloc 329 sasl_malloc_t *malloc;
+minix/lib/openssl/lib/posix/net/bpf_compat.h malloc 45 #define malloc(size, type, canwait) bpf_alloc(size, canwait)
+minix/lib/openssl/sunos/include/process.h malloc 30 #define malloc(X) gc_malloc(X)
+minix/lib/openssl/sunos/pxk/alloc_old.c malloc 548 char *malloc(num)
+minix/lib/pxk/alloc_old.c malloc 547 char *malloc(num)
+minix/lib/watchmalloc/common/malloc.c malloc 162 malloc(size_t size)
+minix/malloc.c malloc 28 malloc(mp, size)
+minix/servers/lib/libc/port/gen/malloc.c malloc 161 malloc(size_t size)
+minix/servers/net/bpf_compat.h malloc 45 #define malloc(size, type, canwait) bpf_alloc(size, canwait)
+minix/servers/pxk/malloc.c malloc 232 malloc(register vm_size_t size)
+
+>>> Functions CALLED BY malloc (limit 50):
+commands/cawf/proto.h <global> 73 char *malloc(unsigned size);
+commands/devmand/main.c <global> 312 malloc(sizeof(struct devmand_usb_match_id));
+libos/sh/options.h <global> 39 unsigned char malloc;
+minix/commands/cawf/proto.h <global> 73 char *malloc(unsigned size);
+minix/commands/devmand/main.c <global> 312 malloc(sizeof(struct devmand_usb_match_id));
+minix/include/process.h <global> 35 #define malloc(X) gc_malloc(X)
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 47 #ifdef malloc
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 48 #undef malloc
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 949 malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1036 malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1115 binding = (binding_bucket *) malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1190 c = (obj_list *) malloc(sizeof (obj_list));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1191 c->obj = (obj_com *) malloc(sizeof (obj_com));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1192 fullname = (char *)malloc(strlen(com->obj->ename)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h <global> 41 #define malloc _fmalloc
+minix/kernel/cmd/fmtmsg/main.c <global> 78 extern void *malloc();
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h <global> 72 #define malloc(a) my_malloc(a, __FILE__, __LINE__)
+minix/kernel/cmd/fs.d/fsck.c <global> 82 char *malloc();
+minix/kernel/cmd/fs.d/ufs/fsdb/fsdb.c <global> 277 extern char *malloc(), *calloc();
+minix/kernel/cmd/fs.d/ufs/lockfs/lockfs.c <global> 122 char *malloc();
+minix/kernel/cmd/ldap/common/convutf8.c <global> 90 if ((dest = (char *)malloc(size)) == NULL) {
+minix/kernel/cmd/listen/lssmb.c <global> 58 extern char *malloc();
+minix/kernel/cmd/lp/filter/postscript/common/ext.h <global> 51 extern char *malloc();
+minix/kernel/cmd/lp/filter/postscript/postcomm/postcomm.h <global> 208 char *malloc();
+minix/kernel/cmd/lp/model/lp.tell.c <global> 43 *malloc(),
+minix/kernel/cmd/mailx/hdr/def.h <global> 647 extern char *malloc();
+minix/kernel/cmd/sendmail/include/sm/conf.h <global> 1312 extern char *malloc();
+minix/kernel/cmd/sendmail/include/sm/conf.h <global> 1413 extern void *malloc();
+minix/kernel/cmd/sgs/rtld/common/_rtld.h <global> 738 extern void *malloc(size_t);
+minix/kernel/cmd/sgs/rtld/common/malloc.c <global> 157 #pragma weak lmalloc = malloc
+minix/kernel/cmd/tcpd/scaffold.c <global> 28 extern char *malloc();
+minix/kernel/cmd/vgrind/regexp.c <global> 109 char *malloc();
+minix/kernel/cmd/ypcmd/mknetid/mknetid.c <global> 58 extern char *malloc();
+minix/kernel/cmd/ypcmd/udpublickey.c <global> 43 extern char *malloc();
+minix/kernel/common/tsol/ltos.c <global> 57 #define malloc(l) kmem_alloc(l, KM_NOSLEEP)
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 966 extern voidp malloc OF((uInt size));
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 3616 extern voidp malloc OF((uInt size));
+minix/kernel/contrib/ast/src/lib/libast/cdt/cdtlib.h <global> 177 extern Void_t* malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/sfio/sfhdr.h <global> 1211 extern void * malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 32 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 59 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 60 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 153 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 167 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 174 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 907 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 908 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1010 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1011 extern Void_t* malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1066 #define malloc ______malloc
+
+======================================================================
+Analyzing function: free (context: ./malloc.c)
+======================================================================
+
+>>> Functions CALLING free (limit 50):
+alloc.c free 127 free(ap)
+libos/umalloc.c free 25 free(void *ap)
+malloc.c free 137 free(ap)
+malloc.c free 205 void free(char *ap) { kfree(ap); }
+minix/include/minix/sffs.h free 52 int (*t_queryvol)(const char *path, u64_t *free, u64_t *total);
+minix/include/process.h free 36 #define free(X) gc_free(X)
+minix/kernel/alloc.c free 99 free(dev, bno) {
+minix/kernel/boot/libsa/stand.h free 445 #define free(x) Free(x, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h free 452 #define free(x) Free(x, NULL, 0)
+minix/kernel/bootstrap/default_pager.c free 94 vm_size_t free;
+minix/kernel/bootstrap/kalloc.c free 263 void free(void *addr)
+minix/kernel/check.c free 557 free(in)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h free 43 #define free _ffree
+minix/kernel/cmd/cron/cron.c free 177 void (*free)(void *obj);
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h free 71 #define free(a) my_free(a, __FILE__, __LINE__)
+minix/kernel/cmd/keyserv/keyserv_cache.c free 96 struct cachekey_disklist *free;
+minix/kernel/cmd/mandoc/compat_ohash.h free 31 void (*free)(void *, void *);
+minix/kernel/cmd/mdb/common/mdb/mdb_demangle.c free 57 .free = mdb_dem_free
+minix/kernel/cmd/sendmail/db/include/db_page.h free 55 u_int32_t free;
+minix/kernel/cmd/sgs/rtld/common/malloc.c free 289 free(void *ptr)
+minix/kernel/cmd/sh/blok.c free 174 free(ap)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 257 #define free(d) (_VMFL_(Vmregion), _ast_free((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 270 #define free(d) (_VMFL_(Vmregion), free((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 286 #define free(d) (_VMFL_(Vmregion), _VMNM_(fre,/,*,*,/,e)((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 58 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 173 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 583 extern void free(reg Void_t* data)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 585 extern void free(data)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 906 #define free ______free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 1065 #define free ______free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h free 311 Block_t* free;
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h free 335 Block_t* free;
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmprofile.c free 59 Vmulong_t free;
+minix/kernel/contrib/ast/src/lib/libpp/pplib.h free 847 #define free(p) vmfree(Vmregion,(void *)p)
+minix/kernel/inkernel/utils.c free 66 free( where )
+minix/kernel/mkfs.c free 398 free(bno)
+minix/kernel/palloc.c free 36 free(cptr)
+minix/kernel/restor.c free 522 free(in)
+minix/kernel/stand/lib/sa/malloc.c free 81 free(void *addr)
+minix/kernel/uts/common/fs/ufs/ufs_alloc.c free 623 free(struct inode *ip, daddr_t bno, off_t size, int flags)
+minix/kernel/uts/common/io/bnxe/577xx/drivers/common/lm/l4/include/lm_l4st.h free 163 u8_t * free;
+minix/kernel/uts/common/io/bnxe/577xx/drivers/common/lm/l4/include/lm_l4st.h free 175 u8_t * free;
+minix/kernel/uts/common/sys/flock_impl.h free 471 int free;
+minix/kernel/uts/common/sys/pg.h free 87 void (*free)(struct pg *);
+minix/kernel/uts/intel/io/vmm/seg_vmm.c free 84 .free = segvmm_free,
+minix/kernel/zone.h free 20 struct zone_obj *free;
+minix/lib/i386/kernel/i386at/gpl/linux/include/linux/skbuff.h free 89 free,
+minix/lib/i386/kernel/i386at/gpl/linux/include/net/sock.h free 298 int free);
+minix/lib/i386/kernel/i386at/gpl/linux/linux_kmem.c free 60 unsigned short free;
+minix/lib/libarchive/archive_read_private.h free 65 int (*free)(struct archive_read_filter_bidder *);
+
+>>> Functions CALLED BY free (limit 50):
+minix/include/minix/sffs.h <global> 52 int (*t_queryvol)(const char *path, u64_t *free, u64_t *total);
+minix/include/process.h <global> 36 #define free(X) gc_free(X)
+minix/kernel/boot/i386/btx/btx/btx.S <global> 210 movzwl %ss:BDA_MEM,%eax #Get free memory
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 49 #undef free
+minix/kernel/bootstrap/default_pager.c <global> 94 vm_size_t free;
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1244 free(c->obj);
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1245 free(c);
+minix/kernel/cmd/ast/ksh/builtins/alias.c <global> 44 #undef free
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h <global> 43 #define free _ffree
+minix/kernel/cmd/cron/cron.c <global> 177 void (*free)(void *obj);
+minix/kernel/cmd/fmtmsg/main.c <global> 79 extern void free();
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h <global> 71 #define free(a) my_free(a, __FILE__, __LINE__)
+minix/kernel/cmd/hal/tools/hal-storage-mount.c <global> 1049 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-shared.c <global> 499 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-shared.c <global> 605 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-zpool.c <global> 156 free (adt_data);
+minix/kernel/cmd/keyserv/keyserv_cache.c <global> 96 struct cachekey_disklist *free;
+minix/kernel/cmd/ldap/common/convutf8.c <global> 136 free(dest);
+minix/kernel/cmd/ldap/common/convutf8.c <global> 144 free(dest);
+minix/kernel/cmd/listen/nstoa.c <global> 79 extern void free();
+minix/kernel/cmd/mailx/hdr/def.h <global> 646 extern void free();
+minix/kernel/cmd/mandoc/compat_ohash.h <global> 31 void (*free)(void *, void *);
+minix/kernel/cmd/mdb/common/mdb/mdb_demangle.c <global> 57 .free = mdb_dem_free
+minix/kernel/cmd/nscd/nscd_switch.h <global> 83 int free;
+minix/kernel/cmd/sendmail/db/include/db_page.h <global> 55 u_int32_t free;
+minix/kernel/cmd/ttymon/sttyparse.c <global> 566 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 572 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 577 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 583 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 588 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 596 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 601 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 607 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 616 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 624 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 629 free((void *)r);
+minix/kernel/cmd/ypcmd/getlist.c <global> 39 extern void free();
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 481 extern __MANGLE__ void free __PROTO__((__V_*));
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 4417 free((char *)proto);
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 968 extern void free OF((voidpf ptr));
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 3617 extern void free OF((voidpf ptr));
+minix/kernel/contrib/ast/src/lib/libast/cdt/cdtlib.h <global> 179 extern void free _ARG_((Void_t*));
+minix/kernel/contrib/ast/src/lib/libast/hash/hashlib.h <global> 48 Hash_free_f free;
+minix/kernel/contrib/ast/src/lib/libast/sfio/sfhdr.h <global> 1213 extern void free _ARG_((void *));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 58 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 151 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 166 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 173 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 905 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 906 #define free ______free
+
+======================================================================
+Analyzing function: realloc (context: ./malloc.c)
+======================================================================
+
+>>> Functions CALLING realloc (limit 50):
+alloc.c realloc 147 realloc(p, nbytes)
+malloc.c realloc 157 realloc(p, nbytes)
+malloc.c realloc 206 char *realloc(char *ptr, unsigned nbytes) { return krealloc(ptr, nbytes); }
+minix/kernel/boot/include/stdlib.h realloc 105 void *realloc(void *, size_t) __result_use_check __alloc_size(2);
+minix/kernel/boot/libsa/stand.h realloc 446 #define realloc(x, y) Realloc(x, y, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h realloc 453 #define realloc(x, y) Realloc(x, y, NULL, 0)
+minix/kernel/bootstrap/kalloc.c realloc 258 void *realloc(void *block, vm_size_t size)
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h realloc 73 #define realloc(a, s) my_realloc(a, s, __FILE__, __LINE__)
+minix/kernel/cmd/sgs/libelf/misc/elf_dem.h realloc 66 #define realloc __can_not_use_realloc_in_elf__
+minix/kernel/cmd/sgs/rtld/common/malloc.c realloc 231 realloc(void *ptr, size_t size)
+minix/kernel/cmd/sh/blok.c realloc 313 realloc(pp, nbytes)
+minix/kernel/cmd/sh/blok.c realloc 318 realloc(pp, nbytes)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h realloc 255 #define realloc(d,s) (_VMFL_(Vmregion), _ast_realloc((Void_t*)(d),(size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h realloc 268 #define realloc(d,s) (_VMFL_(Vmregion), realloc((Void_t*)(d),(size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h realloc 282 #define realloc(d,s) (_VMFL_(Vmregion), _VMNM_(reallo,/,*,*,/,c)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 36 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 67 #define realloc _ast_realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 176 #define realloc _ast_realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 530 extern Void_t* realloc(reg Void_t* data, reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 532 extern Void_t* realloc(data,size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 912 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 1068 #define realloc ______realloc
+minix/kernel/inkernel/utils.c realloc 99 realloc(ptr, size)
+minix/kernel/stand/lib/sa/malloc.c realloc 63 realloc(void *oldaddr, size_t size)
+minix/lib/libbsdmalloc/common/malloc.bsd43.c realloc 263 realloc(void *cp, size_t nbytes)
+minix/lib/libmagicrt/include/magic_real_mem.h realloc 9 #define realloc magic_real_realloc
+minix/lib/libmalloc/common/malloc.c realloc 721 realloc(void *ptr, size_t size)
+minix/lib/libmapmalloc/common/textmem.c realloc 155 realloc(void *ptr, size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c realloc 250 realloc(void * ptr, size_t bytes)
+minix/lib/libsasl/lib/saslint.h realloc 331 sasl_realloc_t *realloc;
+minix/lib/libumem/common/malloc.c realloc 391 realloc(void *buf_arg, size_t newsize)
+minix/lib/openssl/sunos/pxk/alloc_old.c realloc 406 char *realloc(oldBlock, nBytes)
+minix/lib/pxk/alloc_old.c realloc 405 char *realloc(oldBlock, nBytes)
+minix/lib/util/gmake-3.66/glob/glob.c realloc 152 #define realloc my_realloc
+minix/lib/watchmalloc/common/malloc.c realloc 285 realloc(void *old, size_t size)
+minix/servers/lib/libc/port/gen/malloc.c realloc 300 realloc(void *old, size_t size)
+minix/servers/pxk/malloc.c realloc 356 realloc(void *old_base, vm_size_t new_size)
+
+>>> Functions CALLED BY realloc (limit 50):
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h <global> 73 #define realloc(a, s) my_realloc(a, s, __FILE__, __LINE__)
+minix/kernel/cmd/ldap/common/convutf8.c <global> 122 if ((tmp = (char *) realloc(dest, size)) == NULL)
+minix/kernel/cmd/ldap/common/convutf8.c <global> 143 if ((tmp = (char *) realloc(dest, size + 1)) == NULL) {
+minix/kernel/cmd/lp/filter/postscript/dpost/ps_include.c <global> 54 extern char *calloc(), *realloc();
+minix/kernel/cmd/lp/model/lp.tell.c <global> 44 *realloc();
+minix/kernel/cmd/sgs/libelf/misc/elf_dem.h <global> 66 #define realloc __can_not_use_realloc_in_elf__
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 478 extern __MANGLE__ __V_* realloc __PROTO__((__V_*, size_t));
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 4481 if (!(proto = (( 0)?( Proto_t*)realloc((char *)( 0),sizeof( Proto_t)*( 1)+( 5 * n + 2)):( Proto_t*)calloc(1,sizeof( Proto_t)*( 1)+( 5 * n + 2)))))
+minix/kernel/contrib/ast/src/lib/libast/cdt/cdtlib.h <global> 178 extern Void_t* realloc _ARG_((Void_t*, size_t));
+minix/kernel/contrib/ast/src/lib/libast/sfio/sfhdr.h <global> 1212 extern void * realloc _ARG_((void *, size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 36 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 66 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 67 #define realloc _ast_realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 157 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 169 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 176 #define realloc _ast_realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 911 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 912 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1023 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1024 extern Void_t* realloc _ARG_((Void_t*, size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1068 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h <global> 76 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h <global> 324 #undef realloc
+minix/kernel/contrib/ast/src/lib/libpp/pplib.h <global> 749 extern void * realloc(void *, size_t);
+minix/kernel/head/iso/stdlib_iso.h <global> 154 extern void *realloc(void *, size_t);
+minix/kernel/head/malloc.h <global> 70 void *realloc(void *, size_t);
+minix/kernel/head/malloc.h <global> 78 using std::realloc;
+minix/kernel/head/stdlib.h <global> 77 using std::realloc;
+minix/kernel/stand/lib/sa/stdlib.h <global> 46 extern void *realloc(void *, size_t);
+minix/kernel/uts/common/gssapi/mechs/krb5/krb5/krb/copy_auth.c <global> 208 new = realloc(fctx->out,
+minix/lib/gss_mechs/mech_krb5/mech/util_buffer_set.c <global> 78 set->elements = (gss_buffer_desc *)realloc(set->elements,
+minix/lib/libmagicrt/include/magic_real_mem.h <global> 9 #define realloc magic_real_realloc
+minix/lib/libmagicrt/magic_mem.c <global> 70 PUBLIC void *(*magic_real_realloc)(void *ptr, size_t size) = &realloc;
+minix/lib/libsasl/include/saslplug.h <global> 77 sasl_realloc_t *realloc;
+minix/lib/libsasl/lib/common.c <global> 115 (sasl_realloc_t *) &realloc,
+minix/lib/libsasl/lib/saslint.h <global> 331 sasl_realloc_t *realloc;
+minix/lib/libtecla/common/getline.c <global> 9974 char *new_prompt = gl->prompt ? realloc(gl->prompt, size) : malloc(size);
+minix/lib/util/gmake-3.66/glob/glob.c <global> 108 extern char *malloc (), *realloc ();
+minix/lib/util/gmake-3.66/glob/glob.c <global> 152 #define realloc my_realloc
+minix/lib/util/gmake-3.66/make.h <global> 159 extern char *malloc (), *realloc ();
+alloc.c realloc 147 realloc(p, nbytes)
+commands/cleantmp/cleantmp.c addpath 102 (path= (char *) realloc((void *) path,
+commands/minix-service/parse.c do_ipc 704 list= realloc(list, listsize);
+commands/remsync/remsync.c allocate 63 if ((mem= mem == nil ? malloc(size) : realloc(mem, size)) == nil) {
+commands/writeisofs/writeisofs.c maketree 367 if(!(dirnodes=realloc(dirnodes, used_dirnodes*sizeof(*dirnodes)))) {
+libos/csh/alloc.c Realloc 67 if ((ptr = realloc(p, n)) == NULL) {
+libos/date/bk_date.c main 209 if ((buf = realloc(buf, bufsiz <<= 1)) == NULL)
+libos/date/date.c main 219 if ((buf = realloc(buf, bufsiz <<= 1)) == NULL)
+libos/ed/ed.h REALLOC 131 if ((ts = (char *) realloc((b), ti += max((i), MINBUFSZ))) == NULL) { \
+libos/ed/glbl.c set_active_node 161 if ((ts = (line_t **) realloc(active_list,
+
+======================================================================
+Analyzing function: malloc (context: ./minix/lib/libmalloc/common/malloc.c)
+======================================================================
+
+>>> Functions CALLING malloc (limit 50):
+alloc.c malloc 62 malloc(nbytes)
+libos/sh/options.h malloc 39 unsigned char malloc;
+libos/umalloc.c malloc 64 malloc(size_t nbytes)
+malloc.c malloc 72 malloc(nbytes)
+malloc.c malloc 204 char *malloc(unsigned nbytes) { return kalloc(nbytes); }
+minix/include/process.h malloc 35 #define malloc(X) gc_malloc(X)
+minix/kernel/boot/include/stdlib.h malloc 98 void *malloc(size_t) __malloc_like __result_use_check __alloc_size(1);
+minix/kernel/boot/libsa/stand.h malloc 442 #define malloc(x) Malloc(x, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h malloc 449 #define malloc(x) Malloc(x, NULL, 0)
+minix/kernel/bootstrap/kalloc.c malloc 253 void *malloc(vm_size_t size)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h malloc 41 #define malloc _fmalloc
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h malloc 72 #define malloc(a) my_malloc(a, __FILE__, __LINE__)
+minix/kernel/cmd/sgs/rtld/common/malloc.c malloc 159 malloc(size_t size)
+minix/kernel/common/tsol/ltos.c malloc 57 #define malloc(l) kmem_alloc(l, KM_NOSLEEP)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 254 #define malloc(s) (_VMFL_(Vmregion), _ast_malloc((size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 267 #define malloc(s) (_VMFL_(Vmregion), malloc((size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 280 #define malloc(s) (_VMFL_(Vmregion), _VMNM_(mallo,/,*,*,/,c)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 32 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 60 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 174 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 509 extern Void_t* malloc(reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 511 extern Void_t* malloc(size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 908 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 1066 #define malloc ______malloc
+minix/kernel/inkernel/utils.c malloc 49 malloc( size )
+minix/kernel/malloc.c malloc 28 malloc(mp, size)
+minix/kernel/stand/lib/sa/malloc.c malloc 36 malloc(size_t size)
+minix/lib/libbsdmalloc/common/malloc.bsd43.c malloc 96 malloc(size_t nbytes)
+minix/lib/libmagicrt/include/magic_real_mem.h malloc 6 #define malloc magic_real_malloc
+minix/lib/libmalloc/common/malloc.c malloc 181 malloc(size_t nbytes)
+minix/lib/libmapmalloc/common/textmem.c malloc 94 malloc(size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c malloc 234 malloc(size_t bytes)
+minix/lib/libpkg/common/nhash.c malloc 41 #define malloc bkmem_alloc
+minix/lib/libpkg/common/nhash.h malloc 63 #define malloc bkmem_alloc
+minix/lib/libsasl/lib/saslint.h malloc 329 sasl_malloc_t *malloc;
+minix/lib/openssl/lib/posix/net/bpf_compat.h malloc 45 #define malloc(size, type, canwait) bpf_alloc(size, canwait)
+minix/lib/openssl/sunos/include/process.h malloc 30 #define malloc(X) gc_malloc(X)
+minix/lib/openssl/sunos/pxk/alloc_old.c malloc 548 char *malloc(num)
+minix/lib/pxk/alloc_old.c malloc 547 char *malloc(num)
+minix/lib/watchmalloc/common/malloc.c malloc 162 malloc(size_t size)
+minix/malloc.c malloc 28 malloc(mp, size)
+minix/servers/lib/libc/port/gen/malloc.c malloc 161 malloc(size_t size)
+minix/servers/net/bpf_compat.h malloc 45 #define malloc(size, type, canwait) bpf_alloc(size, canwait)
+minix/servers/pxk/malloc.c malloc 232 malloc(register vm_size_t size)
+
+>>> Functions CALLED BY malloc (limit 50):
+commands/cawf/proto.h <global> 73 char *malloc(unsigned size);
+commands/devmand/main.c <global> 312 malloc(sizeof(struct devmand_usb_match_id));
+libos/sh/options.h <global> 39 unsigned char malloc;
+minix/commands/cawf/proto.h <global> 73 char *malloc(unsigned size);
+minix/commands/devmand/main.c <global> 312 malloc(sizeof(struct devmand_usb_match_id));
+minix/include/process.h <global> 35 #define malloc(X) gc_malloc(X)
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 47 #ifdef malloc
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 48 #undef malloc
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 949 malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1036 malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1115 binding = (binding_bucket *) malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1190 c = (obj_list *) malloc(sizeof (obj_list));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1191 c->obj = (obj_com *) malloc(sizeof (obj_com));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1192 fullname = (char *)malloc(strlen(com->obj->ename)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h <global> 41 #define malloc _fmalloc
+minix/kernel/cmd/fmtmsg/main.c <global> 78 extern void *malloc();
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h <global> 72 #define malloc(a) my_malloc(a, __FILE__, __LINE__)
+minix/kernel/cmd/fs.d/fsck.c <global> 82 char *malloc();
+minix/kernel/cmd/fs.d/ufs/fsdb/fsdb.c <global> 277 extern char *malloc(), *calloc();
+minix/kernel/cmd/fs.d/ufs/lockfs/lockfs.c <global> 122 char *malloc();
+minix/kernel/cmd/ldap/common/convutf8.c <global> 90 if ((dest = (char *)malloc(size)) == NULL) {
+minix/kernel/cmd/listen/lssmb.c <global> 58 extern char *malloc();
+minix/kernel/cmd/lp/filter/postscript/common/ext.h <global> 51 extern char *malloc();
+minix/kernel/cmd/lp/filter/postscript/postcomm/postcomm.h <global> 208 char *malloc();
+minix/kernel/cmd/lp/model/lp.tell.c <global> 43 *malloc(),
+minix/kernel/cmd/mailx/hdr/def.h <global> 647 extern char *malloc();
+minix/kernel/cmd/sendmail/include/sm/conf.h <global> 1312 extern char *malloc();
+minix/kernel/cmd/sendmail/include/sm/conf.h <global> 1413 extern void *malloc();
+minix/kernel/cmd/sgs/rtld/common/_rtld.h <global> 738 extern void *malloc(size_t);
+minix/kernel/cmd/sgs/rtld/common/malloc.c <global> 157 #pragma weak lmalloc = malloc
+minix/kernel/cmd/tcpd/scaffold.c <global> 28 extern char *malloc();
+minix/kernel/cmd/vgrind/regexp.c <global> 109 char *malloc();
+minix/kernel/cmd/ypcmd/mknetid/mknetid.c <global> 58 extern char *malloc();
+minix/kernel/cmd/ypcmd/udpublickey.c <global> 43 extern char *malloc();
+minix/kernel/common/tsol/ltos.c <global> 57 #define malloc(l) kmem_alloc(l, KM_NOSLEEP)
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 966 extern voidp malloc OF((uInt size));
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 3616 extern voidp malloc OF((uInt size));
+minix/kernel/contrib/ast/src/lib/libast/cdt/cdtlib.h <global> 177 extern Void_t* malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/sfio/sfhdr.h <global> 1211 extern void * malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 32 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 59 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 60 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 153 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 167 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 174 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 907 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 908 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1010 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1011 extern Void_t* malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1066 #define malloc ______malloc
+
+======================================================================
+Analyzing function: free (context: ./minix/lib/libmalloc/common/malloc.c)
+======================================================================
+
+>>> Functions CALLING free (limit 50):
+alloc.c free 127 free(ap)
+libos/umalloc.c free 25 free(void *ap)
+malloc.c free 137 free(ap)
+malloc.c free 205 void free(char *ap) { kfree(ap); }
+minix/include/minix/sffs.h free 52 int (*t_queryvol)(const char *path, u64_t *free, u64_t *total);
+minix/include/process.h free 36 #define free(X) gc_free(X)
+minix/kernel/alloc.c free 99 free(dev, bno) {
+minix/kernel/boot/libsa/stand.h free 445 #define free(x) Free(x, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h free 452 #define free(x) Free(x, NULL, 0)
+minix/kernel/bootstrap/default_pager.c free 94 vm_size_t free;
+minix/kernel/bootstrap/kalloc.c free 263 void free(void *addr)
+minix/kernel/check.c free 557 free(in)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h free 43 #define free _ffree
+minix/kernel/cmd/cron/cron.c free 177 void (*free)(void *obj);
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h free 71 #define free(a) my_free(a, __FILE__, __LINE__)
+minix/kernel/cmd/keyserv/keyserv_cache.c free 96 struct cachekey_disklist *free;
+minix/kernel/cmd/mandoc/compat_ohash.h free 31 void (*free)(void *, void *);
+minix/kernel/cmd/mdb/common/mdb/mdb_demangle.c free 57 .free = mdb_dem_free
+minix/kernel/cmd/sendmail/db/include/db_page.h free 55 u_int32_t free;
+minix/kernel/cmd/sgs/rtld/common/malloc.c free 289 free(void *ptr)
+minix/kernel/cmd/sh/blok.c free 174 free(ap)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 257 #define free(d) (_VMFL_(Vmregion), _ast_free((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 270 #define free(d) (_VMFL_(Vmregion), free((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 286 #define free(d) (_VMFL_(Vmregion), _VMNM_(fre,/,*,*,/,e)((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 58 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 173 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 583 extern void free(reg Void_t* data)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 585 extern void free(data)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 906 #define free ______free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 1065 #define free ______free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h free 311 Block_t* free;
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h free 335 Block_t* free;
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmprofile.c free 59 Vmulong_t free;
+minix/kernel/contrib/ast/src/lib/libpp/pplib.h free 847 #define free(p) vmfree(Vmregion,(void *)p)
+minix/kernel/inkernel/utils.c free 66 free( where )
+minix/kernel/mkfs.c free 398 free(bno)
+minix/kernel/palloc.c free 36 free(cptr)
+minix/kernel/restor.c free 522 free(in)
+minix/kernel/stand/lib/sa/malloc.c free 81 free(void *addr)
+minix/kernel/uts/common/fs/ufs/ufs_alloc.c free 623 free(struct inode *ip, daddr_t bno, off_t size, int flags)
+minix/kernel/uts/common/io/bnxe/577xx/drivers/common/lm/l4/include/lm_l4st.h free 163 u8_t * free;
+minix/kernel/uts/common/io/bnxe/577xx/drivers/common/lm/l4/include/lm_l4st.h free 175 u8_t * free;
+minix/kernel/uts/common/sys/flock_impl.h free 471 int free;
+minix/kernel/uts/common/sys/pg.h free 87 void (*free)(struct pg *);
+minix/kernel/uts/intel/io/vmm/seg_vmm.c free 84 .free = segvmm_free,
+minix/kernel/zone.h free 20 struct zone_obj *free;
+minix/lib/i386/kernel/i386at/gpl/linux/include/linux/skbuff.h free 89 free,
+minix/lib/i386/kernel/i386at/gpl/linux/include/net/sock.h free 298 int free);
+minix/lib/i386/kernel/i386at/gpl/linux/linux_kmem.c free 60 unsigned short free;
+minix/lib/libarchive/archive_read_private.h free 65 int (*free)(struct archive_read_filter_bidder *);
+
+>>> Functions CALLED BY free (limit 50):
+minix/include/minix/sffs.h <global> 52 int (*t_queryvol)(const char *path, u64_t *free, u64_t *total);
+minix/include/process.h <global> 36 #define free(X) gc_free(X)
+minix/kernel/boot/i386/btx/btx/btx.S <global> 210 movzwl %ss:BDA_MEM,%eax #Get free memory
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 49 #undef free
+minix/kernel/bootstrap/default_pager.c <global> 94 vm_size_t free;
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1244 free(c->obj);
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1245 free(c);
+minix/kernel/cmd/ast/ksh/builtins/alias.c <global> 44 #undef free
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h <global> 43 #define free _ffree
+minix/kernel/cmd/cron/cron.c <global> 177 void (*free)(void *obj);
+minix/kernel/cmd/fmtmsg/main.c <global> 79 extern void free();
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h <global> 71 #define free(a) my_free(a, __FILE__, __LINE__)
+minix/kernel/cmd/hal/tools/hal-storage-mount.c <global> 1049 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-shared.c <global> 499 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-shared.c <global> 605 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-zpool.c <global> 156 free (adt_data);
+minix/kernel/cmd/keyserv/keyserv_cache.c <global> 96 struct cachekey_disklist *free;
+minix/kernel/cmd/ldap/common/convutf8.c <global> 136 free(dest);
+minix/kernel/cmd/ldap/common/convutf8.c <global> 144 free(dest);
+minix/kernel/cmd/listen/nstoa.c <global> 79 extern void free();
+minix/kernel/cmd/mailx/hdr/def.h <global> 646 extern void free();
+minix/kernel/cmd/mandoc/compat_ohash.h <global> 31 void (*free)(void *, void *);
+minix/kernel/cmd/mdb/common/mdb/mdb_demangle.c <global> 57 .free = mdb_dem_free
+minix/kernel/cmd/nscd/nscd_switch.h <global> 83 int free;
+minix/kernel/cmd/sendmail/db/include/db_page.h <global> 55 u_int32_t free;
+minix/kernel/cmd/ttymon/sttyparse.c <global> 566 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 572 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 577 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 583 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 588 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 596 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 601 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 607 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 616 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 624 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 629 free((void *)r);
+minix/kernel/cmd/ypcmd/getlist.c <global> 39 extern void free();
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 481 extern __MANGLE__ void free __PROTO__((__V_*));
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 4417 free((char *)proto);
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 968 extern void free OF((voidpf ptr));
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 3617 extern void free OF((voidpf ptr));
+minix/kernel/contrib/ast/src/lib/libast/cdt/cdtlib.h <global> 179 extern void free _ARG_((Void_t*));
+minix/kernel/contrib/ast/src/lib/libast/hash/hashlib.h <global> 48 Hash_free_f free;
+minix/kernel/contrib/ast/src/lib/libast/sfio/sfhdr.h <global> 1213 extern void free _ARG_((void *));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 58 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 151 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 166 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 173 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 905 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 906 #define free ______free
+
+======================================================================
+Analyzing function: realloc (context: ./minix/lib/libmalloc/common/malloc.c)
+======================================================================
+
+>>> Functions CALLING realloc (limit 50):
+alloc.c realloc 147 realloc(p, nbytes)
+malloc.c realloc 157 realloc(p, nbytes)
+malloc.c realloc 206 char *realloc(char *ptr, unsigned nbytes) { return krealloc(ptr, nbytes); }
+minix/kernel/boot/include/stdlib.h realloc 105 void *realloc(void *, size_t) __result_use_check __alloc_size(2);
+minix/kernel/boot/libsa/stand.h realloc 446 #define realloc(x, y) Realloc(x, y, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h realloc 453 #define realloc(x, y) Realloc(x, y, NULL, 0)
+minix/kernel/bootstrap/kalloc.c realloc 258 void *realloc(void *block, vm_size_t size)
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h realloc 73 #define realloc(a, s) my_realloc(a, s, __FILE__, __LINE__)
+minix/kernel/cmd/sgs/libelf/misc/elf_dem.h realloc 66 #define realloc __can_not_use_realloc_in_elf__
+minix/kernel/cmd/sgs/rtld/common/malloc.c realloc 231 realloc(void *ptr, size_t size)
+minix/kernel/cmd/sh/blok.c realloc 313 realloc(pp, nbytes)
+minix/kernel/cmd/sh/blok.c realloc 318 realloc(pp, nbytes)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h realloc 255 #define realloc(d,s) (_VMFL_(Vmregion), _ast_realloc((Void_t*)(d),(size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h realloc 268 #define realloc(d,s) (_VMFL_(Vmregion), realloc((Void_t*)(d),(size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h realloc 282 #define realloc(d,s) (_VMFL_(Vmregion), _VMNM_(reallo,/,*,*,/,c)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 36 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 67 #define realloc _ast_realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 176 #define realloc _ast_realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 530 extern Void_t* realloc(reg Void_t* data, reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 532 extern Void_t* realloc(data,size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 912 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c realloc 1068 #define realloc ______realloc
+minix/kernel/inkernel/utils.c realloc 99 realloc(ptr, size)
+minix/kernel/stand/lib/sa/malloc.c realloc 63 realloc(void *oldaddr, size_t size)
+minix/lib/libbsdmalloc/common/malloc.bsd43.c realloc 263 realloc(void *cp, size_t nbytes)
+minix/lib/libmagicrt/include/magic_real_mem.h realloc 9 #define realloc magic_real_realloc
+minix/lib/libmalloc/common/malloc.c realloc 721 realloc(void *ptr, size_t size)
+minix/lib/libmapmalloc/common/textmem.c realloc 155 realloc(void *ptr, size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c realloc 250 realloc(void * ptr, size_t bytes)
+minix/lib/libsasl/lib/saslint.h realloc 331 sasl_realloc_t *realloc;
+minix/lib/libumem/common/malloc.c realloc 391 realloc(void *buf_arg, size_t newsize)
+minix/lib/openssl/sunos/pxk/alloc_old.c realloc 406 char *realloc(oldBlock, nBytes)
+minix/lib/pxk/alloc_old.c realloc 405 char *realloc(oldBlock, nBytes)
+minix/lib/util/gmake-3.66/glob/glob.c realloc 152 #define realloc my_realloc
+minix/lib/watchmalloc/common/malloc.c realloc 285 realloc(void *old, size_t size)
+minix/servers/lib/libc/port/gen/malloc.c realloc 300 realloc(void *old, size_t size)
+minix/servers/pxk/malloc.c realloc 356 realloc(void *old_base, vm_size_t new_size)
+
+>>> Functions CALLED BY realloc (limit 50):
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h <global> 73 #define realloc(a, s) my_realloc(a, s, __FILE__, __LINE__)
+minix/kernel/cmd/ldap/common/convutf8.c <global> 122 if ((tmp = (char *) realloc(dest, size)) == NULL)
+minix/kernel/cmd/ldap/common/convutf8.c <global> 143 if ((tmp = (char *) realloc(dest, size + 1)) == NULL) {
+minix/kernel/cmd/lp/filter/postscript/dpost/ps_include.c <global> 54 extern char *calloc(), *realloc();
+minix/kernel/cmd/lp/model/lp.tell.c <global> 44 *realloc();
+minix/kernel/cmd/sgs/libelf/misc/elf_dem.h <global> 66 #define realloc __can_not_use_realloc_in_elf__
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 478 extern __MANGLE__ __V_* realloc __PROTO__((__V_*, size_t));
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 4481 if (!(proto = (( 0)?( Proto_t*)realloc((char *)( 0),sizeof( Proto_t)*( 1)+( 5 * n + 2)):( Proto_t*)calloc(1,sizeof( Proto_t)*( 1)+( 5 * n + 2)))))
+minix/kernel/contrib/ast/src/lib/libast/cdt/cdtlib.h <global> 178 extern Void_t* realloc _ARG_((Void_t*, size_t));
+minix/kernel/contrib/ast/src/lib/libast/sfio/sfhdr.h <global> 1212 extern void * realloc _ARG_((void *, size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 36 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 66 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 67 #define realloc _ast_realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 157 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 169 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 176 #define realloc _ast_realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 911 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 912 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1023 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1024 extern Void_t* realloc _ARG_((Void_t*, size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1068 #define realloc ______realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h <global> 76 #undef realloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h <global> 324 #undef realloc
+minix/kernel/contrib/ast/src/lib/libpp/pplib.h <global> 749 extern void * realloc(void *, size_t);
+minix/kernel/head/iso/stdlib_iso.h <global> 154 extern void *realloc(void *, size_t);
+minix/kernel/head/malloc.h <global> 70 void *realloc(void *, size_t);
+minix/kernel/head/malloc.h <global> 78 using std::realloc;
+minix/kernel/head/stdlib.h <global> 77 using std::realloc;
+minix/kernel/stand/lib/sa/stdlib.h <global> 46 extern void *realloc(void *, size_t);
+minix/kernel/uts/common/gssapi/mechs/krb5/krb5/krb/copy_auth.c <global> 208 new = realloc(fctx->out,
+minix/lib/gss_mechs/mech_krb5/mech/util_buffer_set.c <global> 78 set->elements = (gss_buffer_desc *)realloc(set->elements,
+minix/lib/libmagicrt/include/magic_real_mem.h <global> 9 #define realloc magic_real_realloc
+minix/lib/libmagicrt/magic_mem.c <global> 70 PUBLIC void *(*magic_real_realloc)(void *ptr, size_t size) = &realloc;
+minix/lib/libsasl/include/saslplug.h <global> 77 sasl_realloc_t *realloc;
+minix/lib/libsasl/lib/common.c <global> 115 (sasl_realloc_t *) &realloc,
+minix/lib/libsasl/lib/saslint.h <global> 331 sasl_realloc_t *realloc;
+minix/lib/libtecla/common/getline.c <global> 9974 char *new_prompt = gl->prompt ? realloc(gl->prompt, size) : malloc(size);
+minix/lib/util/gmake-3.66/glob/glob.c <global> 108 extern char *malloc (), *realloc ();
+minix/lib/util/gmake-3.66/glob/glob.c <global> 152 #define realloc my_realloc
+minix/lib/util/gmake-3.66/make.h <global> 159 extern char *malloc (), *realloc ();
+alloc.c realloc 147 realloc(p, nbytes)
+commands/cleantmp/cleantmp.c addpath 102 (path= (char *) realloc((void *) path,
+commands/minix-service/parse.c do_ipc 704 list= realloc(list, listsize);
+commands/remsync/remsync.c allocate 63 if ((mem= mem == nil ? malloc(size) : realloc(mem, size)) == nil) {
+commands/writeisofs/writeisofs.c maketree 367 if(!(dirnodes=realloc(dirnodes, used_dirnodes*sizeof(*dirnodes)))) {
+libos/csh/alloc.c Realloc 67 if ((ptr = realloc(p, n)) == NULL) {
+libos/date/bk_date.c main 209 if ((buf = realloc(buf, bufsiz <<= 1)) == NULL)
+libos/date/date.c main 219 if ((buf = realloc(buf, bufsiz <<= 1)) == NULL)
+libos/ed/ed.h REALLOC 131 if ((ts = (char *) realloc((b), ti += max((i), MINBUFSZ))) == NULL) { \
+libos/ed/glbl.c set_active_node 161 if ((ts = (line_t **) realloc(active_list,
+
+======================================================================
+Analyzing function: calloc (context: ./minix/lib/libmalloc/common/malloc.c)
+======================================================================
+
+>>> Functions CALLING calloc (limit 50):
+alloc.c calloc 52 int calloc;
+malloc.c calloc 62 int calloc;
+minix/kernel/boot/include/stdlib.h calloc 90 void *calloc(size_t, size_t) __malloc_like __result_use_check
+minix/kernel/boot/libsa/stand.h calloc 444 #define calloc(x, y) Calloc(x, y, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h calloc 451 #define calloc(x, y) Calloc(x, y, NULL, 0)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h calloc 42 #define calloc _fcalloc
+minix/kernel/cmd/mandoc/compat_ohash.h calloc 30 void *(*calloc)(size_t, size_t, void *);
+minix/kernel/cmd/sgs/rtld/common/malloc.c calloc 207 calloc(size_t num, size_t size)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h calloc 256 #define calloc(n,s) (_VMFL_(Vmregion), _ast_calloc((size_t)n, (size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h calloc 269 #define calloc(n,s) (_VMFL_(Vmregion), calloc((size_t)n, (size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h calloc 284 #define calloc(n,s) (_VMFL_(Vmregion), _VMNM_(callo,/,*,*,/,c)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c calloc 30 #define calloc ______calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c calloc 56 #define calloc _ast_calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c calloc 171 #define calloc _ast_calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c calloc 487 extern Void_t* calloc(reg size_t n_obj, reg size_t s_obj)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c calloc 489 extern Void_t* calloc(n_obj, s_obj)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c calloc 902 #define calloc ______calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c calloc 1063 #define calloc ______calloc
+minix/kernel/include/subr.c calloc 110 calloc(num, size)
+minix/kernel/inkernel/utils.c calloc 88 calloc(nelem, elsize)
+minix/kernel/sh.misc.c calloc 34 calloc(i, j)
+minix/kernel/stand/lib/sa/malloc.c calloc 51 calloc(size_t number, size_t size)
+minix/lib/libmagicrt/include/magic_real_mem.h calloc 7 #define calloc magic_real_calloc
+minix/lib/libmalloc/common/malloc.c calloc 844 calloc(size_t num, size_t size)
+minix/lib/libmapmalloc/common/calloc.c calloc 36 calloc(size_t num, size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c calloc 331 calloc(size_t nelem, size_t bytes)
+minix/lib/libsasl/lib/saslint.h calloc 330 sasl_calloc_t *calloc;
+minix/lib/libumem/common/malloc.c calloc 123 calloc(size_t nelem, size_t elsize)
+minix/lib/openssl/sunos/pxk/alloc_old.c calloc 599 char *calloc(n, size)
+minix/lib/pxk/alloc_old.c calloc 598 char *calloc(n, size)
+minix/lib/watchmalloc/common/malloc.c calloc 1257 calloc(size_t num, size_t size)
+minix/servers/lib/libc/port/gen/calloc.c calloc 39 calloc(size_t num, size_t size)
+minix/subr.c calloc 110 calloc(num, size)
+subr.c calloc 110 calloc(num, size)
+
+>>> Functions CALLED BY calloc (limit 50):
+alloc.c <global> 52 int calloc;
+malloc.c <global> 62 int calloc;
+minix/kernel/cmd/ast/ksh/builtins/alias.c <global> 43 #undef calloc
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h <global> 42 #define calloc _fcalloc
+minix/kernel/cmd/fs.d/ufs/fsdb/fsdb.c <global> 277 extern char *malloc(), *calloc();
+minix/kernel/cmd/lp/filter/postscript/common/ext.h <global> 52 extern char *calloc();
+minix/kernel/cmd/lp/filter/postscript/dpost/ps_include.c <global> 54 extern char *calloc(), *realloc();
+minix/kernel/cmd/mailx/hdr/def.h <global> 643 extern char *calloc();
+minix/kernel/cmd/mandoc/compat_ohash.h <global> 30 void *(*calloc)(size_t, size_t, void *);
+minix/kernel/cmd/refer/hunt1.c <global> 32 char *calloc();
+minix/kernel/cmd/sgs/rtld/common/_rtld.h <global> 667 extern void *calloc(size_t, size_t);
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 479 extern __MANGLE__ __V_* calloc __PROTO__((size_t, size_t));
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 4481 if (!(proto = (( 0)?( Proto_t*)realloc((char *)( 0),sizeof( Proto_t)*( 1)+( 5 * n + 2)):( Proto_t*)calloc(1,sizeof( Proto_t)*( 1)+( 5 * n + 2)))))
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 967 extern voidp calloc OF((uInt items, uInt size));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 30 #define calloc ______calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 55 #undef calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 56 #define calloc _ast_calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 149 #undef calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 164 #undef calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 171 #define calloc _ast_calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 901 #undef calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 902 #define calloc ______calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1001 #undef calloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1002 extern Void_t* calloc _ARG_((size_t, size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1063 #define calloc ______calloc
+minix/kernel/contrib/ast/src/lib/libpp/pplib.h <global> 750 extern void * calloc(size_t, size_t);
+minix/kernel/contrib/zlib/zutil.c <global> 298 extern voidp calloc OF((uInt items, uInt size));
+minix/kernel/def.h <global> 203 char *calloc();
+minix/kernel/defs.h <global> 155 char *calloc(), *crypt(), *ctime(), *getenv(), *longname();
+minix/kernel/fmt.c <global> 21 char *calloc();
+minix/kernel/head/iso/stdlib_iso.h <global> 134 extern void *calloc(size_t, size_t);
+minix/kernel/head/malloc.h <global> 71 void *calloc(size_t, size_t);
+minix/kernel/head/malloc.h <global> 79 using std::calloc;
+minix/kernel/head/stdlib.h <global> 64 using std::calloc;
+minix/kernel/mach.h <global> 208 char *hgethome(), *calloc(), *ctime(), *getenv();
+minix/kernel/sh.h <global> 341 char *calloc();
+minix/kernel/stand/lib/sa/stdlib.h <global> 45 extern void *calloc(size_t, size_t);
+minix/kernel/uts/common/gssapi/mechs/krb5/krb5/krb/copy_auth.c <global> 266 fctx.out = calloc(fctx.space+1, sizeof (krb5_authdata *));
+minix/kernel/uts/common/io/ppp/spppcomp/zlib.c <global> 6033 extern voidp calloc OF((uInt items, uInt size));
+minix/kernel/whatis.c <global> 10 char *calloc();
+minix/kernel/xstr.c <global> 17 char *calloc();
+minix/lib/libmagicrt/include/magic_real_mem.h <global> 7 #define calloc magic_real_calloc
+minix/lib/libmagicrt/magic_mem.c <global> 68 PUBLIC void *(*magic_real_calloc)(size_t nmemb, size_t size) = &calloc;
+minix/lib/libpool/common/pool_xml.c <global> 2586 if ((tbl = calloc(max_attr, sizeof (dtype_tbl_t))) == NULL) {
+minix/lib/libsasl/include/saslplug.h <global> 76 sasl_calloc_t *calloc;
+minix/lib/libsasl/lib/common.c <global> 114 (sasl_calloc_t *) &calloc,
+minix/lib/libsasl/lib/saslint.h <global> 330 sasl_calloc_t *calloc;
+minix/lib/nsswitch/files/common/files_common.c <global> 538 fhp->fh_table = calloc(line * fhp->fh_nhtab, sizeof (files_hashent_t));
+minix/mkstr.c <global> 7 char *calloc();
+commands/devmand/main.c determine_type 526 mypath = (char *) calloc(1, strlen(path)+strlen(DEVMAN_TYPE_NAME)+1);
+
+======================================================================
+Analyzing function: memalign (context: ./minix/lib/libmalloc/common/malloc.c)
+======================================================================
+
+>>> Functions CALLING memalign (limit 50):
+minix/kernel/boot/libsa/stand.h memalign 443 #define memalign(x, y) Memalign(x, y, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h memalign 450 #define memalign(x, y) Memalign(x, y, NULL, 0)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h memalign 258 #define memalign(a,s) (_VMFL_(Vmregion), _ast_memalign((size_t)(a),(size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h memalign 271 #define memalign(a,s) (_VMFL_(Vmregion), memalign((size_t)(a),(size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h memalign 287 #define memalign(a,s) (_VMFL_(Vmregion), _VMNM_(memalig,/,*,*,/,n)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c memalign 175 #define memalign _ast_memalign
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c memalign 627 extern Void_t* memalign(reg size_t align, reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c memalign 629 extern Void_t* memalign(align, size)
+minix/lib/libmagicrt/include/magic_real_mem.h memalign 13 #define memalign magic_real_memalign
+minix/lib/libmalloc/common/malloc.c memalign 198 memalign(size_t alignment, size_t size)
+minix/lib/libmapmalloc/common/valloc.c memalign 48 memalign(size_t align, size_t nbytes)
+minix/lib/libmtmalloc/common/mtmalloc.c memalign 460 memalign(size_t alignment, size_t size)
+minix/lib/libumem/common/malloc.c memalign 149 memalign(size_t align, size_t size_arg)
+minix/lib/watchmalloc/common/malloc.c memalign 1116 memalign(size_t align, size_t nbytes)
+minix/servers/lib/libc/port/gen/memalign.c memalign 63 memalign(size_t align, size_t nbytes)
+
+>>> Functions CALLED BY memalign (limit 50):
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 155 #undef memalign
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 168 #undef memalign
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 175 #define memalign _ast_memalign
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1014 #undef memalign
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1015 extern Void_t* memalign _ARG_((size_t, size_t));
+minix/kernel/head/stdlib.h <global> 309 extern void *memalign(size_t, size_t);
+minix/lib/libmagicrt/include/magic_real_mem.h <global> 13 #define memalign magic_real_memalign
+minix/lib/libmagicrt/magic_mem.c <global> 76 PUBLIC void *(*magic_real_memalign)(size_t boundary, size_t size) = &memalign;
+minix/kernel/boot/efi/libefi/efipart.c efipart_realstrategy 1139 blkbuf = memalign(ioalign, bio_size);
+minix/kernel/boot/libsa/stand.h panic_action 443 #define memalign(x, y) Memalign(x, y, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h panic_action 450 #define memalign(x, y) Memalign(x, y, NULL, 0)
+minix/kernel/cmd/cmd-inet/usr.bin/ftp/main.c main 145 buf = (char *)memalign(getpagesize(), FTPBUFSIZ);
+minix/kernel/cmd/fs.d/autofs/automount.c compare_opts 406 if ((opttbl1 = memalign(sizeof (char *),
+minix/kernel/cmd/fs.d/autofs/automount.c compare_opts 430 if ((opttbl2 = memalign(sizeof (char *),
+minix/kernel/cmd/lockstat/lockstat.c main 1421 if ((data_buf = memalign(sizeof (uint64_t),
+minix/kernel/cmd/lockstat/lockstat.c main 1448 newlsp = memalign(sizeof (uint64_t),
+minix/kernel/cmd/mdb/common/mdb/mdb_umem.c mdb_umem_handler 104 ptr = memalign(align, nbytes);
+minix/kernel/cmd/mdb/common/mdb/mdb_umem.c mdb_alloc_align 180 ptr = memalign(align, nbytes);
+minix/kernel/cmd/od/od.c main 722 buffer.data = memalign(16, buffer.mask + 1);
+minix/kernel/cmd/svr4pkg/libinst/copyf.c copyFile 265 buf = memalign((size_t)pagesize, blocksize);
+minix/kernel/cmd/th_tools/th_define.c GETSTRUCT 51 ((s *) memalign(sizeof (void *), (num) * sizeof (s)))
+minix/kernel/cmd/th_tools/th_manage.c main 222 if ((hip = memalign(sizeof (void *),
+minix/kernel/contrib/ast/src/lib/libast/disc/sfdcdio.c sfdcdio 197 if(!(buf = (Void_t*)memalign(dio.d_mem,bufsize)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 201 extern Void_t* memalign _ARG_(( size_t, size_t ));
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 249 #undef memalign
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 258 #define memalign(a,s) (_VMFL_(Vmregion), _ast_memalign((size_t)(a),(size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 271 #define memalign(a,s) (_VMFL_(Vmregion), memalign((size_t)(a),(size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 287 #define memalign(a,s) (_VMFL_(Vmregion), _VMNM_(memalig,/,*,*,/,n)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c memalign 627 extern Void_t* memalign(reg size_t align, reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c memalign 629 extern Void_t* memalign(align, size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c posix_memalign 664 if(!(mem = memalign(align, size)) )
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c valloc 681 return VMRECORD(memalign(_Vmpagesize, size));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c pvalloc 694 return VMRECORD(memalign(_Vmpagesize, ROUND(size,_Vmpagesize)) );
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c vm_memalign_hook 806 r = memalign(align, size);
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c F2 848 extern Void_t* F2(_memalign, size_t,a, size_t,n) { return memalign(a, n); }
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c F2 865 extern Void_t* F2(__memalign, size_t,a, size_t,n) { return memalign(a, n); }
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c F2 882 extern Void_t* F2(__libc_memalign, size_t,a, size_t,n) { return memalign(a, n); }
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c F2 1040 extern Void_t* F2(_ast_memalign, size_t,a, size_t,n) { return memalign(a, n); }
+minix/lib/libmalloc/common/malloc.c memalign 198 memalign(size_t alignment, size_t size)
+minix/lib/libmalloc/common/malloc.c valloc 301 return (memalign(pagesize, size));
+minix/lib/libmapmalloc/common/valloc.c memalign 48 memalign(size_t align, size_t nbytes)
+minix/lib/libmtmalloc/common/mtmalloc.c memalign 460 memalign(size_t alignment, size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c valloc 742 return (memalign(pagesize, size));
+minix/lib/libnsl/rpc/svc_dg.c set_src_addr 333 opthdr = (struct T_opthdr *)memalign(sizeof (int ),
+minix/lib/libpkg/common/vfpops.c vfpOpen 270 p = (char *)memalign(pagesize, vfp->_vfpSize);
+minix/lib/libpkg/common/vfpops.c vfpOpen 309 vfp->_vfpStart = memalign((size_t)pagesize, vfp->_vfpSize);
+minix/lib/librsm/common/rsmlib.c rsm_get_interconnect_topology 2879 topology_ptr = (rsm_topology_t *)memalign(8, topology_data_size);
+minix/lib/libumem/common/malloc.c memalign 149 memalign(size_t align, size_t size_arg)
+minix/lib/libumem/common/malloc.c valloc 231 return (memalign(pagesize, size));
+minix/lib/watchmalloc/common/malloc.c memalign 1116 memalign(size_t align, size_t nbytes)
+
+======================================================================
+Analyzing function: valloc (context: ./minix/lib/libmalloc/common/malloc.c)
+======================================================================
+
+>>> Functions CALLING valloc (limit 50):
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h valloc 259 #define valloc(s) (_VMFL_(Vmregion), _ast_valloc((size_t)(s) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h valloc 272 #define valloc(s) (_VMFL_(Vmregion), valloc((size_t)(s) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h valloc 289 #define valloc(s) (_VMFL_(Vmregion), _VMNM_(vallo,/,*,*,/,c)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c valloc 672 extern Void_t* valloc(reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c valloc 674 extern Void_t* valloc(size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c valloc 914 #define valloc ______valloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c valloc 1069 #define valloc ______valloc
+minix/lib/libmagicrt/include/magic_real_mem.h valloc 12 #define valloc magic_real_valloc
+minix/lib/libmalloc/common/malloc.c valloc 292 valloc(size_t size)
+minix/lib/libmapmalloc/common/valloc.c valloc 36 valloc(size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c valloc 732 valloc(size_t size)
+minix/lib/libumem/common/malloc.c valloc 229 valloc(size_t size)
+minix/lib/watchmalloc/common/malloc.c valloc 1248 valloc(size_t size)
+minix/servers/lib/libc/port/gen/valloc.c valloc 35 valloc(size_t size)
+
+>>> Functions CALLED BY valloc (limit 50):
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 158 #undef valloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 913 #undef valloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 914 #define valloc ______valloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1027 #undef valloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1028 extern Void_t* valloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1069 #define valloc ______valloc
+minix/kernel/head/stdlib.h <global> 248 extern void *valloc(size_t);
+minix/lib/libmagicrt/include/magic_real_mem.h <global> 12 #define valloc magic_real_valloc
+minix/lib/libmagicrt/magic_mem.c <global> 75 PUBLIC void *(*magic_real_valloc)(size_t size) = &valloc;
+minix/kernel/boot/include/unistd.h setproctitle 583 void *valloc(size_t);
+minix/kernel/cmd/cpio/utils.c e_valloc 92 void *ret = valloc(size);
+minix/kernel/cmd/dd/dd.c main 938 ibuf = (unsigned char *)valloc(ibs + 10);
+minix/kernel/cmd/dd/dd.c main 952 obuf = (unsigned char *)valloc(obs + cbs + 10);
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 202 extern Void_t* valloc _ARG_(( size_t ));
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 250 #undef valloc
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 259 #define valloc(s) (_VMFL_(Vmregion), _ast_valloc((size_t)(s) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 272 #define valloc(s) (_VMFL_(Vmregion), valloc((size_t)(s) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h defined 289 #define valloc(s) (_VMFL_(Vmregion), _VMNM_(vallo,/,*,*,/,c)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c valloc 672 extern Void_t* valloc(reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c valloc 674 extern Void_t* valloc(size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c F1 855 extern Void_t* F1(_valloc, size_t,n) { return valloc(n); }
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c F1 872 extern Void_t* F1(__valloc, size_t,n) { return valloc(n); }
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c F1 889 extern Void_t* F1(__libc_valloc, size_t,n) { return valloc(n); }
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c F1 1052 extern Void_t* F1(_ast_valloc, size_t,n) { return valloc(n); }
+minix/lib/libdevinfo/devinfo.c di_init_impl 257 if ((pa = valloc(map_size)) == NULL) {
+minix/lib/libmalloc/common/malloc.c valloc 292 valloc(size_t size)
+minix/lib/libmapmalloc/common/valloc.c valloc 36 valloc(size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c valloc 732 valloc(size_t size)
+minix/lib/libumem/common/malloc.c valloc 229 valloc(size_t size)
+minix/lib/watchmalloc/common/malloc.c valloc 1248 valloc(size_t size)
+minix/llvm/include/magic_common.h MAGIC_MEMA_FUNCS 229 __X(posix_memalign), __X(valloc), __X(memalign), __X(aligned_alloc), \
+minix/servers/lib/libc/port/gen/valloc.c valloc 35 valloc(size_t size)
+
+======================================================================
+Analyzing function: kalloc (context: ./minix/kernel/kalloc.c)
+======================================================================
+
+>>> Functions CALLING kalloc (limit 50):
+minix/kalloc.c kalloc 93 char *kalloc(void ) {
+minix/kernel/bootstrap/kalloc.c kalloc 172 void *kalloc(vm_size_t size)
+minix/kernel/kalloc.c kalloc 217 vm_offset_t kalloc(size)
+minix/lib/klib/src/kalloc.c kalloc 25 void *kalloc(k_size_t size) { return malloc(size); }
+
+>>> Functions CALLED BY kalloc (limit 50):
+minix/kernel/bootstrap/def_pager_setup.c <global> 30 extern void *kalloc();
+minix/kernel/bootstrap/default_pager.c <global> 52 extern void *kalloc();
+minix/kernel/dag_sched.c <global> 23 extern void *kalloc();
+minix/lib/klib/include/kalloc.h <global> 15 void *kalloc(k_size_t size);
+minix/lib/klib/include/klib.h <global> 431 void *kalloc(k_size_t size);
+malloc.c malloc 204 char *malloc(unsigned nbytes) { return kalloc(nbytes); }
+minix/defs.h malloc 106 char *kalloc(void );
+minix/include/defs.h malloc 106 char *kalloc(void );
+minix/kalloc.c kalloc 93 char *kalloc(void ) {
+minix/kernel/bootstrap/def_pager_setup.c add_paging_file 53 fdp = (struct file_direct *) kalloc(sizeof *fdp);
+minix/kernel/bootstrap/default_pager.c create_paging_partition 179 part = (partition_t) kalloc(sizeof(struct part));
+minix/kernel/bootstrap/default_pager.c create_paging_partition 184 part->bitmap = (bm_entry_t *)kalloc(bmsize);
+minix/kernel/bootstrap/default_pager.c create_paging_partition 205 kalloc( n * sizeof(partition_t) );
+minix/kernel/bootstrap/default_pager.c pager_alloc 495 mapptr = (dp_map_t) kalloc(alloc_size);
+minix/kernel/bootstrap/default_pager.c pager_alloc 508 kalloc(INDIRECT_PAGEMAP_SIZE(size));
+minix/kernel/bootstrap/default_pager.c pager_alloc 512 mapptr = (vm_offset_t *) kalloc(PAGEMAP_SIZE(size));
+minix/kernel/bootstrap/default_pager.c pager_extend 654 kalloc(INDIRECT_PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 665 kalloc(INDIRECT_PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 692 new_mapptr = (dp_map_t) kalloc(PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_extend 705 kalloc(INDIRECT_PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 715 new_mapptr = (vm_offset_t *)kalloc(PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_extend 728 kalloc(INDIRECT_PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 743 new_mapptr = (dp_map_t) kalloc(PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 754 kalloc(PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_write_offset 1080 mapptr = (dp_map_t) kalloc(PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_write_offset 1095 kalloc(PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_port_alloc 1832 ds = (default_pager_t) kalloc(sizeof *ds);
+minix/kernel/bootstrap/default_pager.c seqnos_memory_object_create 1972 ds1 = (default_pager_t) kalloc(sizeof *ds1);
+minix/kernel/bootstrap/default_pager.c start_default_pager_thread 2692 dpt = (default_pager_thread_t *) kalloc(sizeof *dpt);
+minix/kernel/bootstrap/default_pager.c default_pager_object_create 2881 ds1 = (default_pager_t) kalloc(sizeof *ds1);
+minix/kernel/bootstrap/kalloc.c kalloc 172 void *kalloc(vm_size_t size)
+minix/kernel/bootstrap/kalloc.c malloc 255 return (void *)kalloc(size);
+minix/kernel/dag_sched.c dag_node_add_dep 94 struct dag_node_list *entry = (struct dag_node_list *)kalloc();
+minix/kernel/dag_sched.c heap_reserve 120 (struct dag_node **)kalloc(new_cap * sizeof(struct dag_node *));
+minix/kernel/inkernel/utils.c malloc 54 where = (int *)kalloc( size + sizeof( int ) );
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyin 1690 data = kalloc(length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyin_compat 3057 data = kalloc(length);
+minix/kernel/kalloc.c kalloc 217 vm_offset_t kalloc(size)
+minix/kernel/mmu64.c walkpml4 25 if(!alloc || (pdp = (pdpe_t*)kalloc()) == 0)
+minix/kernel/mmu64.c walkpml4 35 if(!alloc || (pd = (pde_t*)kalloc()) == 0)
+minix/kernel/mmu64.c walkpml4 45 if(!alloc || (pt = (pte_t*)kalloc()) == 0)
+minix/kernel/mmu64.c setupkvm64 89 if((pml4 = (pml4e_t*)kalloc()) == 0)
+minix/kernel/vm.c walkpgdir 51 if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+minix/kernel/vm.c setupkvm 130 if((pgdir = (pde_t*)kalloc()) == 0)
+minix/kernel/vm.c inituvm 199 mem = kalloc();
+minix/kernel/vm.c allocuvm 244 mem = kalloc();
+minix/kernel/vm.c copyuvm 366 if((mem = kalloc()) == 0)
+minix/kernel/vm.c exo_alloc_page 446 char *mem = kalloc();
+minix/lib/i386/kernel/i386/iopb.c io_port_create 180 io_port = (io_port_t) kalloc(sizeof(struct io_port));
+minix/lib/i386/kernel/i386/iopb.c iopb_create 272 ts = (iopb_tss_t) kalloc(sizeof (struct iopb_tss));
+
+======================================================================
+Analyzing function: kfree (context: ./minix/kernel/kalloc.c)
+======================================================================
+
+>>> Functions CALLING kfree (limit 50):
+minix/kalloc.c kfree 63 void kfree(char *v) {
+minix/kernel/bootstrap/kalloc.c kfree 223 kfree( void *data,
+minix/kernel/kalloc.c kfree 285 kfree(data, size)
+minix/lib/i386/kernel/i386at/gpl/linux/include/linux/malloc.h kfree 8 #define kfree linux_kfree
+minix/lib/klib/src/kalloc.c kfree 32 void kfree(void *ptr) { free(ptr); }
+
+>>> Functions CALLED BY kfree (limit 50):
+minix/kernel/dag_sched.c <global> 24 extern void kfree(void *, unsigned long );
+minix/kernel/tools/smatch/src/validation/sm_netdevice.c <global> 2 void kfree(void *);
+minix/kernel/tools/smatch/src/validation/sm_skb.c <global> 30 void kfree(void *data);
+minix/lib/i386/kernel/i386at/gpl/linux/include/linux/malloc.h <global> 8 #define kfree linux_kfree
+minix/lib/klib/include/kalloc.h <global> 22 void kfree(void *ptr);
+minix/lib/klib/include/klib.h <global> 432 void kfree(void *ptr);
+minix/lib/klib/include/klib.h <global> 473 void kfree(void *ptr);
+malloc.c free 205 void free(char *ap) { kfree(ap); }
+minix/defs.h free 107 void kfree(char *);
+minix/drivers/power/acpi/include/platform/aclinuxex.h AcpiOsFree 104 kfree (Memory);
+minix/include/defs.h AcpiOsFree 107 void kfree(char *);
+minix/kalloc.c freerange 56 kfree(p);
+minix/kalloc.c kfree 63 void kfree(char *v) {
+minix/kernel/bootstrap/def_pager_setup.c remove_paging_file 94 kfree(fdp, sizeof(*fdp));
+minix/kernel/bootstrap/default_pager.c create_paging_partition 214 if (i) kfree(old_list, i*sizeof(partition_t));
+minix/kernel/bootstrap/default_pager.c pager_extend 660 kfree((char *)old_mapptr, INDIRECT_PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 671 kfree((char *)old_mapptr, INDIRECT_PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 698 kfree((char *)old_mapptr, PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 721 kfree((char *)old_mapptr, PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 749 kfree((char *)old_mapptr, PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 760 kfree((char *)old_mapptr, PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1188 kfree((char *)mapptr, PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1191 kfree((char *)pager->map, INDIRECT_PAGEMAP_SIZE(pager->size));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1196 kfree((char *)mapptr, PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1199 kfree((char *)pager->checksum,
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1211 kfree((char *)pager->map, PAGEMAP_SIZE(pager->size));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1213 kfree((char *)pager->checksum, PAGEMAP_SIZE(pager->size));
+minix/kernel/bootstrap/default_pager.c destroy_paging_partition 1618 kfree(part->bitmap, howmany(part->total_size, NB_BM) * sizeof(bm_entry_t));
+minix/kernel/bootstrap/default_pager.c destroy_paging_partition 1619 kfree(part, sizeof(struct part));
+minix/kernel/bootstrap/default_pager.c default_pager_no_senders 2190 kfree((char *) ds, sizeof(*ds));
+minix/kernel/bootstrap/default_pager.c default_pager_no_senders 2202 kfree((char *) ds, sizeof(*ds));
+minix/kernel/bootstrap/kalloc.c kfree 223 kfree( void *data,
+minix/kernel/capability/capability_proof.c construct_access_proof 53 kfree(proof);
+minix/kernel/capability/capability_proof.c construct_access_proof 61 kfree(proof);
+minix/kernel/capability/capability_proof.c construct_access_proof 70 kfree(proof);
+minix/kernel/capability/capability_proof.c construct_access_proof 133 if(proof->derivation_path) kfree(proof->derivation_path);
+minix/kernel/capability/capability_proof.c construct_access_proof 134 kfree(proof);
+minix/kernel/capability/capability_proof.c construct_access_proof 140 kfree(proof->derivation_path);
+minix/kernel/capability/capability_proof.c construct_access_proof 141 kfree(proof);
+minix/kernel/capability/math_syscalls.c free_capability_proof 38 if (proof->derivation_path) kfree(proof->derivation_path);
+minix/kernel/capability/math_syscalls.c free_capability_proof 39 kfree(proof);
+minix/kernel/dag_sched.c heap_reserve 127 kfree((void *)ready_heap, ready_capacity * sizeof(*ready_heap));
+minix/kernel/inkernel/utils.c free 81 kfree( &where[ -1 ], where[ -1 ] + sizeof( int ) );
+minix/kernel/ipc_kmsg.c ipc_kmsg_clean_body 474 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_clean_partial 620 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_free 655 kfree((vm_offset_t) kmsg, size);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyin 1699 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyout_body 2644 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyin_compat 3066 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyout_compat 3310 kfree(data, length);
+
+======================================================================
+Analyzing function: kget (context: ./minix/kernel/kalloc.c)
+======================================================================
+
+>>> Functions CALLING kget (limit 50):
+minix/kernel/kalloc.c kget 251 vm_offset_t kget(size)
+
+>>> Functions CALLED BY kget (limit 50):
+minix/kernel/kalloc.c kget 251 vm_offset_t kget(size)
+
+======================================================================
+Analyzing function: kalloc (context: ./minix/kernel/bootstrap/kalloc.c)
+======================================================================
+
+>>> Functions CALLING kalloc (limit 50):
+minix/kalloc.c kalloc 93 char *kalloc(void ) {
+minix/kernel/bootstrap/kalloc.c kalloc 172 void *kalloc(vm_size_t size)
+minix/kernel/kalloc.c kalloc 217 vm_offset_t kalloc(size)
+minix/lib/klib/src/kalloc.c kalloc 25 void *kalloc(k_size_t size) { return malloc(size); }
+
+>>> Functions CALLED BY kalloc (limit 50):
+minix/kernel/bootstrap/def_pager_setup.c <global> 30 extern void *kalloc();
+minix/kernel/bootstrap/default_pager.c <global> 52 extern void *kalloc();
+minix/kernel/dag_sched.c <global> 23 extern void *kalloc();
+minix/lib/klib/include/kalloc.h <global> 15 void *kalloc(k_size_t size);
+minix/lib/klib/include/klib.h <global> 431 void *kalloc(k_size_t size);
+malloc.c malloc 204 char *malloc(unsigned nbytes) { return kalloc(nbytes); }
+minix/defs.h malloc 106 char *kalloc(void );
+minix/include/defs.h malloc 106 char *kalloc(void );
+minix/kalloc.c kalloc 93 char *kalloc(void ) {
+minix/kernel/bootstrap/def_pager_setup.c add_paging_file 53 fdp = (struct file_direct *) kalloc(sizeof *fdp);
+minix/kernel/bootstrap/default_pager.c create_paging_partition 179 part = (partition_t) kalloc(sizeof(struct part));
+minix/kernel/bootstrap/default_pager.c create_paging_partition 184 part->bitmap = (bm_entry_t *)kalloc(bmsize);
+minix/kernel/bootstrap/default_pager.c create_paging_partition 205 kalloc( n * sizeof(partition_t) );
+minix/kernel/bootstrap/default_pager.c pager_alloc 495 mapptr = (dp_map_t) kalloc(alloc_size);
+minix/kernel/bootstrap/default_pager.c pager_alloc 508 kalloc(INDIRECT_PAGEMAP_SIZE(size));
+minix/kernel/bootstrap/default_pager.c pager_alloc 512 mapptr = (vm_offset_t *) kalloc(PAGEMAP_SIZE(size));
+minix/kernel/bootstrap/default_pager.c pager_extend 654 kalloc(INDIRECT_PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 665 kalloc(INDIRECT_PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 692 new_mapptr = (dp_map_t) kalloc(PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_extend 705 kalloc(INDIRECT_PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 715 new_mapptr = (vm_offset_t *)kalloc(PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_extend 728 kalloc(INDIRECT_PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 743 new_mapptr = (dp_map_t) kalloc(PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 754 kalloc(PAGEMAP_SIZE(new_size));
+minix/kernel/bootstrap/default_pager.c pager_write_offset 1080 mapptr = (dp_map_t) kalloc(PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_write_offset 1095 kalloc(PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_port_alloc 1832 ds = (default_pager_t) kalloc(sizeof *ds);
+minix/kernel/bootstrap/default_pager.c seqnos_memory_object_create 1972 ds1 = (default_pager_t) kalloc(sizeof *ds1);
+minix/kernel/bootstrap/default_pager.c start_default_pager_thread 2692 dpt = (default_pager_thread_t *) kalloc(sizeof *dpt);
+minix/kernel/bootstrap/default_pager.c default_pager_object_create 2881 ds1 = (default_pager_t) kalloc(sizeof *ds1);
+minix/kernel/bootstrap/kalloc.c kalloc 172 void *kalloc(vm_size_t size)
+minix/kernel/bootstrap/kalloc.c malloc 255 return (void *)kalloc(size);
+minix/kernel/dag_sched.c dag_node_add_dep 94 struct dag_node_list *entry = (struct dag_node_list *)kalloc();
+minix/kernel/dag_sched.c heap_reserve 120 (struct dag_node **)kalloc(new_cap * sizeof(struct dag_node *));
+minix/kernel/inkernel/utils.c malloc 54 where = (int *)kalloc( size + sizeof( int ) );
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyin 1690 data = kalloc(length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyin_compat 3057 data = kalloc(length);
+minix/kernel/kalloc.c kalloc 217 vm_offset_t kalloc(size)
+minix/kernel/mmu64.c walkpml4 25 if(!alloc || (pdp = (pdpe_t*)kalloc()) == 0)
+minix/kernel/mmu64.c walkpml4 35 if(!alloc || (pd = (pde_t*)kalloc()) == 0)
+minix/kernel/mmu64.c walkpml4 45 if(!alloc || (pt = (pte_t*)kalloc()) == 0)
+minix/kernel/mmu64.c setupkvm64 89 if((pml4 = (pml4e_t*)kalloc()) == 0)
+minix/kernel/vm.c walkpgdir 51 if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+minix/kernel/vm.c setupkvm 130 if((pgdir = (pde_t*)kalloc()) == 0)
+minix/kernel/vm.c inituvm 199 mem = kalloc();
+minix/kernel/vm.c allocuvm 244 mem = kalloc();
+minix/kernel/vm.c copyuvm 366 if((mem = kalloc()) == 0)
+minix/kernel/vm.c exo_alloc_page 446 char *mem = kalloc();
+minix/lib/i386/kernel/i386/iopb.c io_port_create 180 io_port = (io_port_t) kalloc(sizeof(struct io_port));
+minix/lib/i386/kernel/i386/iopb.c iopb_create 272 ts = (iopb_tss_t) kalloc(sizeof (struct iopb_tss));
+
+======================================================================
+Analyzing function: kfree (context: ./minix/kernel/bootstrap/kalloc.c)
+======================================================================
+
+>>> Functions CALLING kfree (limit 50):
+minix/kalloc.c kfree 63 void kfree(char *v) {
+minix/kernel/bootstrap/kalloc.c kfree 223 kfree( void *data,
+minix/kernel/kalloc.c kfree 285 kfree(data, size)
+minix/lib/i386/kernel/i386at/gpl/linux/include/linux/malloc.h kfree 8 #define kfree linux_kfree
+minix/lib/klib/src/kalloc.c kfree 32 void kfree(void *ptr) { free(ptr); }
+
+>>> Functions CALLED BY kfree (limit 50):
+minix/kernel/dag_sched.c <global> 24 extern void kfree(void *, unsigned long );
+minix/kernel/tools/smatch/src/validation/sm_netdevice.c <global> 2 void kfree(void *);
+minix/kernel/tools/smatch/src/validation/sm_skb.c <global> 30 void kfree(void *data);
+minix/lib/i386/kernel/i386at/gpl/linux/include/linux/malloc.h <global> 8 #define kfree linux_kfree
+minix/lib/klib/include/kalloc.h <global> 22 void kfree(void *ptr);
+minix/lib/klib/include/klib.h <global> 432 void kfree(void *ptr);
+minix/lib/klib/include/klib.h <global> 473 void kfree(void *ptr);
+malloc.c free 205 void free(char *ap) { kfree(ap); }
+minix/defs.h free 107 void kfree(char *);
+minix/drivers/power/acpi/include/platform/aclinuxex.h AcpiOsFree 104 kfree (Memory);
+minix/include/defs.h AcpiOsFree 107 void kfree(char *);
+minix/kalloc.c freerange 56 kfree(p);
+minix/kalloc.c kfree 63 void kfree(char *v) {
+minix/kernel/bootstrap/def_pager_setup.c remove_paging_file 94 kfree(fdp, sizeof(*fdp));
+minix/kernel/bootstrap/default_pager.c create_paging_partition 214 if (i) kfree(old_list, i*sizeof(partition_t));
+minix/kernel/bootstrap/default_pager.c pager_extend 660 kfree((char *)old_mapptr, INDIRECT_PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 671 kfree((char *)old_mapptr, INDIRECT_PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 698 kfree((char *)old_mapptr, PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 721 kfree((char *)old_mapptr, PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 749 kfree((char *)old_mapptr, PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_extend 760 kfree((char *)old_mapptr, PAGEMAP_SIZE(old_size));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1188 kfree((char *)mapptr, PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1191 kfree((char *)pager->map, INDIRECT_PAGEMAP_SIZE(pager->size));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1196 kfree((char *)mapptr, PAGEMAP_SIZE(PAGEMAP_ENTRIES));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1199 kfree((char *)pager->checksum,
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1211 kfree((char *)pager->map, PAGEMAP_SIZE(pager->size));
+minix/kernel/bootstrap/default_pager.c pager_dealloc 1213 kfree((char *)pager->checksum, PAGEMAP_SIZE(pager->size));
+minix/kernel/bootstrap/default_pager.c destroy_paging_partition 1618 kfree(part->bitmap, howmany(part->total_size, NB_BM) * sizeof(bm_entry_t));
+minix/kernel/bootstrap/default_pager.c destroy_paging_partition 1619 kfree(part, sizeof(struct part));
+minix/kernel/bootstrap/default_pager.c default_pager_no_senders 2190 kfree((char *) ds, sizeof(*ds));
+minix/kernel/bootstrap/default_pager.c default_pager_no_senders 2202 kfree((char *) ds, sizeof(*ds));
+minix/kernel/bootstrap/kalloc.c kfree 223 kfree( void *data,
+minix/kernel/capability/capability_proof.c construct_access_proof 53 kfree(proof);
+minix/kernel/capability/capability_proof.c construct_access_proof 61 kfree(proof);
+minix/kernel/capability/capability_proof.c construct_access_proof 70 kfree(proof);
+minix/kernel/capability/capability_proof.c construct_access_proof 133 if(proof->derivation_path) kfree(proof->derivation_path);
+minix/kernel/capability/capability_proof.c construct_access_proof 134 kfree(proof);
+minix/kernel/capability/capability_proof.c construct_access_proof 140 kfree(proof->derivation_path);
+minix/kernel/capability/capability_proof.c construct_access_proof 141 kfree(proof);
+minix/kernel/capability/math_syscalls.c free_capability_proof 38 if (proof->derivation_path) kfree(proof->derivation_path);
+minix/kernel/capability/math_syscalls.c free_capability_proof 39 kfree(proof);
+minix/kernel/dag_sched.c heap_reserve 127 kfree((void *)ready_heap, ready_capacity * sizeof(*ready_heap));
+minix/kernel/inkernel/utils.c free 81 kfree( &where[ -1 ], where[ -1 ] + sizeof( int ) );
+minix/kernel/ipc_kmsg.c ipc_kmsg_clean_body 474 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_clean_partial 620 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_free 655 kfree((vm_offset_t) kmsg, size);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyin 1699 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyout_body 2644 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyin_compat 3066 kfree(data, length);
+minix/kernel/ipc_kmsg.c ipc_kmsg_copyout_compat 3310 kfree(data, length);
+
+======================================================================
+Analyzing function: alloc (context: ./alloc.c)
+======================================================================
+
+>>> Functions CALLING alloc (limit 50):
+commands/autopart/autopart.c alloc 222 void *alloc(size_t n)
+commands/cleantmp/cleantmp.c alloc 45 void *alloc(size_t s)
+commands/fsck.mfs/fsck.c alloc 322 char *alloc(nelem, elsize)
+commands/part/part.c alloc 193 void *alloc(size_t n)
+libos/ksh/alloc.c alloc 65 alloc(size_t size, Area *ap)
+minix/commands/autopart/autopart.c alloc 222 void *alloc(size_t n)
+minix/commands/cleantmp/cleantmp.c alloc 45 void *alloc(size_t s)
+minix/commands/fsck.mfs/fsck.c alloc 322 char *alloc(nelem, elsize)
+minix/commands/part/part.c alloc 193 void *alloc(size_t n)
+minix/kernel/alloc.c alloc 58 alloc(dev) {
+minix/kernel/c/c21.c alloc 244 alloc(an)
+minix/kernel/check.c alloc 525 alloc()
+minix/kernel/cmd/bhyve/common/qemu_loader.c alloc 42 } alloc;
+minix/kernel/cmd/fs.d/ufs/mkfs/mkfs.c alloc 2868 alloc(int size, int mode)
+minix/kernel/cmd/ldap/ns_ldap/ldapaddent.h alloc 62 int alloc;
+minix/kernel/cmd/mandoc/compat_ohash.h alloc 32 void *(*alloc)(size_t, void *);
+minix/kernel/cmd/sh/blok.c alloc 69 alloc(size_t nbytes)
+minix/kernel/cmd/sh/defs.h alloc 163 #define alloc malloc
+minix/kernel/cmd/troff/n3.c alloc 433 filep alloc()
+minix/kernel/common/mpi/mpi.h alloc 242 mp_size alloc;
+minix/kernel/contrib/ast/src/lib/libast/misc/stk.c alloc 101 int alloc;
+minix/kernel/contrib/ast/src/lib/libast/regex/reginit.c alloc 394 alloc(register regdisc_t* disc, void * p, size_t n)
+minix/kernel/contrib/ast/src/lib/libast/regex/reglib.h alloc 40 #define alloc _reg_alloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmprofile.c alloc 57 Vmulong_t alloc;
+minix/kernel/df.c alloc 61 alloc()
+minix/kernel/diff1.c alloc 90 alloc(n)
+minix/kernel/mkfs.c alloc 378 alloc()
+minix/kernel/palloc.c alloc 7 alloc(need)
+minix/kernel/restor.c alloc 499 alloc()
+minix/kernel/uts/common/fs/ufs/ufs_alloc.c alloc 105 alloc(struct inode *ip, daddr_t bpref, int size, daddr_t *bnp, cred_t *cr)
+minix/kernel/uts/common/io/cxgbe/t4nex/cudbg_entity.h alloc 378 u32 alloc;
+minix/kernel/uts/common/io/cxgbe/t4nex/cudbg_entity.h alloc 384 u32 alloc;
+minix/kernel/uts/common/sys/pg.h alloc 86 struct pg *(*alloc)();
+minix/lib/libsasl/lib/saslint.h alloc 336 sasl_mutex_alloc_t *alloc;
+minix/usr.bin/mined/mined1.c alloc 1067 char *alloc(int bytes)
+
+>>> Functions CALLED BY alloc (limit 50):
+0.h <global> 507 char *alloc();
+commands/fsck.mfs/fsck.c <global> 162 char *alloc(unsigned nelem, unsigned elsize);
+libos/ksh/proto.h <global> 14 void * alloc ARGS((size_t, Area *));
+minix/0.h <global> 555 char *alloc();
+minix/commands/fsck.mfs/fsck.c <global> 162 char *alloc(unsigned nelem, unsigned elsize);
+minix/kernel/0.h <global> 588 char *alloc();
+minix/kernel/2Sys/zalloc.h <global> 78 zone_t zinit(vm_size_t size, vm_size_t max, vm_size_t alloc,
+minix/kernel/cmd/audio/include/AudioBuffer.h <global> 50 virtual AudioError alloc();
+minix/kernel/cmd/bhyve/common/qemu_loader.c <global> 42 } alloc;
+minix/kernel/cmd/ldap/ns_ldap/ldapaddent.h <global> 62 int alloc;
+minix/kernel/cmd/mandoc/compat_ohash.h <global> 32 void *(*alloc)(size_t, void *);
+minix/kernel/cmd/mdb/common/mdb/mdb_demangle.c <global> 56 .alloc = mdb_dem_alloc,
+minix/kernel/cmd/sh/defs.h <global> 163 #define alloc malloc
+minix/kernel/common/lzma/LzFind.h <global> 67 ISzAlloc *alloc);
+minix/kernel/common/lzma/LzFind.h <global> 68 void MatchFinder_Free(CMatchFinder *p, ISzAlloc *alloc);
+minix/kernel/common/lzma/LzmaDec.h <global> 130 SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc);
+minix/kernel/common/lzma/LzmaDec.h <global> 131 void LzmaDec_FreeProbs(CLzmaDec *p, ISzAlloc *alloc);
+minix/kernel/common/lzma/LzmaDec.h <global> 133 SRes LzmaDec_Allocate(CLzmaDec *state, const Byte *prop, unsigned propsSize, ISzAlloc *alloc);
+minix/kernel/common/lzma/LzmaDec.h <global> 134 void LzmaDec_Free(CLzmaDec *state, ISzAlloc *alloc);
+minix/kernel/common/lzma/LzmaDec.h <global> 221 ELzmaStatus *status, ISzAlloc *alloc);
+minix/kernel/common/lzma/LzmaEnc.h <global> 53 CLzmaEncHandle LzmaEnc_Create(ISzAlloc *alloc);
+minix/kernel/common/lzma/LzmaEnc.h <global> 54 void LzmaEnc_Destroy(CLzmaEncHandle p, ISzAlloc *alloc, ISzAlloc *allocBig);
+minix/kernel/common/lzma/LzmaEnc.h <global> 58 ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+minix/kernel/common/lzma/LzmaEnc.h <global> 60 int writeEndMark, ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+minix/kernel/common/lzma/LzmaEnc.h <global> 75 ICompressProgress *progress, ISzAlloc *alloc, ISzAlloc *allocBig);
+minix/kernel/common/mpi/mpi.h <global> 242 mp_size alloc;
+minix/kernel/contrib/ast/src/lib/libast/hash/hashlib.h <global> 47 Hash_alloc_f alloc;
+minix/kernel/contrib/ast/src/lib/libast/misc/stk.c <global> 101 int alloc;
+minix/kernel/contrib/ast/src/lib/libast/regex/reglib.h <global> 40 #define alloc _reg_alloc
+minix/kernel/contrib/ast/src/lib/libast/regex/reglib.h <global> 583 extern void * alloc(regdisc_t*, void *, size_t);
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmprofile.c <global> 57 Vmulong_t alloc;
+minix/kernel/uts/common/io/cxgbe/t4nex/cudbg_entity.h <global> 378 u32 alloc;
+minix/kernel/uts/common/io/cxgbe/t4nex/cudbg_entity.h <global> 384 u32 alloc;
+minix/kernel/uts/common/sys/fs/smbfs_ioctl.h <global> 42 uint32_t alloc;
+minix/kernel/uts/common/sys/fs/ufs_inode.h <global> 873 extern int alloc(struct inode *, daddr_t, int , daddr_t *, cred_t *);
+minix/kernel/uts/common/sys/pg.h <global> 86 struct pg *(*alloc)();
+minix/kernel/uts/common/sys/stream.h <global> 406 int alloc;
+minix/lib/libcxx/test/containers/sequences/deque/deque.cons/size.pass.cpp <global> 65 test3(unsigned n, Allocator const &alloc = Allocator())
+minix/lib/libcxx/test/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 39 void check_allocator ( const dynarray<T> &dyn, const Allocator &alloc ) {
+minix/lib/libcxx/test/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 41 assert ( dyn[i].get_allocator() == alloc );
+minix/lib/libcxx/test/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 45 void test ( const std::initializer_list<T> &vals, const Allocator &alloc ) {
+minix/lib/libcxx/test/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 48 dynA d1 ( vals, alloc );
+minix/lib/libcxx/test/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 51 check_allocator ( d1, alloc );
+minix/lib/libcxx/test/containers/sequences/forwardlist/forwardlist.cons/size.pass.cpp <global> 22 void check_allocator(unsigned n, Allocator const &alloc = Allocator())
+minix/lib/libcxx/test/containers/sequences/list/list.cons/size_type.pass.cpp <global> 22 test3(unsigned n, Allocator const &alloc = Allocator())
+minix/lib/libcxx/test/libcxx/experimental/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 39 void check_allocator ( const dynarray<T> &dyn, const Allocator &alloc ) {
+minix/lib/libcxx/test/libcxx/experimental/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 41 assert ( dyn[i].get_allocator() == alloc );
+minix/lib/libcxx/test/libcxx/experimental/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 45 void test ( const std::initializer_list<T> &vals, const Allocator &alloc ) {
+minix/lib/libcxx/test/libcxx/experimental/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 48 dynA d1 ( vals, alloc );
+minix/lib/libcxx/test/libcxx/experimental/containers/sequences/dynarray/dynarray.cons/alloc.pass.cpp <global> 51 check_allocator ( d1, alloc );
+
+======================================================================
+Analyzing function: malloc (context: ./minix/kernel/malloc.c)
+======================================================================
+
+>>> Functions CALLING malloc (limit 50):
+alloc.c malloc 62 malloc(nbytes)
+libos/sh/options.h malloc 39 unsigned char malloc;
+libos/umalloc.c malloc 64 malloc(size_t nbytes)
+malloc.c malloc 72 malloc(nbytes)
+malloc.c malloc 204 char *malloc(unsigned nbytes) { return kalloc(nbytes); }
+minix/include/process.h malloc 35 #define malloc(X) gc_malloc(X)
+minix/kernel/boot/include/stdlib.h malloc 98 void *malloc(size_t) __malloc_like __result_use_check __alloc_size(1);
+minix/kernel/boot/libsa/stand.h malloc 442 #define malloc(x) Malloc(x, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h malloc 449 #define malloc(x) Malloc(x, NULL, 0)
+minix/kernel/bootstrap/kalloc.c malloc 253 void *malloc(vm_size_t size)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h malloc 41 #define malloc _fmalloc
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h malloc 72 #define malloc(a) my_malloc(a, __FILE__, __LINE__)
+minix/kernel/cmd/sgs/rtld/common/malloc.c malloc 159 malloc(size_t size)
+minix/kernel/common/tsol/ltos.c malloc 57 #define malloc(l) kmem_alloc(l, KM_NOSLEEP)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 254 #define malloc(s) (_VMFL_(Vmregion), _ast_malloc((size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 267 #define malloc(s) (_VMFL_(Vmregion), malloc((size_t)(s)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h malloc 280 #define malloc(s) (_VMFL_(Vmregion), _VMNM_(mallo,/,*,*,/,c)\
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 32 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 60 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 174 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 509 extern Void_t* malloc(reg size_t size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 511 extern Void_t* malloc(size)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 908 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c malloc 1066 #define malloc ______malloc
+minix/kernel/inkernel/utils.c malloc 49 malloc( size )
+minix/kernel/malloc.c malloc 28 malloc(mp, size)
+minix/kernel/stand/lib/sa/malloc.c malloc 36 malloc(size_t size)
+minix/lib/libbsdmalloc/common/malloc.bsd43.c malloc 96 malloc(size_t nbytes)
+minix/lib/libmagicrt/include/magic_real_mem.h malloc 6 #define malloc magic_real_malloc
+minix/lib/libmalloc/common/malloc.c malloc 181 malloc(size_t nbytes)
+minix/lib/libmapmalloc/common/textmem.c malloc 94 malloc(size_t size)
+minix/lib/libmtmalloc/common/mtmalloc.c malloc 234 malloc(size_t bytes)
+minix/lib/libpkg/common/nhash.c malloc 41 #define malloc bkmem_alloc
+minix/lib/libpkg/common/nhash.h malloc 63 #define malloc bkmem_alloc
+minix/lib/libsasl/lib/saslint.h malloc 329 sasl_malloc_t *malloc;
+minix/lib/openssl/lib/posix/net/bpf_compat.h malloc 45 #define malloc(size, type, canwait) bpf_alloc(size, canwait)
+minix/lib/openssl/sunos/include/process.h malloc 30 #define malloc(X) gc_malloc(X)
+minix/lib/openssl/sunos/pxk/alloc_old.c malloc 548 char *malloc(num)
+minix/lib/pxk/alloc_old.c malloc 547 char *malloc(num)
+minix/lib/watchmalloc/common/malloc.c malloc 162 malloc(size_t size)
+minix/malloc.c malloc 28 malloc(mp, size)
+minix/servers/lib/libc/port/gen/malloc.c malloc 161 malloc(size_t size)
+minix/servers/net/bpf_compat.h malloc 45 #define malloc(size, type, canwait) bpf_alloc(size, canwait)
+minix/servers/pxk/malloc.c malloc 232 malloc(register vm_size_t size)
+
+>>> Functions CALLED BY malloc (limit 50):
+commands/cawf/proto.h <global> 73 char *malloc(unsigned size);
+commands/devmand/main.c <global> 312 malloc(sizeof(struct devmand_usb_match_id));
+libos/sh/options.h <global> 39 unsigned char malloc;
+minix/commands/cawf/proto.h <global> 73 char *malloc(unsigned size);
+minix/commands/devmand/main.c <global> 312 malloc(sizeof(struct devmand_usb_match_id));
+minix/include/process.h <global> 35 #define malloc(X) gc_malloc(X)
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 47 #ifdef malloc
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 48 #undef malloc
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 949 malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1036 malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1115 binding = (binding_bucket *) malloc(sizeof (binding_bucket));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1190 c = (obj_list *) malloc(sizeof (obj_list));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1191 c->obj = (obj_com *) malloc(sizeof (obj_com));
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1192 fullname = (char *)malloc(strlen(com->obj->ename)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h <global> 41 #define malloc _fmalloc
+minix/kernel/cmd/fmtmsg/main.c <global> 78 extern void *malloc();
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h <global> 72 #define malloc(a) my_malloc(a, __FILE__, __LINE__)
+minix/kernel/cmd/fs.d/fsck.c <global> 82 char *malloc();
+minix/kernel/cmd/fs.d/ufs/fsdb/fsdb.c <global> 277 extern char *malloc(), *calloc();
+minix/kernel/cmd/fs.d/ufs/lockfs/lockfs.c <global> 122 char *malloc();
+minix/kernel/cmd/ldap/common/convutf8.c <global> 90 if ((dest = (char *)malloc(size)) == NULL) {
+minix/kernel/cmd/listen/lssmb.c <global> 58 extern char *malloc();
+minix/kernel/cmd/lp/filter/postscript/common/ext.h <global> 51 extern char *malloc();
+minix/kernel/cmd/lp/filter/postscript/postcomm/postcomm.h <global> 208 char *malloc();
+minix/kernel/cmd/lp/model/lp.tell.c <global> 43 *malloc(),
+minix/kernel/cmd/mailx/hdr/def.h <global> 647 extern char *malloc();
+minix/kernel/cmd/sendmail/include/sm/conf.h <global> 1312 extern char *malloc();
+minix/kernel/cmd/sendmail/include/sm/conf.h <global> 1413 extern void *malloc();
+minix/kernel/cmd/sgs/rtld/common/_rtld.h <global> 738 extern void *malloc(size_t);
+minix/kernel/cmd/sgs/rtld/common/malloc.c <global> 157 #pragma weak lmalloc = malloc
+minix/kernel/cmd/tcpd/scaffold.c <global> 28 extern char *malloc();
+minix/kernel/cmd/vgrind/regexp.c <global> 109 char *malloc();
+minix/kernel/cmd/ypcmd/mknetid/mknetid.c <global> 58 extern char *malloc();
+minix/kernel/cmd/ypcmd/udpublickey.c <global> 43 extern char *malloc();
+minix/kernel/common/tsol/ltos.c <global> 57 #define malloc(l) kmem_alloc(l, KM_NOSLEEP)
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 966 extern voidp malloc OF((uInt size));
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 3616 extern voidp malloc OF((uInt size));
+minix/kernel/contrib/ast/src/lib/libast/cdt/cdtlib.h <global> 177 extern Void_t* malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/sfio/sfhdr.h <global> 1211 extern void * malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 32 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 59 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 60 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 153 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 167 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 174 #define malloc _ast_malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 907 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 908 #define malloc ______malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1010 #undef malloc
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1011 extern Void_t* malloc _ARG_((size_t));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 1066 #define malloc ______malloc
+
+======================================================================
+Analyzing function: free (context: ./minix/kernel/malloc.c)
+======================================================================
+
+>>> Functions CALLING free (limit 50):
+alloc.c free 127 free(ap)
+libos/umalloc.c free 25 free(void *ap)
+malloc.c free 137 free(ap)
+malloc.c free 205 void free(char *ap) { kfree(ap); }
+minix/include/minix/sffs.h free 52 int (*t_queryvol)(const char *path, u64_t *free, u64_t *total);
+minix/include/process.h free 36 #define free(X) gc_free(X)
+minix/kernel/alloc.c free 99 free(dev, bno) {
+minix/kernel/boot/libsa/stand.h free 445 #define free(x) Free(x, __FILE__, __LINE__)
+minix/kernel/boot/libsa/stand.h free 452 #define free(x) Free(x, NULL, 0)
+minix/kernel/bootstrap/default_pager.c free 94 vm_size_t free;
+minix/kernel/bootstrap/kalloc.c free 263 void free(void *addr)
+minix/kernel/check.c free 557 free(in)
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h free 43 #define free _ffree
+minix/kernel/cmd/cron/cron.c free 177 void (*free)(void *obj);
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h free 71 #define free(a) my_free(a, __FILE__, __LINE__)
+minix/kernel/cmd/keyserv/keyserv_cache.c free 96 struct cachekey_disklist *free;
+minix/kernel/cmd/mandoc/compat_ohash.h free 31 void (*free)(void *, void *);
+minix/kernel/cmd/mdb/common/mdb/mdb_demangle.c free 57 .free = mdb_dem_free
+minix/kernel/cmd/sendmail/db/include/db_page.h free 55 u_int32_t free;
+minix/kernel/cmd/sgs/rtld/common/malloc.c free 289 free(void *ptr)
+minix/kernel/cmd/sh/blok.c free 174 free(ap)
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 257 #define free(d) (_VMFL_(Vmregion), _ast_free((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 270 #define free(d) (_VMFL_(Vmregion), free((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h free 286 #define free(d) (_VMFL_(Vmregion), _VMNM_(fre,/,*,*,/,e)((Void_t*)(d)) )
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 58 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 173 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 583 extern void free(reg Void_t* data)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 585 extern void free(data)
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 906 #define free ______free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c free 1065 #define free ______free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h free 311 Block_t* free;
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmhdr.h free 335 Block_t* free;
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/vmprofile.c free 59 Vmulong_t free;
+minix/kernel/contrib/ast/src/lib/libpp/pplib.h free 847 #define free(p) vmfree(Vmregion,(void *)p)
+minix/kernel/inkernel/utils.c free 66 free( where )
+minix/kernel/mkfs.c free 398 free(bno)
+minix/kernel/palloc.c free 36 free(cptr)
+minix/kernel/restor.c free 522 free(in)
+minix/kernel/stand/lib/sa/malloc.c free 81 free(void *addr)
+minix/kernel/uts/common/fs/ufs/ufs_alloc.c free 623 free(struct inode *ip, daddr_t bno, off_t size, int flags)
+minix/kernel/uts/common/io/bnxe/577xx/drivers/common/lm/l4/include/lm_l4st.h free 163 u8_t * free;
+minix/kernel/uts/common/io/bnxe/577xx/drivers/common/lm/l4/include/lm_l4st.h free 175 u8_t * free;
+minix/kernel/uts/common/sys/flock_impl.h free 471 int free;
+minix/kernel/uts/common/sys/pg.h free 87 void (*free)(struct pg *);
+minix/kernel/uts/intel/io/vmm/seg_vmm.c free 84 .free = segvmm_free,
+minix/kernel/zone.h free 20 struct zone_obj *free;
+minix/lib/i386/kernel/i386at/gpl/linux/include/linux/skbuff.h free 89 free,
+minix/lib/i386/kernel/i386at/gpl/linux/include/net/sock.h free 298 int free);
+minix/lib/i386/kernel/i386at/gpl/linux/linux_kmem.c free 60 unsigned short free;
+minix/lib/libarchive/archive_read_private.h free 65 int (*free)(struct archive_read_filter_bidder *);
+
+>>> Functions CALLED BY free (limit 50):
+minix/include/minix/sffs.h <global> 52 int (*t_queryvol)(const char *path, u64_t *free, u64_t *total);
+minix/include/process.h <global> 36 #define free(X) gc_free(X)
+minix/kernel/boot/i386/btx/btx/btx.S <global> 210 movzwl %ss:BDA_MEM,%eax #Get free memory
+minix/kernel/boot/libsa/zalloc_malloc.c <global> 49 #undef free
+minix/kernel/bootstrap/default_pager.c <global> 94 vm_size_t free;
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1244 free(c->obj);
+minix/kernel/cmd/abi/appcert/static_prof/static_prof.c <global> 1245 free(c);
+minix/kernel/cmd/ast/ksh/builtins/alias.c <global> 44 #undef free
+minix/kernel/cmd/cmd-inet/usr.sbin/snoop/fakewin.h <global> 43 #define free _ffree
+minix/kernel/cmd/cron/cron.c <global> 177 void (*free)(void *obj);
+minix/kernel/cmd/fmtmsg/main.c <global> 79 extern void free();
+minix/kernel/cmd/fs.d/autofs/debug_alloc.h <global> 71 #define free(a) my_free(a, __FILE__, __LINE__)
+minix/kernel/cmd/hal/tools/hal-storage-mount.c <global> 1049 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-shared.c <global> 499 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-shared.c <global> 605 free (adt_data);
+minix/kernel/cmd/hal/tools/hal-storage-zpool.c <global> 156 free (adt_data);
+minix/kernel/cmd/keyserv/keyserv_cache.c <global> 96 struct cachekey_disklist *free;
+minix/kernel/cmd/ldap/common/convutf8.c <global> 136 free(dest);
+minix/kernel/cmd/ldap/common/convutf8.c <global> 144 free(dest);
+minix/kernel/cmd/listen/nstoa.c <global> 79 extern void free();
+minix/kernel/cmd/mailx/hdr/def.h <global> 646 extern void free();
+minix/kernel/cmd/mandoc/compat_ohash.h <global> 31 void (*free)(void *, void *);
+minix/kernel/cmd/mdb/common/mdb/mdb_demangle.c <global> 57 .free = mdb_dem_free
+minix/kernel/cmd/nscd/nscd_switch.h <global> 83 int free;
+minix/kernel/cmd/sendmail/db/include/db_page.h <global> 55 u_int32_t free;
+minix/kernel/cmd/ttymon/sttyparse.c <global> 566 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 572 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 577 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 583 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 588 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 596 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 601 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 607 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 616 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 624 free((void *)r);
+minix/kernel/cmd/ttymon/sttyparse.c <global> 629 free((void *)r);
+minix/kernel/cmd/ypcmd/getlist.c <global> 39 extern void free();
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 481 extern __MANGLE__ void free __PROTO__((__V_*));
+minix/kernel/contrib/ast/src/cmd/INIT/proto.c <global> 4417 free((char *)proto);
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 968 extern void free OF((voidpf ptr));
+minix/kernel/contrib/ast/src/cmd/INIT/ratz.c <global> 3617 extern void free OF((voidpf ptr));
+minix/kernel/contrib/ast/src/lib/libast/cdt/cdtlib.h <global> 179 extern void free _ARG_((Void_t*));
+minix/kernel/contrib/ast/src/lib/libast/hash/hashlib.h <global> 48 Hash_free_f free;
+minix/kernel/contrib/ast/src/lib/libast/sfio/sfhdr.h <global> 1213 extern void free _ARG_((void *));
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 58 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 151 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 166 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 173 #define free _ast_free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 905 #undef free
+minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c <global> 906 #define free ______free
