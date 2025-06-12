@@ -1,0 +1,41 @@
+{
+  "allocators": {
+    "./alloc.c": {
+      "allocation_sites": 12,
+      "size_distribution": "TBD_manual_analysis",
+      "threading_model": "Not obvious/Single",
+      "special_features": ["debugging", "alignment", "zeroing (via calloc field)"]
+    },
+    "./malloc.c": {
+      "allocation_sites": 13,
+      "size_distribution": "TBD_manual_analysis",
+      "threading_model": "Not obvious/Single (legacy code); Wrapper inherits from kalloc",
+      "special_features": ["debugging (legacy code)", "alignment (legacy code)", "zeroing (legacy code, via calloc field)"]
+    },
+    "./minix/kernel/kalloc.c": {
+      "allocation_sites": 6,
+      "size_distribution": "TBD_manual_analysis",
+      "threading_model": "Not obvious/Kernel-Serialized",
+      "special_features": ["debugging"]
+    },
+    "./minix/kernel/malloc.c": {
+      "allocation_sites": 1,
+      "size_distribution": "TBD_manual_analysis",
+      "threading_model": "Not obvious/Kernel-Serialized",
+      "special_features": []
+    },
+    "./minix/lib/libmalloc/common/malloc.c": {
+      "allocation_sites": 63,
+      "size_distribution": "TBD_manual_analysis",
+      "threading_model": "Mutex-protected",
+      "special_features": ["debugging", "alignment", "zeroing"]
+    },
+    "./minix/kernel/bootstrap/kalloc.c": {
+      "allocation_sites": 8,
+      "size_distribution": "TBD_manual_analysis",
+      "threading_model": "Spinlock-protected",
+      "special_features": ["debugging"]
+    }
+  },
+  "notes": "Size distribution requires more detailed analysis. Threading model inferred from keywords. Allocation sites are sum of alloc/free calls from feature analysis."
+}

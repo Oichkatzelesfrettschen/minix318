@@ -1,0 +1,6 @@
+C
+    filter remove_matches \bALEX\b
+    filter remove_matches \bHAPPY\b
+    extension c
+    extension h
+    3rd_gen_scale 2.00

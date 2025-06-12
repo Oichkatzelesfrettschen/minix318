@@ -1,0 +1,33 @@
+digraph KernelAllocationFlow {
+    rankdir=LR;
+    node [shape=box, style=rounded];
+
+    subgraph cluster_kernel_core {
+        label = "Kernel Core Systems";
+        "IPC System (ipc_kmsg_*)" [shape=ellipse];
+        "VM System (Page Tables, etc.)" [shape=ellipse];
+        "Driver Subsystems" [shape=ellipse];
+        "Default Pager (bootstrap)" [shape=ellipse];
+    }
+
+    subgraph cluster_kernel_allocators {
+        label = "Kernel Allocators";
+        "kalloc() (minix/kernel/kalloc.c)" [style="filled", fillcolor=lightblue];
+        "bootstrap_kalloc() (minix/kernel/bootstrap/kalloc.c)" [style="filled", fillcolor=lightgreen];
+        "Zone Allocator (zalloc/kmem_)" ;
+        "Page Allocator (vm_map/kmem_alloc_wired)";
+    }
+
+    "IPC System (ipc_kmsg_*)" -> "kalloc() (minix/kernel/kalloc.c)";
+    "VM System (Page Tables, etc.)" -> "kalloc() (minix/kernel/kalloc.c)";
+    "Driver Subsystems" -> "kalloc() (minix/kernel/kalloc.c)";
+
+    "Default Pager (bootstrap)" -> "bootstrap_kalloc() (minix/kernel/bootstrap/kalloc.c)";
+
+    "kalloc() (minix/kernel/kalloc.c)" -> "Zone Allocator (zalloc/kmem_)";
+    "kalloc() (minix/kernel/kalloc.c)" -> "Page Allocator (vm_map/kmem_alloc_wired)";
+    "bootstrap_kalloc() (minix/kernel/bootstrap/kalloc.c)" -> "Page Allocator (vm_map/kmem_alloc_wired)";
+
+    label = "Simplified Kernel Allocation Flow (MINIX318)";
+    fontsize=20;
+}
