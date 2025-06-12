@@ -1,0 +1,131 @@
+language,filename,blank,comment,code,"github.com/AlDanial/cloc v 1.98  T=0.19 s (669.8 files/s 221003.1 lines/s)"
+C,./minix/lib/libbsm/common/devalloc.c,164,435,1570
+C,./minix/kernel/uts/common/fs/ufs/ufs_alloc.c,161,596,1346
+C,./minix/kernel/contrib/ast/src/lib/libast/vmalloc/malloc.c,207,102,1167
+C,./minix/kernel/uts/common/io/e1000g/e1000g_alloc.c,212,235,1109
+C,./minix/lib/openssl/lib/posix/ufs/ffs/ffs_alloc.c,44,416,1035
+C,./minix/servers/ufs/ffs/ffs_alloc.c,44,416,1035
+C,./minix/lib/watchmalloc/common/malloc.c,148,287,1024
+C,./minix/kernel/cmd/allocate/mkdevalloc.c,147,168,999
+C,./minix/kernel/uts/common/fs/udfs/udf_alloc.c,150,286,985
+C,./minix/lib/libmtmalloc/common/mtmalloc.c,227,360,980
+C,./minix/lib/libmalloc/common/malloc.c,102,405,695
+C,./minix/lib/libdwarf/common/dwarf_alloc.c,129,318,609
+C,./minix/servers/lib/libc/port/gen/malloc.c,115,226,580
+C,./minix/lib/openssl/lib/posix/ufs/ext2fs/ext2_linux_balloc.c,63,95,426
+C,./minix/servers/ufs/ext2fs/ext2_linux_balloc.c,63,95,424
+C,./minix/lib/openssl/lib/posix/ufs/ext2fs/ext2_linux_ialloc.c,33,98,388
+C,./minix/servers/ufs/ext2fs/ext2_linux_ialloc.c,33,98,386
+C,./minix/kernel/uts/common/fs/pcfs/pc_alloc.c,43,98,383
+C,./minix/lib/openssl/lib/posix/ufs/ext2fs/ext2_alloc.c,36,213,312
+C,./minix/servers/ufs/ext2fs/ext2_alloc.c,36,213,312
+C,./minix/servers/lib/libc/port/aio/aio_alloc.c,52,70,311
+C,./minix/kernel/cmd/fs.d/autofs/debug_alloc.c,47,39,308
+C,./minix/servers/kern/kern_malloc.c,12,79,290
+C,./minix/lib/openssl/lib/posix/serv/zalloc.c,72,77,288
+C,./minix/servers/serv/zalloc.c,72,77,288
+C,./minix/servers/pxk/malloc.c,33,167,271
+C,./minix/lib/libumem/common/malloc.c,81,72,269
+C,./minix/kernel/common/acpica/namespace/nsalloc.c,115,323,265
+C,./minix/drivers/power/acpi/namespace/nsalloc.c,115,215,264
+C,./minix/servers/pxk/alloc.c,62,31,260
+C,./minix/lib/libnsl/nsl/t_alloc.c,26,65,254
+C,./minix/lib/pxk/alloc.c,61,43,248
+C/C++ Header,./minix/kernel/contrib/ast/src/lib/libast/include/vmalloc.h,60,30,245
+C,./libos/sh/memalloc.c,51,111,237
+C,./minix/kernel/cmd/devfsadm/devalloc.c,28,95,227
+C/C++ Header,./minix/lib/libcxx/test/support/min_allocator.h,62,8,221
+C,./minix/servers/lib/libc/port/threads/alloc.c,47,133,217
+C/C++ Header,./minix/kernel/2Sys/malloc.h,7,66,202
+C,./minix/kernel/alloc.c,18,91,201
+C,./minix/kernel/cmd/sgs/rtld/common/malloc.c,43,89,201
+C,./minix/servers/ufs/ffs/ffs_balloc.c,8,78,198
+C,./minix/servers/ufs/ext2fs/ext2_balloc.c,9,111,196
+C,./minix/kernel/common/acpica/utilities/utalloc.c,83,248,186
+C/C++ Header,./minix/lib/libcxx/test/support/test_allocator.h,33,9,184
+C,./alloc.c,13,28,174
+C,./minix/kernel/uts/common/fs/smbsrv/smb_alloc.c,32,115,166
+C,./minix/kernel/bootstrap/kalloc.c,39,79,164
+C,./malloc.c,12,33,161
+C,./minix/lib/openssl/lib/posix/ufs/lfs/lfs_alloc.c,27,68,160
+C,./minix/servers/ufs/lfs/lfs_alloc.c,27,68,160
+C,./minix/kernel/contrib/ast/src/lib/libast/hash/hashalloc.c,8,33,159
+C,./minix/drivers/power/acpi/utilities/utalloc.c,77,129,158
+C,./minix/kernel/tools/smatch/src/smatch_fresh_alloc.c,37,24,158
+C,./minix/kernel/boot/libsa/zalloc_malloc.c,31,36,154
+C,./minix/kernel/boot/libsa/zalloc.c,44,140,153
+C,./minix/kernel/cmd/sendmail/db/db/db_salloc.c,36,114,151
+C/C++ Header,./minix/lib/libcxx/test/support/allocators.h,41,8,136
+C,./minix/kernel/cmd/lp/lib/lp/Sys_malloc.c,19,35,133
+C,./minix/kernel/kalloc.c,27,147,133
+C/C++ Header,./minix/lib/libbsm/common/devalloc.h,28,29,125
+C/C++ Header,./minix/lib/libcxx/test/std/thread/futures/test_allocator.h,26,8,124
+C/C++ Header,./minix/lib/libcxx/test/thread/futures/test_allocator.h,26,8,123
+C,./minix/kernel/uts/common/ktli/t_kalloc.c,21,48,122
+C,./minix/kernel/cmd/sendmail/db/os/os_alloc.c,32,68,119
+C,./minix/kernel/cmd/fm/modules/common/eversholt/alloc.c,40,57,116
+C,./minix/servers/netiso/xebec/malloc.c,11,12,113
+C,./minix/lib/libdwarf/common/pro_alloc.c,33,82,101
+C,./minix/kernel/cmd/mailx/stralloc.c,16,61,98
+C,./minix/lib/krb5/kadm5/srv/xdr_alloc.c,22,56,94
+C,./minix/kalloc.c,13,18,89
+C/C++ Header,./minix/kernel/tools/smatch/src/allocate.h,11,1,84
+C,./minix/kernel/cmd/audio/utilities/zmalloc.c,22,36,82
+C,./minix/servers/ufs/lfs/lfs_balloc.c,10,45,82
+C,./minix/lib/libuutil/common/uu_alloc.c,23,31,81
+C,./minix/usr.bin/diff/xmalloc.c,15,14,81
+C,./libos/umalloc.c,11,2,77
+C,./minix/kernel/cmd/fm/eversholt/common/alloc.c,24,53,75
+C,./libos/ksh/alloc.c,21,32,74
+C/C++ Header,./minix/kernel/2Sys/zalloc.h,15,46,71
+C,./minix/kernel/contrib/ast/src/lib/libast/astsa/vmalloc.c,8,25,69
+C,./minix/servers/lib/libc/port/gen/tsdalloc.c,11,26,65
+C,./drivers/ieee1275/sun4/prom_alloc.c,22,63,60
+C/C++ Header,./minix/kernel/cmd/allocate/allocate.h,11,29,59
+C,./minix/malloc.c,5,25,57
+C,./libos/csh/alloc.c,13,29,55
+C,./minix/lib/fm/topo/libtopo/common/topo_alloc.c,15,26,54
+C,./minix/lib/krb5/dyn/dyn_realloc.c,12,22,54
+C/C++ Header,./minix/lib/libmtmalloc/common/mtmalloc_impl.h,15,37,54
+C/C++ Header,./minix/kernel/cmd/fs.d/autofs/debug_alloc.h,22,25,53
+C/C++ Header,./minix/lib/libcxx/test/std/containers/stack_allocator.h,10,8,48
+C,./minix/kernel/stand/lib/sa/malloc.c,14,28,47
+C,./minix/kernel/cmd/fm/fmd/common/fmd_alloc.c,13,25,46
+C,./minix/kernel/stand/lib/sa/standalloc.c,10,39,46
+C/C++ Header,./minix/kernel/head/malloc.h,11,34,45
+C,./minix/kernel/tools/cscope-fast/alloc.c,16,33,38
+C/C++ Header,./libos/sh/memalloc.h,10,34,37
+C,./minix/kernel/palloc.c,6,1,37
+C/C++ Header,./minix/lib/libcxx/test/utilities/tuple/tuple.tuple/alloc_first.h,13,8,37
+C/C++ Header,./minix/lib/libcxx/test/utilities/tuple/tuple.tuple/alloc_last.h,13,8,37
+C,./minix/lib/i386/boot/malloc.c,6,8,35
+C,./minix/lib/libxcurses/src/libc/mks/m_malloc.c,7,67,30
+C/C++ Header,./minix/kernel/contrib/ast/src/lib/libast/astsa/vmalloc.h,8,24,29
+C/C++ Header,./minix/kernel/cmd/fm/eversholt/common/alloc.h,10,27,28
+C,./minix/lib/libmapmalloc/common/calloc.c,8,29,28
+C/C++ Header,./minix/kernel/uts/common/smbsrv/alloc.h,12,46,27
+C/C++ Header,./minix/kernel/boot/libsa/zalloc_defs.h,13,42,26
+C,./minix/servers/lib/libc/port/gen/calloc.c,6,30,20
+C/C++ Header,./minix/kernel/head/alloca.h,11,43,17
+C/C++ Header,./minix/lib/fm/topo/libtopo/common/topo_alloc.h,6,25,17
+C/C++ Header,./minix/kernel/boot/libsa/zalloc_mem.h,6,33,16
+C/C++ Header,./minix/kernel/cmd/fm/fmd/common/fmd_alloc.h,7,25,15
+C/C++ Header,./minix/lib/libdwarf/common/dwarf_alloc.h,10,29,15
+C/C++ Header,./minix/lib/libmtmalloc/common/mtmalloc.h,9,29,15
+C,./minix/kernel/cmd/sgs/tsort/common/zmalloc.c,6,30,13
+C/C++ Header,./minix/lib/libdwarf/common/pro_alloc.h,14,19,13
+C,./minix/lib/libmapmalloc/common/valloc.c,7,32,13
+C,./minix/servers/lib/libc/port/gen/valloc.c,7,26,13
+C/C++ Header,./minix/kernel/cmd/audio/include/zmalloc.h,6,25,12
+C/C++ Header,./minix/lib/i386/kernel/i386at/gpl/linux/include/linux/malloc.h,5,0,11
+C/C++ Header,./minix/usr.bin/diff/xmalloc.h,4,16,11
+C/C++ Header,./minix/include/xk_malloc.h,9,12,10
+C/C++ Header,./minix/lib/libdwarf/common/malloc_check.h,14,28,10
+C,./minix/kernel/contrib/ast/src/lib/libast/regex/regalloc.c,3,24,9
+C/C++ Header,./minix/kernel/boot/libsa/zalloc_protos.h,3,28,7
+C/C++ Header,./minix/lib/klib/include/kalloc.h,5,23,7
+C,./minix/lib/klib/src/kalloc.c,4,31,6
+C/C++ Header,./minix/lib/i386/kernel/i386/zalloc.h,3,22,4
+C,./minix/alloc.c,1,7,1
+C/C++ Header,./minix/servers/netiso/xebec/malloc.h,1,2,1
+SUM,,4705,10558,27304

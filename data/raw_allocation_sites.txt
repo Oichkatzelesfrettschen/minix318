@@ -1,0 +1,1198 @@
+
+329: * Return the number of free blocks in the filesystem.
+335:	int free = 0;
+346:			free++;
+352:		fsp->pcfs_fsinfo.fs_free_clusters = free;
+354:	return (free);
+105:alloc(struct inode *ip, daddr_t bpref, int size, daddr_t *bnp, cred_t *cr)
+119:		err = ufs_fault(ITOV(ip), "alloc: bad size, dev = 0x%lx,"
+167:		cmn_err(CE_NOTE, "alloc: %s: file system full", fs->fs_fsmnt);
+238:	 * following the current allocation were not free. The extra
+251:			(void) free(ip, bno + numfrags(fs, nsize),
+375:	 * Check if we really got a free inode, if not then complain
+409:			    "%s: free inode %d had size 0x%llx, run fsck(8)%s",
+459: * the current cg if it has more than 25% free inodes and more
+460: * than 25% free blocks. Otherwise the cgs are searched from
+468: * above the average number of free inodes, the one with the smallest
+517: * average number of free blocks.  An appropriate cylinder group is found
+522: * of free blocks is found. If the allocation is for the first block in an
+619: * free map. If a fragment is deallocated, a possible
+623:free(struct inode *ip, daddr_t bno, off_t size, int flags)
+648:		    "free: bad size, dev = 0x%lx, bsize = %d, size = %d, "
+682:			(void) ufs_fault(ITOV(ip), "free: freeing free block, "
+714:				    "free: freeing free frag, "
+768: * The specified inode is placed back in the free map.
+810:		(void) ufs_fault(ITOV(ip), "ufs_ifree: freeing free inode, "
+841: *   3) brute force search for a free block.
+989:	 * available (free blocks or free frags).
+996:		 * If there are not enough free frags then return.
+1396:	 * free block map for an appropriate bit pattern.
+1813:			 * Only free the block if they are not same, and
+1818:				free(ip, ip->i_db[i], fs->fs_bsize, 0);
+1831:			free(ip, undo->blk, fs->fs_bsize, I_IBLK);
+1849:	 * Don't forget to free the undo chain :)
+1870: * of l_len == 0, meaning free to end of file.
+1873: * maintain a contiguous free list much longer than FIFO.
+1984:		blksfree = cg_blksfree(cgp);	    /* free array */
+1985:		cgblks = fragstoblks(fs, fs->fs_fpg); /* blks in free array */
+1988:			/* find a free block */
+2001:			/* count the number of free blocks */
+732: * mark the blocks as free blocks
+1268: * of l_len == 0, meaning free to end of file.
+1271: * maintain a contiguous free list much longer than FIFO.
+1358:	int32_t error, index, free = 0;
+1382:			free = 1;
+1388:	if (free) {
+34:#include <smbsrv/alloc.h>
+246: * sr	If not NULL, request the memory to free is associated with.
+42: * Do not mix usage of these macros with malloc/free functions.
+46: * these functions instead of malloc/free/kmem_*.
+53: * MEM_FREE -  free memory
+62:#define	MEM_MALLOC(AREA, SIZE) malloc(SIZE)
+63:#define	MEM_ZALLOC(AREA, SIZE) calloc((SIZE), 1)
+65:#define	MEM_REALLOC(AREA, PTR, SIZE) realloc((PTR), (SIZE))
+66:#define	MEM_FREE(AREA, PTR) free(PTR)
+25:/*	Public header file for the virtual malloc package.
+48:	int	n_free;			/* number of free blocks	*/
+50:	size_t	s_free;			/* total amount of free space	*/
+52:	size_t	m_free;			/* largest free piece		*/
+143:extern Vmalloc_t*	Vmregion;	/* malloc region		*/
+165:extern Void_t*		vmalloc _ARG_(( Vmalloc_t*, size_t ));
+196:extern Void_t*		malloc _ARG_(( size_t ));
+197:extern Void_t*		realloc _ARG_(( Void_t*, size_t ));
+198:extern void		free _ARG_(( Void_t* ));
+200:extern Void_t*		calloc _ARG_(( size_t, size_t ));
+202:extern Void_t*		valloc _ARG_(( size_t ));
+235:#define vmalloc(vm,sz)		(_VMFL_(vm), \
+245:#undef malloc
+246:#undef realloc
+247:#undef calloc
+248:#undef free
+250:#undef valloc
+254:#define malloc(s)		(_VMFL_(Vmregion), _ast_malloc((size_t)(s)) )
+255:#define realloc(d,s)		(_VMFL_(Vmregion), _ast_realloc((Void_t*)(d),(size_t)(s)) )
+256:#define calloc(n,s)		(_VMFL_(Vmregion), _ast_calloc((size_t)n, (size_t)(s)) )
+257:#define free(d)			(_VMFL_(Vmregion), _ast_free((Void_t*)(d)) )
+259:#define valloc(s)		(_VMFL_(Vmregion), _ast_valloc((size_t)(s) )
+267:#define malloc(s)		(_VMFL_(Vmregion), malloc((size_t)(s)) )
+268:#define realloc(d,s)		(_VMFL_(Vmregion), realloc((Void_t*)(d),(size_t)(s)) )
+269:#define calloc(n,s)		(_VMFL_(Vmregion), calloc((size_t)n, (size_t)(s)) )
+270:#define free(d)			(_VMFL_(Vmregion), free((Void_t*)(d)) )
+272:#define valloc(s)		(_VMFL_(Vmregion), valloc((size_t)(s) )
+280:#define malloc(s)		(_VMFL_(Vmregion), _VMNM_(mallo,/,*,*,/,c)\
+282:#define realloc(d,s)		(_VMFL_(Vmregion), _VMNM_(reallo,/,*,*,/,c)\
+284:#define calloc(n,s)		(_VMFL_(Vmregion), _VMNM_(callo,/,*,*,/,c)\
+286:#define free(d)			(_VMFL_(Vmregion), _VMNM_(fre,/,*,*,/,e)((Void_t*)(d)) )
+289:#define valloc(s)		(_VMFL_(Vmregion), _VMNM_(vallo,/,*,*,/,c)\
+298:#define cfree(d)		free(d)
+307:#ifndef vmalloc
+308:#define vmalloc(vm,sz)		(*(_VM_(vm)->meth.allocf))((vm),(sz),0)
+25: * posix regex alloc control
+30:#define calloc		______calloc
+32:#define malloc		______malloc
+36:#define realloc		______realloc
+50:#include	<malloc.h>
+55:#undef	calloc
+56:#define calloc		_ast_calloc
+58:#define free		_ast_free
+59:#undef	malloc
+60:#define malloc		_ast_malloc
+66:#undef	realloc
+67:#define realloc		_ast_realloc
+82: * define _AST_std_malloc=1 to force the standard malloc
+84: * will simply call malloc etc.
+91:/*	malloc compatibility functions
+102:**	    free	disable addfreelist()
+103:**	    keep	disable free -- if code works with this enabled then it
+104:**	    		probably accesses free'd data
+149:#undef calloc
+151:#undef free
+153:#undef malloc
+157:#undef realloc
+158:#undef valloc
+162:#include <malloc.h>
+164:#undef	calloc
+166:#undef	free
+167:#undef	malloc
+169:#undef	realloc
+171:#define calloc		_ast_calloc
+173:#define free		_ast_free
+174:#define malloc		_ast_malloc
+176:#define realloc		_ast_realloc
+259:	/* if getenv() calls malloc(), the options may not affect the eventual region */
+357:/* manage a cache of free objects */
+389:		{	if(asocasint(&vm->data->lock, 0, 1) == 0) /* can free this now */
+487:extern Void_t* calloc(reg size_t n_obj, reg size_t s_obj)
+489:extern Void_t* calloc(n_obj, s_obj)
+509:extern Void_t* malloc(reg size_t size)
+511:extern Void_t* malloc(size)
+530:extern Void_t* realloc(reg Void_t* data, reg size_t size)
+532:extern Void_t* realloc(data,size)
+543:		return malloc(size);
+554:		else if(Regmax > 0 && Vmregion == Vmheap && (addr = malloc(size)) )
+569:#undef	realloc /* let the native realloc() take care of it */
+571:		extern Void_t*	realloc(Void_t*, size_t);
+573:		extern Void_t*	realloc();
+575:		return realloc(data, size);
+583:extern void free(reg Void_t* data)
+585:extern void free(data)
+604:#undef	free /* let the native free() take care of it */
+606:		extern void	free(Void_t*);
+608:		extern void	free();
+610:		free(data);
+623:	free(data);
+672:extern Void_t* valloc(reg size_t size)
+674:extern Void_t* valloc(size)
+712:		if((ns = malloc(n+1)) )
+754:	while(Frame) /* free unused frames */
+783:#define USE_NATIVE	0	/* native free/realloc on non-vmalloc ptrs */
+791:	free(ptr);
+798:	r = malloc(size);
+814:	r = realloc(ptr, size);
+843:extern Void_t*	F2(_calloc, size_t,n, size_t,m) { return calloc(n, m); }
+844:extern Void_t	F1(_cfree, Void_t*,p) { free(p); }
+845:extern Void_t	F1(_free, Void_t*,p) { free(p); }
+846:extern Void_t*	F1(_malloc, size_t,n) { return malloc(n); }
+853:extern Void_t*	F2(_realloc, Void_t*,p, size_t,n) { return realloc(p, n); }
+855:extern Void_t*	F1(_valloc, size_t,n) { return valloc(n); }
+860:extern Void_t*	F2(__calloc, size_t,n, size_t,m) { return calloc(n, m); }
+861:extern Void_t	F1(__cfree, Void_t*,p) { free(p); }
+862:extern Void_t	F1(__free, Void_t*,p) { free(p); }
+863:extern Void_t*	F1(__malloc, size_t,n) { return malloc(n); }
+870:extern Void_t*	F2(__realloc, Void_t*,p, size_t,n) { return realloc(p, n); }
+872:extern Void_t*	F1(__valloc, size_t,n) { return valloc(n); }
+877:extern Void_t*	F2(__libc_calloc, size_t,n, size_t,m) { return calloc(n, m); }
+878:extern Void_t	F1(__libc_cfree, Void_t*,p) { free(p); }
+879:extern Void_t	F1(__libc_free, Void_t*,p) { free(p); }
+880:extern Void_t*	F1(__libc_malloc, size_t,n) { return malloc(n); }
+887:extern Void_t*	F2(__libc_realloc, Void_t*,p, size_t,n) { return realloc(p, n); }
+889:extern Void_t*	F1(__libc_valloc, size_t,n) { return valloc(n); }
+901:#undef	calloc
+902:#define calloc		______calloc
+905:#undef	free
+906:#define free		______free
+907:#undef	malloc
+908:#define malloc		______malloc
+911:#undef	realloc
+912:#define realloc		______realloc
+913:#undef	valloc
+914:#define valloc		______valloc
+918:#include	<malloc.h>
+995: * even though there is no malloc override, still provide
+1001:#undef	calloc
+1002:extern Void_t*	calloc _ARG_((size_t, size_t));
+1007:#undef	free
+1008:extern void	free _ARG_((Void_t*));
+1010:#undef	malloc
+1011:extern Void_t*	malloc _ARG_((size_t));
+1023:#undef	realloc
+1024:extern Void_t*	realloc _ARG_((Void_t*, size_t));
+1027:#undef	valloc
+1028:extern Void_t*	valloc _ARG_((size_t));
+1037:extern Void_t	F1(_ast_free, Void_t*,p) { free(p); }
+1038:extern Void_t*	F1(_ast_malloc, size_t,n) { return malloc(n); }
+1042:extern Void_t*	F2(_ast_realloc, Void_t*,p, size_t,n) { return realloc(p, n); }
+1046:extern Void_t*	F2(_ast_calloc, size_t,n, size_t,m) { return calloc(n, m); }
+1047:extern Void_t	F1(_ast_cfree, Void_t*,p) { free(p); }
+1052:extern Void_t*	F1(_ast_valloc, size_t,n) { return valloc(n); }
+1063:#define calloc		______calloc
+1065:#define free		______free
+1066:#define malloc		______malloc
+1068:#define realloc		______realloc
+1069:#define valloc		______valloc
+1075:#include	<malloc.h>
+1327:			case 'f':		/* free */
+1406:	/* slip in the new region now so that malloc() will work fine */
+1435:		/* this may wind up calling malloc(), but region is ok now */
+1447: * that misbehave by passing bogus addresses to free()
+1451: * to keep malloc() data by disabling free()
+102:			tab->root->local->alloc = va_arg(ap, Hash_alloc_f);
+118:			tab->root->local->free = va_arg(ap, Hash_free_f);
+24: * standalone mini vmalloc implementation
+25: * no resize, no free, no disciplines, no methods
+29:#include <vmalloc.h>
+59:		free(cp);
+61:	free(vp);
+23: * standalone mini vmalloc interface
+29:#define vmalloc(v,n)		_vm_resize(v,(void*)0,n)
+275:		nm = (char *)malloc(SIZE_OF_TMP + 1 + strlen(dep->d_name) + 1);
+294:		nm = (char *)malloc(sz + 1);
+333:		nm = (char *)malloc(SIZE_OF_RMT + 1 + strlen(dep->d_name) + 1);
+341:		nm = (char *)malloc(SIZE_OF_TMP + strlen(dep->d_name) + 1);
+482:		nm = (char *)malloc(SIZE_OF_TMP + 1 + strlen(dep->d_name) + 1);
+501:		nm = (char *)malloc(sz + 1);
+534:		nm = (char *)malloc(SIZE_OF_SOUND + 1 +
+542:		nm = (char *)malloc(SIZE_OF_SOUND + 1 +
+690:		nm = (char *)malloc(SIZE_OF_TMP + 1 + strlen(dep->d_name) + 1);
+709:		nm = (char *)malloc(sz+1);
+857:		nm = (char *)malloc(SIZE_OF_TMP + 1 + strlen(dep->d_name) + 1);
+877:		nm = (char *)malloc(sz + 1);
+928:		nm = (char *)malloc(SIZE_OF_DSK + 1 + strlen(dep->d_name) + 1);
+979:		nm = (char *)malloc(SIZE_OF_RDSK + 1 + strlen(dep->d_name) + 1);
+1170:		nm = (char *)malloc(SIZE_OF_DSK + 1 + strlen(dep->d_name) + 1);
+1259:	tape  = (struct tape *)calloc(DFLT_NTAPE, sizeof (struct tape));
+1260:	audio = (struct audio *)calloc(DFLT_NAUDIO, sizeof (struct audio));
+1261:	cd    = (struct cd *)calloc(DFLT_NCD, sizeof (struct cd));
+1262:	fp    = (struct fp *)calloc(DFLT_NFP, sizeof (struct fp));
+1264:		rmdisk = (struct rmdisk *)calloc(DFLT_RMDISK,
+1268:		rmdisk_r = (struct rmdisk *)calloc(DFLT_RMDISK,
+1289:	new = (void *)calloc(n + DELTA,  size);
+1300:	free(old);
+25: * alloc.c -- memory allocation wrapper functions, replacable in more
+32:#include "alloc.h"
+42:	Malloctotal = stats_new_counter("alloc.total", "bytes allocated", 1);
+43:	Malloccount = stats_new_counter("alloc.calls", "total calls", 1);
+62: * alloc_malloc -- a malloc() with checks
+64: * this routine is typically called via the MALLOC() macro in alloc.h
+70:	void *retval = malloc(nbytes);
+73:		outfl(O_DIE, fname, line, "malloc: out of memory");
+85: * alloc_realloc -- a realloc() with checks
+87: * this routine is typically called via the REALLOC() macro in alloc.h
+92:	void *retval = realloc(ptr, nbytes);
+95:		out(O_DIE, fname, line, "realloc: out of memory");
+103: * this routine is typically called via the STRDUP() macro in alloc.h
+117: * alloc_free -- a free() with checks
+119: * this routine is typically called via the FREE() macro in alloc.h
+126:	free(ptr);
+137:	retval = malloc(nbytes);
+139:		out(O_DIE, "malloc: out of memory");
+151:	free(ptr);
+25: * alloc.h -- public definitions for memory allocation module
+36:#define	FMD_NOSLEEP	0x0	/* do not sleep or retry if alloc fails */
+37:#define	FMD_SLEEP	0x1	/* sleep or retry if alloc fails */
+26: * alloc.c -- memory allocation wrapper functions, for eft.so FMD module
+35:#include "alloc.h"
+54:	Malloctotal = stats_new_counter("alloc.total", "bytes allocated", 1);
+55:	Freetotal = stats_new_counter("free.total", "bytes freed", 1);
+56:	Malloccount = stats_new_counter("alloc.calls", "alloc calls", 1);
+57:	Freecount = stats_new_counter("free.calls", "free calls", 1);
+82: * alloc_malloc -- a malloc() with checks
+84: * this routine is typically called via the MALLOC() macro in alloc.h
+112: * alloc_realloc -- a realloc() with checks
+114: * this routine is typically called via the REALLOC() macro in alloc.h
+139: * this routine is typically called via the STRDUP() macro in alloc.h
+152: * alloc_free -- a free() with checks
+154: * this routine is typically called via the FREE() macro in alloc.h
+32: *	malloc(3C) with error checking
+44:	if ((p = malloc(n)) == NULL)
+33: * Simplified version of malloc(), calloc() and free(), to be linked with
+124:		 * If a page becomes free, leave it, and save the unmapping
+126:		 * for later malloc activity.
+154: * Replace both malloc() and lmalloc() (libc's private memory allocator).
+157:#pragma weak lmalloc = malloc
+159:malloc(size_t size)
+207:calloc(size_t num, size_t size)
+224:	if ((mp = malloc(total)) == NULL)
+231:realloc(void *ptr, size_t size)
+238:		return (malloc(size));
+246:	 * Join block with next one if it is free
+263:	if ((newptr = malloc(size)) == NULL)
+269:	 * Add the free block to the free APlist for later defragmentation.
+271:	 * free APlist.  The APlist can't be allowed to grow, as the growth
+272:	 * requires a realloc(), which would recurse back here, resulting in an
+273:	 * infinite loop.  If the free APlist is full, defrag() now.  This
+274:	 * defragmentation might not be able to collapse any free space, but
+275:	 * the free APlist will be cleared as part of the processing, ensuring
+285: * Replace both free() and lfree() (libc's private memory allocator).
+289:free(void *ptr)
+309:	free(ptr);
+68:	alist = (struct alloc_list *)malloc(sizeof (*alist));
+100:			free(alist);
+109:		syslog(LOG_ERR, "\tduplicate free, type %s, at %p in %s/%d\n",
+121:	addr = (void *)malloc(size);
+135:	ptr = (void *)realloc(addr, size);
+152:	free(addr);
+71:#define	free(a)			my_free(a, __FILE__, __LINE__)
+72:#define	malloc(a)		my_malloc(a, __FILE__, __LINE__)
+73:#define	realloc(a, s)		my_realloc(a, s, __FILE__, __LINE__)
+76:	alloc_type		ret	= malloc(size);
+102:	alloc_type		ret	= realloc(ptr, size);
+128:	alloc_type		ret	= calloc(nelem, elsize);
+181:	free (ptr);
+29: * zfree	- use munmap(2) to unmap (free) memory.
+31: * These functions should be better than malloc(3) for large memory allocation.
+62:	bm = (struct buffer_map *)malloc(sizeof (struct buffer_map));
+88:			free(p_curr);
+236:				free(nickname);
+344:				free(newentry.devinfo.devlist);
+347:		else free(dargs.devinfo->devname);
+95:		sp->s_topFree = (char *) calloc(STRINGSIZE << index,
+153: * Called to free all strings allocated
+29: * by the key/data item, and it can be 0.  Correct here so that malloc never
+35: * Correct for systems that don't set errno when malloc and friends fail.
+71: *	The calloc(3) function for DB.
+95: *	The malloc(3) function for DB.
+112:	/* Some C libraries don't correctly set errno when malloc(3) fails. */
+119:		p = malloc(size);
+136: *	The realloc(3) function for DB.
+149:	/* If we haven't yet allocated anything yet, simply call malloc. */
+158:	 * Some C libraries don't correctly set errno when realloc(3) fails.
+161:	 * try to continue after realloc fails.
+167:		p = realloc(ptr, size);
+181: *	The free(3) function for DB.
+198:		free(ptr);
+203: *	The free(3) function for DB, freeing a string.
+218:		free(ptr);
+28: * it up into areas, similarly to how malloc works.  We do coalescing on free.
+30: * The "len" field in the __data struct contains the length of the free region
+32: * by the caller to find this length, which allows us to free a chunk without
+132:		 * flag value, so that we can find the real length during free.
+179:	 * We keep the free list sorted by address so that coalescing is
+234: *	Return the amount of memory on the free list.
+294:	fprintf(fp, "%s\nMemory free list\n", DB_LINE);
+28: * $Log: kalloc.c,v $
+53: * 	Made the big kalloc zones collectable.
+73: * 	Make all kalloc zones 8 MB big. (No more kalloc panics!)
+86: * 	Give each kalloc zone a meaningful name (for panics);
+99: *	File:	kern/kalloc.c
+111:#include <kern/kalloc.h>
+135:	"kalloc.1",		"kalloc.2",
+136:	"kalloc.4",		"kalloc.8",
+137:	"kalloc.16",		"kalloc.32",
+138:	"kalloc.64",		"kalloc.128",
+139:	"kalloc.256",		"kalloc.512",
+140:	"kalloc.1024",		"kalloc.2048",
+141:	"kalloc.4096",		"kalloc.8192",
+142:	"kalloc.16384",		"kalloc.32768"
+190:	 *	with kalloc, and messages up through size 8192 are common.
+217:vm_offset_t kalloc(size)
+285:kfree(data, size)
+4: * This program is free software; you can redistribute it and/or
+36:	{"kmalloc", 0},
+40:	{"vmalloc", 0},
+43:	{"kcalloc", 0, 1},
+53:	{"krealloc", 1},
+62:	{"malloc", 0},
+63:	{"calloc", 0, 1},
+65:	{"realloc", 1},
+53:/* version of malloc that only returns if successful */
+58:	return (alloctest(malloc(size)));
+61:/* version of calloc that only returns if successful */
+66:	return (alloctest(calloc(nelem, size)));
+69:/* version of realloc that only returns if successful */
+74:	return (alloctest(realloc(p, size)));
+44:#define	M_KEEP		4	/* retain contents of block after a free */
+56:	unsigned long fsmblks;	/* space in free small blocks */
+58:	unsigned long fordblks;	/* space in free ordinary blocks */
+68:void *malloc(size_t);
+69:void free(void *);
+70:void *realloc(void *, size_t);
+71:void *calloc(size_t, size_t);
+76:using std::malloc;
+77:using std::free;
+78:using std::realloc;
+79:using std::calloc;
+7:alloc(need)
+36:free(cptr)
+66: * The standalone allocator cannot free other types of memory.
+32: * For documentation on these functions, see malloc(3C).
+36:malloc(size_t size)
+51:calloc(size_t number, size_t size)
+55:	addr = malloc(number * size);
+63:realloc(void *oldaddr, size_t size)
+68:	addr = malloc(size);
+73:			free(oldaddr);
+81:free(void *addr)
+2: * @file alloc.c
+6: * legacy file at @c minix/alloc.c now includes this one.
+48: * alloc will obtain the next available
+49: * free disk block from the free list of
+52: * free blocks; the last of these is read to
+56: * the free list is exhausted.
+58:alloc(dev) {
+96: * back on the free list of the
+99:free(dev, bno) {
+242: * in core free-block and i-node
+33: * MALLOC.C - malloc equivalent, runs on top of zalloc and uses sbrk
+47:#ifdef malloc
+48:#undef malloc
+49:#undef free
+117:			printf("free: duplicate free @ %p from %s:%d\n",
+122:			panic("free: guard1 fail @ %p from %s:%d",
+128:			printf("free: duplicate2 free @ %p from %s:%d\n",
+133:			panic("free: guard2 fail @ %p + %zu from %s:%d",
+163: * realloc() - I could be fancier here and free the old buffer before
+40: *	Pools are managed via a linked list of 'free' areas.  Allocating
+42: *	Since the freelist consists only of free memory areas, it is possible
+55: *	z[n]xalloc() works like z[n]alloc() but the allocation is made from
+65: *	if you want.  Reclaim does not function when z[n]xalloc() is used,
+66: *	only for z[n]alloc().
+169: * zfree() - free previously allocated memory
+197:	 * free the segment
+272: *		   must free it to make it available to the memory subsystem.
+56: * Required malloc alignment.
+21: * 2.2. Intel grants, free of charge, to any person ("Licensee") obtaining a
+21: * 2.2. Intel grants, free of charge, to any person ("Licensee") obtaining a
+169: * DESCRIPTION: Subsystem equivalent of calloc. Allocate and zero memory.
+482:         * allocations. Note: The caller should use AcpiOsFree to free this
+28:malloc(mp, size)
+27: *	File:	kern/kalloc.c
+49:	vm_offset_t	head;		/* head of free list */
+84:	 * Support free lists for items up to vm_page_size or
+172:void *kalloc(vm_size_t size)
+223:kfree(	void *data,
+253:void *malloc(vm_size_t size)
+255:	return (void *)kalloc(size);
+258:void *realloc(void *block, vm_size_t size)
+260:	panic("realloc not implemented");
+263:void free(void *addr)
+265:	panic("free not implemented");
+18: * $Log: malloc.h,v $
+24: *	File:	include/sys/malloc.h
+59: *	@(#)malloc.h	8.3 (Berkeley) 1/12/94
+68: * flags to malloc
+78:#define	M_FREE		zone_M_FREE	/* should be on free list */
+201:#define	M_FREE		0	/* should be on free list */
+269:	(space) = (cast)malloc(size)
+270:#define FREE(addr, type) free((caddr_t)(addr))
+272:#define	bsd_malloc(size, type, flags) malloc(size)
+273:#define bsd_free(addr, type) free((void *)(addr))
+78:zone_t		zinit(vm_size_t size, vm_size_t max, vm_size_t alloc,
+1:/* $OpenBSD: xmalloc.h,v 1.2 2009/06/07 08:39:13 ray Exp $ */
+9: * Versions of malloc and friends that check their results, and never return
+22:void	*xmalloc(size_t);
+23:void	*xcalloc(size_t, size_t);
+24:void	*xrealloc(void *, size_t, size_t);
+25:void     xfree(void *);
+1:/* $OpenBSD: xmalloc.c,v 1.2 2009/06/07 08:39:13 ray Exp $ */
+6: * Versions of malloc and friends that check their results, and never return
+24:#include "xmalloc.h"
+27:xmalloc(size_t size)
+33:	ptr = malloc(size);
+40:xcalloc(size_t nmemb, size_t size)
+45:		errx(1, "xcalloc: zero size");
+47:		errx(1, "xcalloc: nmemb * size > SIZE_MAX");
+48:	ptr = calloc(nmemb, size);
+50:		errx(1, "xcalloc: out of memory (allocating %lu bytes)",
+56:xrealloc(void *ptr, size_t nmemb, size_t size)
+66:		new_ptr = malloc(new_size);
+68:		new_ptr = realloc(ptr, new_size);
+75:xfree(void *ptr)
+79:	free(ptr);
+89:	cp = xmalloc(len);
+37:// the pages mapped by entrypgdir on free list.
+56:    kfree(p);
+61://  call to kalloc().  (The exception is when
+63:void kfree(char *v) {
+67:    panic("kfree");
+93:char *kalloc(void) {
+2: * @file alloc.c
+6: * implementation now resides in @c minix/kernel/alloc.c.
+9:#include "kernel/alloc.c"
+28:malloc(mp, size)
+99:	if ((fbuf = (char *)malloc(fsize)) == NULL) {
+104:		free(fbuf);
+155:			free(fbuf);
+162:				free(fbuf);
+214:			free(*fbuf);
+217:		if ((*fbuf = malloc(fsize)) == NULL) {
+223:			free(*fbuf);
+233:			free(*fbuf);
+238:			free(*fbuf);
+366:	if ((sep = (strentry_t *)malloc(sizeof (strentry_t))) == NULL)
+370:		free(sep);
+462:	if ((sep = (strentry_t *)malloc(sizeof (strentry_t))) == NULL)
+466:		free(sep);
+507:	if ((sep = (strentry_t *)malloc(sizeof (strentry_t))) == NULL)
+511:		free(sep);
+709:					/* if need to free and safe to free */
+712:						free(dargs->devinfo->devname);
+830:			/* if need to free and safe to free */
+833:				free(dargs->devinfo->devname);
+1023:		free(old_str);
+1045:		free(old_str);
+1068:	if ((tokp = (char *)malloc(strlen(devinfo->devopts) +1)) != NULL) {
+1115:		if ((tokp = (char *)malloc(strlen(devinfo->devopts) + 1))
+1383:	if ((nbuf = (char *)malloc(nsize + 1)) == NULL)
+1395:			free(nbuf);
+1406:			free(nbuf);
+1417:		free(nbuf);
+1421:	free(nbuf);
+1625:	 * Once we have built these lists, we need to free the strings
+1805:		if ((nentry = (deventry_t *)malloc(sizeof (deventry_t))) ==
+1843:		if (kval = (char *)malloc(nlen))
+1862:	    (char *)realloc(nentry->devinfo.devlist, nlen)) == NULL) {
+1864:			free(nentry->devinfo.devname);
+1865:			free(nentry);
+1984:			    (char *)realloc(current->devinfo.devlist,
+1986:				free(oldlist);
+2008:			free(oldlist);
+2017:		free(current->devinfo.devname);
+2018:		free(current->devinfo.devlist);
+2021:		free(current);
+2111:	free(current->devinfo.devname);
+2113:		free(current->devinfo.devlist);
+2115:		free(current->devinfo.devopts);
+2122:	free(current);
+2: * alloc.c
+59: * The number of malloc blocks to store
+86:    xTrace1(malloc, TR_FUNCTIONAL_TRACE, "xMalloc(%d) called", num);
+88:    xTrace1(malloc, TR_DETAILED, "xk internal malloc returns %x", mp);
+97:		xError("malloc debugging block array overflow");
+101:	xTrace1(malloc, TR_DETAILED, "xMalloc adding block to index %d",
+115:    xTrace1(malloc, TR_DETAILED, "xMalloc returns %x", mp);
+125:    xError("free stack");
+205:    xIfTrace(malloc, verboseDump) {
+214:	xIfTrace(malloc, verboseDump) {
+231:		xTrace1(malloc, TR_ALWAYS, "%s", buf);
+239:    xTrace2(malloc, TR_ALWAYS, "%d mallocs, %d frees", numMallocs, numFrees);
+240:    xTrace1(malloc, TR_ALWAYS, "%d malloc debugging slots occupied", i);
+269:    xIfTrace( malloc, TR_DETAILED ) {
+278:	xTrace1(malloc, TR_ALWAYS, "%s", buf);
+301:    xTrace0(malloc, TR_GROSS_EVENTS, "xkernel malloc init");
+323:    xTrace1(malloc, TR_EVENTS, "malloc %u bytes", s);
+324:    xIfTrace(malloc, TR_MAJOR_EVENTS)
+326:	  printf("malloc %u bytes", s);
+328:    if ( p = (char *)malloc(s) ) {
+335:	printf("malloc: memory available %d\n", memory_unused);
+340:    Kabort("malloc failed");
+350:    free(p);
+40:#include "malloc.h"
+56: * use level memory allocater (malloc, free, realloc)
+58: *	-malloc, free, realloc and mallopt form a memory allocator
+59: *	similar to malloc, free, and realloc.  The routines
+67: *		1. A free block.  This is a block not in use by the
+69: *		   of the free queue.)
+81: *	free list.
+85: *	head of the free queue, which prevents bunching of small
+88: *	-Compaction is performed at free time of any blocks immediately
+90: *	with a preceding block during the search phase of malloc.
+91: *	Since a freed block is added at the front of the free queue,
+94: *	a block with a contiguious preceding block that is free is
+95: *	freed and reallocated on the next call to malloc.  The
+101: *	malloc.  This block contains a header and ?????? small blocks.
+105: *	A list of free blocks is kept within the holding block.
+109: *	description of arena, free queue, holding blocks etc.
+129:				/* first and last entry in free list */
+177: * malloc(nbytes) - give a user nbytes to use
+181:malloc(size_t nbytes)
+204:	static int realloc;
+211:		return (malloc(size));
+235:		 * can't free it. So double the allocation request.
+237:		realloc++;
+238:		free(alloc_buf);
+286:	free(alloc_buf);
+292:valloc(size_t size)
+305: * malloc_unlocked(nbytes, nosmall) - Do the real work for malloc
+320:		/* initialize free queue */
+341:			 * pointers by calling malloc recursively.
+385:			 * Now make lfreeq point to a free block.
+423:			/* add to head of free queue */
+511:			 *		    block is free
+570:				 * is free
+592:			/* take block found of free queue */
+595:			 * make head of free queue immediately follow blk,
+629: * free(ptr) - free block that user thinks starts at ptr
+640:free(void *ptr)
+648: * free_unlocked(ptr) - Do the real work for free()
+667:		/* allow twits (e.g. awk) to free a block twice */
+672:		/* put lblk on its hold block's free list */
+716: * realloc(ptr, size) - give the user a block of size "size", with
+721:realloc(void *ptr, size_t size)
+733: * realloc_unlocked(ptr) - Do the real work for realloc()
+759:		 * reallocating a free block, malloc doesn't alter the contents
+779:		 * deal with twits who reallocate free blocks
+826:			/* bite the bullet, and call malloc */
+840: * calloc - allocate and clear memory block
+844:calloc(size_t num, size_t size)
+861:	mp = malloc(total);
+892: *	M_KEEP   Retain data in freed block until the next malloc,
+893: *		 realloc, or calloc.  Value is ignored.
+895: *		 the old version of malloc, and is not recommended.
+898: *		 1, if malloc has previously been called or
+962: *		 of space usage, defined in malloc.h
+973:	ssize_t fsp;			/* free space in 1 hold block */
+1036: * freespace - calc. how much space is used in the free
+1041: *	returns space used in free small blocks of hblk
+1055:	/* follow free chain */
+1140: * rstalloc - reset alloc routines
+1147: *		  the first call to malloc, even if some
+1182:	free(p);
+2: * alloc.c
+59: * The number of malloc blocks to store
+86:    xTrace1(malloc, TR_FUNCTIONAL_TRACE, "xMalloc(%d) called", num);
+88:    xTrace1(malloc, TR_DETAILED, "xk internal malloc returns %x", mp);
+97:		xError("malloc debugging block array overflow");
+101:	xTrace1(malloc, TR_DETAILED, "xMalloc adding block to index %d",
+115:    xTrace1(malloc, TR_DETAILED, "xMalloc returns %x", mp);
+125:    xError("free stack");
+205:    xIfTrace(malloc, verboseDump) {
+214:	xIfTrace(malloc, verboseDump) {
+231:		xTrace1(malloc, TR_ALWAYS, "%s", buf);
+239:    xTrace2(malloc, TR_ALWAYS, "%d mallocs, %d frees", numMallocs, numFrees);
+240:    xTrace1(malloc, TR_ALWAYS, "%d malloc debugging slots occupied", i);
+269:    xIfTrace( malloc, TR_DETAILED ) {
+278:	xTrace1(malloc, TR_ALWAYS, "%s", buf);
+301:    xTrace0(malloc, TR_GROSS_EVENTS, "xkernel malloc init");
+323:    xTrace1(malloc, TR_EVENTS, "malloc %u bytes", s);
+324:    xIfTrace(malloc, TR_MAJOR_EVENTS)
+326:	  printf("malloc %u bytes", s);
+328:    if ( p = (char *)malloc(s) ) {
+335:	printf("malloc: memory available %d\n", memory_unused);
+340:    Kabort("malloc failed");
+350:    free(p);
+1:/* $Header: /n/fast/usr/lsrc/mach/CVS/lites/server/netiso/xebec/malloc.h,v 1.1.1.1 1995/03/02 21:49:57 mike Exp $ */
+2:/* $Source: /n/fast/usr/lsrc/mach/CVS/lites/server/netiso/xebec/malloc.h,v $ */
+1:/* $Header: /n/fast/usr/lsrc/mach/CVS/lites/server/netiso/xebec/malloc.c,v 1.1.1.1 1995/03/02 21:49:57 mike Exp $ */
+2:/* $Source: /n/fast/usr/lsrc/mach/CVS/lites/server/netiso/xebec/malloc.c,v $ */
+10: * a simple malloc
+12: * it's a whole lot faster than the c library malloc
+16:#include "malloc.h"
+45:#include <sys/malloc.h>
+87:	 * Remove the inode from the free list and write the new start
+88:	 * of the free list into the superblock.
+92:		panic("lfs_ialloc: inuse inode on the free list");
+230:	 * and link it into the free chain.
+20: * The free inodes are managed by bitmaps.  A file system contains several
+26: * the free blocks count in the block.  The descriptors are loaded in memory
+295: * free space and a low directory-to-inode ratio; if that fails, then of
+296: * the groups with above-average free space, that group with the fewest
+300: * group to find a free inode.
+369:			 * free inode
+384:			 * That failed: try linear search for a free inode
+506:				    "Wrong free inodes count in group %d, "
+513:			    "Wrong free inodes count in super block, "
+77: * the call in vfree might be redundant
+314:			panic("ext2_reallocblks: alloc mismatch");
+350:	 * Last, free the old blocks and assign the new blocks to the buffers.
+437:	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
+19: * The free blocks are managed by bitmaps.  A file system contains several
+25: * the free blocks count in the block.  The descriptors are loaded in memory
+246: * free, or there is a free block within 32 blocks of the goal, that block
+247: * is allocated.  Otherwise a forward search is made for a free block; within
+248: * each block group the search first looks for an entire free byte in the block
+249: * bitmap, and then for any free bit if that fails.
+277:	 * First, test whether the goal block is free.
+303:			 * The goal was occupied; search forward for a free
+319:		 * There has been no free block found in the near vicinity
+321:		 * searching in each group first for an entire free byte in
+322:		 * the bitmap and then for any free bit.
+380:	 * We have succeeded in finding a free byte in the block
+382:	 * start of this group of free blocks.
+525:				    "Superblock in group %d is marked free", i);
+531:					    "%d is marked free", j, i);
+535:				    "Block bitmap for group %d is marked free",
+540:				    "Inode bitmap for group %d is marked free",
+547:					    "group %d is marked free", j, i);
+552:				    "Wrong free blocks count for group %d, "
+559:			    "Wrong free blocks count in super block, "
+224:		 * less than half of the minimum free reserve, we choose
+240:		 * we allocate a full sized block, then free the unused portion.
+244:		 * grow within 2% of the free reserve, we choose to begin
+409:			panic("ffs_reallocblks: alloc mismatch");
+445:	 * Last, free the old blocks and assign the new blocks to the buffers.
+520:		panic("ffs_valloc: dup alloc");
+523:		printf("free inode %s/%d had %d blocks\n",
+538:	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
+547: * free inodes, the one with the smallest number of directories.
+576: * average number of free blocks.  An appropriate cylinder group is found
+581: * of free blocks is found. If the allocation is for the first block in an
+662: *   3) brute force search for a free block.
+920:		 * next available free block following the one
+1167: * free map. If a fragment is deallocated, a possible
+1213:			panic("blkfree: freeing free block");
+1238:				panic("blkfree: freeing free frag");
+1274: * The specified inode is placed back in the free map.
+1316:			panic("ifree: freeing free inode");
+1352:	 * find the fragment by searching through the free block
+1400: * Update the cluster map because of an allocation or free.
+1402: * Cnt == 1 means free; cnt == -1 means allocating.
+88:zone_t zinit(size, max, alloc, pageable, name)
+91:	vm_size_t	alloc;		/* allocation size */
+106:	if ((max = round_page(max)) < (alloc = round_page(alloc)))
+107:		max = alloc;
+113:	z->alloc_size = alloc;
+4:  This program is free software; you can redistribute it and/or modify it
+13:  free of the rightful claim of any third person regarding infringement
+28:/* A simple libdwarf-aware malloc checker.
+30:   do make a checking-for-alloc-mistakes libdwarf.
+5:   This program is free software; you can redistribute it
+16:   that it is free of the rightful claim of any third person
+5:  This program is free software; you can redistribute it
+16:  that it is free of the rightful claim of any third person
+41:#include <malloc.h>
+51:    of structs for malloc.
+105:    the malloc arena is exhausted (when malloc returns NULL).
+185:    free(erm);
+192:/* Here is the extra we malloc for a prefix. */
+439:/*  We did alloc something but not a fixed-length thing.
+468:    free(malloc_addr);
+534:    alloc_mem = malloc(size);
+562:            is unable to free anything the caller
+571:            not necessary to test for alloc type, but instead
+600:        a DW_DLA_STRING string that may or may not be malloc-ed
+618:        /*  Not in the tree, so not malloc-ed
+624:        but is space malloc-d in _dwarf_get_alloc(). */
+687:    that the space was allocated by a direct call to malloc,
+688:    and so a straight free() is done.  This is also the case
+694:    and if found not to be the case, a free() is done,
+695:    again on the assumption that a malloc was used to
+700:    to free the er_msg string
+787:            /*  This is special, malloc arena
+806:                so just malloc'd a Dwarf_Error_s.
+808:            free(space);
+811:        /* Was normal alloc, use normal dealloc. */
+844:            and address to free
+863:    free(malloc_addr);
+876:    dbg = (Dwarf_Debug) malloc(sizeof(struct Dwarf_Debug_s));
+905:/* In the 'rela' relocation case we might have malloc'd
+906:   space to ensure it is read-write. In that case, free the space.  */
+911:        free(sec->dss_data);
+939:    Used to free all space allocated for this Dwarf_Debug.
+973:    /* Housecleaning done. Now really free all the space. */
+1006:        free(dbg->de_printf_callback.dp_buffer);
+1021:    free((void *)dbg->de_path);
+1024:        free((char *)dbg->de_gnu_global_paths[g]);
+1027:    free((void*)dbg->de_gnu_global_paths);
+1031:    free(dbg);
+1034:/*  A special case: we have no dbg, no alloc header etc.
+1047:    char *mem = (char *)malloc(len);
+6:  This program is free software; you can redistribute it
+17:  that it is free of the rightful claim of any third person
+43:#include <malloc.h>
+90:    /* alloc control struct and data block together for performance reasons */
+91:    lp = (memory_list_t *) malloc(size + sizeof(memory_list_t));
+124:  depending on the fact that we used to just 'free' this.
+175:    free((void*)lp);
+182:    free(nodep);
+215:    free((void *)base_dbglp);
+5:  This program is free software; you can redistribute it and/or modify it
+14:  free of the rightful claim of any third person regarding infringement
+9: * The current implementation forwards to the C library's @c malloc.
+15:void *kalloc(k_size_t size);
+18: * @brief Free memory previously allocated with kalloc.
+20: * @param ptr Pointer to memory to free. May be NULL.
+22:void kfree(void *ptr);
+25: * @brief Resize an allocation obtained from kalloc.
+27: * This behaves similar to @c realloc.
+33:void *krealloc(void *ptr, k_size_t size);
+2: * @file kalloc.c
+6: * @c malloc(), @c free() and @c realloc() functions. The interface
+11:#include <kalloc.h>
+19: * @c malloc() function. It enables a future drop-in replacement
+25:void *kalloc(k_size_t size) { return malloc(size); }
+28: * @brief Release memory obtained with kalloc().
+30: * @param ptr Allocation to free. May be @c NULL.
+32:void kfree(void *ptr) { free(ptr); }
+35: * @brief Resize a block allocated by kalloc().
+41:void *krealloc(void *ptr, k_size_t size) { return realloc(ptr, size); }
+68:            return (pointer)std::malloc(n * sizeof(T));
+71:        {--count; std::free(p);}
+134:        {return (T*)std::malloc(n * sizeof(T));}
+136:        {std::free(p);}
+69:            return (pointer)std::malloc(n * sizeof(T));
+72:        {--count; std::free(p);}
+135:        {return (T*)std::malloc(n * sizeof(T));}
+137:        {std::free(p);}
+66:		  "dyn: alloc: Increasing object by %d bytes (%d incs).\n",
+70:     temp = (DynPtr) realloc(obj->array, new_size_in_bytes);
+73:	       fprintf(stderr, "dyn: alloc: Out of memory.\n");
+85:	  fprintf(stderr, "dyn: alloc: done.\n");
+31: * valloc(size) - do nothing
+36:valloc(size_t size)
+32: * calloc - allocate and clear memory block
+36:calloc(size_t num, size_t size)
+53:	mp = malloc(total);
+64:	free(p);
+31: *	Memory management: malloc(), realloc(), free(), memalign().
+43: *	free elts maintained in a self-adjusting binary tree. Each list
+51: *	are free and used as follows:
+53: *		BIT0:	1 for busy (block is in use), 0 for free.
+55: *			preceding block in contiguous memory is free.
+63:static	TREE	*Root;		/* root of the free tree */
+64:static	TREE	*Bottom;	/* the last free chunk in the arena */
+117:	/* want to return a unique pointer on malloc(0) */
+162:malloc(size_t size)
+261:	/* if the leftover is enough for a new free piece */
+280: *	realloc().
+285:realloc(void *old, size_t size)
+392:		/* the previous block may be free */
+399:call_malloc:	/* call malloc to get a new block */
+412:	 * Attempt special case recovery allocations since malloc() failed:
+417:	 *	malloc() may have failed to allocate the chunk of
+420:	 *	malloc() may have failed as with 2.  Change to
+424:	 *	If the previous block is free and the combination of
+463:	/* malloc() sets errno */
+469: *	Coalescing of adjacent free blocks is done first.
+470: *	Then, the new free block is leaf-inserted into the free tree
+473: *	on the tree. In practice, however, free is much more infrequent
+474: *	than malloc/realloc and the tree searches performed by these
+543:	/* set bottom block, or insert in the free tree */
+615:	 * Tell next block that this one is free.
+731:	/* non-contiguous memory, free old bottom block */
+1074:free(void *old)
+1118:	size_t	reqsize;	/* Num of bytes to get from malloc() */
+1119:	TREE	*p;		/* Ptr returned from malloc() */
+1139:	 * aligned correctly. The worst case is when malloc returns
+1164:	p = (TREE *) malloc(reqsize);
+1166:		/* malloc sets errno */
+1230:		 * split and free a fragment on the right
+1248:valloc(size_t size)
+1257:calloc(size_t num, size_t size)
+1269:	if ((mp = malloc(total)) != NULL)
+1278:	free(p);
+31: * Public interface for multi-threadead malloc user land library
+42:#define	MTDOUBLEFREE	1	/* core dumps on double free */
+43:#define	MTDEBUGPATTERN	2	/* write misaligned data after free. */
+45:#define	MTCHUNKSIZE	32	/* How much to alloc when backfilling caches. */
+31: * Various data structures that define the guts of the mt malloc
+44:	caddr_t mt_freelist;	/* free block bit mask */
+52: * The MT hot malloc implementation contained herein is designed to be
+53: * plug-compatible with the libc version of malloc. It is not intended
+65: * bucket the allocation should be satisfied from. The management of free
+66: * buckets is done via a bitmask. A free bucket is represented by a 1. The
+67: * first free bit represents the first free bucket. The position of the bit,
+72: * This cache control address is used during free() to mark the buffer free
+104: * get to the aligned address from malloc'ed address is the minimum size
+107: * from memaligned address, we can get to the malloc'ed address. Otherwise,
+110: * malloc'ed address.
+171:#define	FREEPATTERN	0xdeadbeef /* debug fill pattern for free buf */
+234:malloc(size_t bytes)
+250:realloc(void * ptr, size_t bytes)
+258:		return (malloc(bytes));
+261:		free(ptr);
+270:	 *	p = malloc(64);
+271:	 *	q = realloc(p, 64);
+283:	new = malloc(bytes);
+290:	 * to realloc() is not allowed - unless the caller specifically states
+317:		free(ptr);
+325:	free(ptr);
+331:calloc(size_t nelem, size_t bytes)
+348:	ptr = malloc(size);
+357:free(void * ptr)
+434:	 * the free. Things go left to right that's why the mask is 0x80
+473:	/* <= MTMALLOC_MIN_ALIGN, malloc can provide directly */
+475:		return (malloc(size));
+484:	alloc_buf = malloc(alloc_size);
+487:		/* malloc sets errno */
+491:	 * If alloc_size > MAX_CACHED, malloc() will have returned a multiple of
+493:	 * we will use alloc_size to return the excess fragments to the free
+608:				/* free up the head fragment */
+655:				 * We try to free up tail-end when we can
+732:valloc(size_t size)
+752:		 * Reinitialize free blocks in case malloc() is called prior
+910:	if (nblocks == 0) { /* less than 8 free blocks in this pool */
+934:		/* Set everything to free */
+952:	/* Reinitialize free oversize blocks. */
+959:	/* Reinitialize free blocks. */
+1028:	 * Find a cache of the appropriate size with free buffers.
+1033:	 *	   free happens during our search, it will increment mt_nfree,
+1061:	if (thiscache == NULL) { /* there are no free caches */
+1132:	 * Now you have the offset in n, you've changed the free mask
+1140:	/* Store the cache addr for this buf. Makes free go fast. */
+1156:			abort();	/* reference after free */
+1218:	 * block in the kernel anyway since given an oversize alloc
+1226:				abort();	/* reference after free */
+1555:	 * that calls malloc().  If it did, disaster would ensue.
+1560:	 * ran first and called malloc(), disaster would ensue.
+1561:	 * Because this is an interposer library for malloc(), the
+7:#define kmalloc	linux_kmalloc
+8:#define kfree	linux_kfree
+4:#include <malloc.h>
+7:/* Remove any memory in the specified range from the free memory list.  */
+35:	if (!(buf = malloc(size)))
+37:	/*printf("malloc returning %08x-%08x\n", buf, buf+size);*/
+44:	if (!(buf = calloc(size, 1)))
+46:	/*printf("calloc returning %08x-%08x\n", buf, buf+size);*/
+111:		if ((p.bind = calloc(1, sizeof (struct t_bind))) == NULL)
+123:		if ((p.call = calloc(1, sizeof (struct t_call))) == NULL)
+153:		if ((p.opt = calloc(1, sizeof (struct t_optmgmt))) == NULL)
+170:		if ((p.dis = calloc(1, sizeof (struct t_discon))) == NULL)
+181:		if ((p.udata = calloc(1, sizeof (struct t_unitdata))) == NULL)
+208:		if ((p.uderr = calloc(1, sizeof (struct t_uderr))) == NULL)
+230:		if ((p.info = calloc(1, sizeof (struct t_info))) == NULL)
+293:			if ((buf->buf = calloc(1, infalloc)) == NULL) {
+302:			if ((buf->buf = calloc(1, 1024)) == NULL) {
+337:		if ((buf->buf = calloc(1, (size_t)n)) == NULL) {
+36: * returned from {m,c,re}alloc and memalign.  The first four bytes give
+43: * argument to umem_alloc(), not the argument to malloc().
+56:#pragma weak malloc = umem_malloc
+57:#pragma weak free = umem_malloc_free
+123:calloc(size_t nelem, size_t elsize)
+133:	retval = malloc(size);
+165:	 * if malloc provides the required alignment, use it.
+169:		return (malloc(size_arg));
+229:valloc(size_t size)
+237: * Pulls information out of a buffer pointer, and optionally free it.
+238: * This is used by free() and realloc() to process buffers.
+243: * Preserves errno, since free()'s semantics require it.
+248:    int do_free,		/* free the buffer, or just get its size? */
+347:			message = "double-free or invalid buffer";
+354:	    do_free? "free" : "realloc", buf_arg, message);
+391:realloc(void *buf_arg, size_t newsize)
+397:		return (malloc(newsize));
+400:		free(buf_arg);
+415:	buf = malloc(newsize);
+420:	free(buf_arg);
+29: * Ensure that errno is set if malloc() fails.
+54: *   Portable replacement for malloc().
+55: *   If malloc() fails (e.g returns NULL)
+56: *   then return ENOMEM unless malloc() sets errno for us on this system
+57: *   and ensure malloc(0) returns a non-NULL pointer.
+68:	 *  ANSI does not insist setting errno when malloc() fails.
+70:	 *  an errno when malloc() fails.
+71:	 *  Thus, on systems that implement malloc() where an errno is not
+81:         *  MKS code seems to rely on malloc(0) returning a valid pointer.
+82:	 *  This allows it to realloc() later when actual size is determined.
+84:	 *  According to ANSI (4.10.3 line 18-19) the result of malloc(0) is
+89:	if ((ptr = malloc(amount)) == NULL) {
+35:	void *p = malloc(n);
+50:	free(p);
+92: * Duplicate a block of memory.  Combines malloc with memcpy, much as
+93: * strdup combines malloc, strlen, and strcpy.
+61: * DESCRIPTION: Subsystem equivalent of calloc. Allocate and zero memory.
+329:         * allocations. Note: The caller should use AcpiOsFree to free this
+1:/* $Header: /n/fast/usr/lsrc/mach/CVS/lites/server/netiso/xebec/malloc.h,v 1.1.1.1 1995/03/02 21:49:57 mike Exp $ */
+2:/* $Source: /n/fast/usr/lsrc/mach/CVS/lites/server/netiso/xebec/malloc.h,v $ */
+1:/* $Header: /n/fast/usr/lsrc/mach/CVS/lites/server/netiso/xebec/malloc.c,v 1.1.1.1 1995/03/02 21:49:57 mike Exp $ */
+2:/* $Source: /n/fast/usr/lsrc/mach/CVS/lites/server/netiso/xebec/malloc.c,v $ */
+10: * a simple malloc
+12: * it's a whole lot faster than the c library malloc
+16:#include "malloc.h"
+45:#include <sys/malloc.h>
+87:	 * Remove the inode from the free list and write the new start
+88:	 * of the free list into the superblock.
+92:		panic("lfs_ialloc: inuse inode on the free list");
+230:	 * and link it into the free chain.
+20: * The free inodes are managed by bitmaps.  A file system contains several
+26: * the free blocks count in the block.  The descriptors are loaded in memory
+293: * free space and a low directory-to-inode ratio; if that fails, then of
+294: * the groups with above-average free space, that group with the fewest
+298: * group to find a free inode.
+367:			 * free inode
+382:			 * That failed: try linear search for a free inode
+504:				    "Wrong free inodes count in group %d, "
+511:			    "Wrong free inodes count in super block, "
+77: * the call in vfree might be redundant
+314:			panic("ext2_reallocblks: alloc mismatch");
+350:	 * Last, free the old blocks and assign the new blocks to the buffers.
+437:	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
+19: * The free blocks are managed by bitmaps.  A file system contains several
+25: * the free blocks count in the block.  The descriptors are loaded in memory
+244: * free, or there is a free block within 32 blocks of the goal, that block
+245: * is allocated.  Otherwise a forward search is made for a free block; within
+246: * each block group the search first looks for an entire free byte in the block
+247: * bitmap, and then for any free bit if that fails.
+275:	 * First, test whether the goal block is free.
+301:			 * The goal was occupied; search forward for a free
+317:		 * There has been no free block found in the near vicinity
+319:		 * searching in each group first for an entire free byte in
+320:		 * the bitmap and then for any free bit.
+378:	 * We have succeeded in finding a free byte in the block
+380:	 * start of this group of free blocks.
+523:				    "Superblock in group %d is marked free", i);
+529:					    "%d is marked free", j, i);
+533:				    "Block bitmap for group %d is marked free",
+538:				    "Inode bitmap for group %d is marked free",
+545:					    "group %d is marked free", j, i);
+550:				    "Wrong free blocks count for group %d, "
+557:			    "Wrong free blocks count in super block, "
+224:		 * less than half of the minimum free reserve, we choose
+240:		 * we allocate a full sized block, then free the unused portion.
+244:		 * grow within 2% of the free reserve, we choose to begin
+409:			panic("ffs_reallocblks: alloc mismatch");
+445:	 * Last, free the old blocks and assign the new blocks to the buffers.
+520:		panic("ffs_valloc: dup alloc");
+523:		printf("free inode %s/%d had %d blocks\n",
+538:	uprintf("\n%s: create/symlink failed, no inodes free\n", fs->fs_fsmnt);
+547: * free inodes, the one with the smallest number of directories.
+576: * average number of free blocks.  An appropriate cylinder group is found
+581: * of free blocks is found. If the allocation is for the first block in an
+662: *   3) brute force search for a free block.
+920:		 * next available free block following the one
+1167: * free map. If a fragment is deallocated, a possible
+1213:			panic("blkfree: freeing free block");
+1238:				panic("blkfree: freeing free frag");
+1274: * The specified inode is placed back in the free map.
+1316:			panic("ifree: freeing free inode");
+1352:	 * find the fragment by searching through the free block
+1400: * Update the cluster map because of an allocation or free.
+1402: * Cnt == 1 means free; cnt == -1 means allocating.
+2: * alloc.c
+49: * The number of malloc blocks to store
+80:    xTrace1(malloc, TR_FUNCTIONAL_TRACE, "xMalloc(%d) called", num);
+82:    xTrace1(malloc, TR_DETAILED, "xk internal malloc returns %x", mp);
+87:	    xError("malloc debugging block array overflow");
+91:    xTrace1(malloc, TR_DETAILED, "xMalloc adding block to index %d",
+107:    xTrace1(malloc, TR_DETAILED, "xMalloc returns %x", mp);
+118:    xError("free stack");
+199:    xIfTrace(malloc, verboseDump) {
+208:	xIfTrace(malloc, verboseDump) {
+225:		xTrace1(malloc, TR_ALWAYS, "%s", buf);
+233:    xTrace2(malloc, TR_ALWAYS, "%d mallocs, %d frees", numMallocs, numFrees);
+234:    xTrace1(malloc, TR_ALWAYS, "%d malloc debugging slots occupied", i);
+264:    xIfTrace( malloc, TR_DETAILED ) {
+273:	xTrace1(malloc, TR_ALWAYS, "%s", buf);
+302:    xTrace0(malloc, TR_GROSS_EVENTS, "xkernel malloc init");
+324:    xTrace1(malloc, TR_EVENTS, "malloc %u bytes", s);
+325:    xIfTrace(malloc, TR_MAJOR_EVENTS)
+327:	  printf("malloc %u bytes", s);
+329:    if ( p = (char *)malloc(s) ) {
+336:	printf("malloc: memory available %d\n", memory_unused);
+341:    Kabort("malloc failed");
+351:    free(p);
+28: * $Log: malloc.c,v $
+43: * 	Converted file to ANSI C.  Fixed realloc behavior when passed
+47: * 	Fixed arguments and return type of malloc and realloc to any_t so
+49: * 	Defined free as a void function.
+83: *	Changed realloc() to copy min(old size, new size) bytes.
+87: * 	File: 	malloc.c
+101: * When free, next points to next block on free list.
+102: * When allocated, fl points to free list.
+118:	header_t head;		/* head of free list for this size */
+127: * Size argument to malloc is a signed integer for sanity checking,
+232:malloc(register vm_size_t size)
+283:	 * Pop block from free list.
+291:	 * Store free list pointer in block header
+293:	 * at free() time.
+303:free(void *base)
+313:	 * Find free list for block.
+342:	     * Push block on free list.
+356:realloc(void *old_base, vm_size_t new_size)
+365:		return malloc(new_size);
+368:		free(old_base);
+394:	 * Allocate new block, copy old bytes, and free old block.
+396:	new_base = malloc(new_size);
+400:		free(old_base);
+438: * Prepare the malloc module for a fork by insuring that no thread is in a
+439: * malloc critical section.
+40:#include <sys/malloc.h>
+63: * The WEIRD_ADDR is used as known text to copy into free objects so
+71: * pointer for free objects. However, when running with diagnostics,
+110:		panic("malloc - bogus type");
+150:				panic("malloc: allocation too large");
+226:		panic("malloc: wrong bucket");
+228:		panic("malloc: lost data");
+246: * Free a block of memory allocated by malloc.
+260:	long *end, *lp, alloc, copysize;
+276:		alloc = addrmask[BUCKETINDX(NBPG * CLSIZE)];
+278:		alloc = addrmask[kup->ku_indx];
+279:	if (((u_long)addr & alloc) != 0)
+280:		panic("free: unaligned addr 0x%x, size %d, type %s, mask %d\n",
+281:			addr, size, memname[type], alloc);
+303:	 * it looks free before laboriously searching the freelist.
+310:			panic("free: duplicated free");
+315:	 * and to make it look free. Also, save the type being freed
+329:			panic("free: multiple frees");
+88:zone_t zinit(size, max, alloc, pageable, name)
+91:	vm_size_t	alloc;		/* allocation size */
+106:	if ((max = round_page(max)) < (alloc = round_page(alloc)))
+107:		max = alloc;
+113:	z->alloc_size = alloc;
+39: * broken up into unit allocations and maintained on free lists.
+262:	 * We maintain the free list already zeroed except for the pointer
+322: * to make memory allocations in the style of malloc()/free()
+330: * fatal error to free() an object allocated by libc_malloc().
+35:valloc(size_t size)
+31: *	Memory management: malloc(), realloc(), free().
+45: *	free elts maintained in a self-adjusting binary tree. Each list
+53: *	are free and used as follows:
+55: *		BIT0:	1 for busy (block is in use), 0 for free.
+57: *			preceding block in contiguous memory is free.
+69: * This never worked when alternate malloc() libraries were used
+73: * real locking: libc_malloc_lock.  This puts libc's malloc() package
+74: * on the same footing as all other malloc packages.
+79:static TREE	*Root,		/* root of the free tree */
+80:		*Bottom,	/* the last free chunk in the arena */
+92:#define	FREESIZE (1<<5) /* size for preserving free blocks until next malloc */
+95:static void *flist[FREESIZE];	/* list of blocks to be freed on next malloc */
+96:static int freeidx;		/* index of free blocks in flist % FREESIZE */
+125:	/* want to return a unique pointer on malloc(0) */
+161:malloc(size_t size)
+195:	/* see if the last free block can be used */
+222:	/* perform free's of space since last malloc */
+277:	/* if the leftover is enough for a new free piece */
+294: * realloc().
+300:realloc(void *old, size_t size)
+328:	/* perform free's of space since last malloc */
+353:		/* free is size is zero */
+404:		/* the previous block may be free */
+410:	/* call malloc to get a new block */
+424:	 * Attempt special case recovery allocations since malloc() failed:
+429:	 *	malloc() may have failed to allocate the chunk of
+432:	 *	malloc() may have failed as with 2.  Change to
+436:	 *	If the previous block is free and the combination of
+477: * Coalescing of adjacent free blocks is done first.
+478: * Then, the new free block is leaf-inserted into the free tree
+481: * on the tree. In practice, however, free is much more infrequent
+482: * than malloc/realloc and the tree searches performed by these
+533:	/* set bottom block, or insert in the free tree */
+589:	/* tell next block that this one is free */
+688:	/* non-contiguous memory, free old bottom block */
+843: *	free().
+844: *	Performs a delayed free of the block pointed to
+846: *	until the next malloc or realloc. At that time, all the
+848: *	realfree(). This allows the contents of free blocks to
+849: *	remain undisturbed until the next malloc or realloc.
+852:free(void *old)
+879:	 *	3. In the free list.
+898: * realloc() should work if it is called with a pointer
+899: * to a block that was freed since the last call to malloc() or
+900: * realloc(). If cleanfree() is called from realloc(), ptr
+36: * calloc - allocate and clear memory block
+39:calloc(size_t num, size_t size)
+55:	return ((mp = malloc(total)) ? memset(mp, 0, total) : mp);
+34: * For each of the structure types we wish to allocate/free
+37: * elements which are put into a free list from which allocations
+83:aio_worker_t *worker_freelist = NULL;	/* free list of worker structures */
+151:aio_req_t *_aio_freelist = NULL;	/* free list of request structures */
+227:aio_lio_t *_lio_head_freelist = NULL;	/* free list of lio head structures */
+307:	 * All of the workers are gone; free their structures.
+52:	      int calloc;	/*calloc clears an array of integers*/
+58:static	union store *allocx;	/*for benefit of realloc*/
+62:malloc(nbytes)
+127:free(ap)
+140:/*	realloc(p, nbytes) reallocates a block obtained from malloc()
+141: *	and freed since last call of malloc()
+147:realloc(p, nbytes)
+157:		free((char *)p);
+159:	q = (union store *)malloc(nbytes);
+202:	int used = 0, free = 0, i;
+211:		if (testbusy(p->ptr)) used += i; else free += i;
+213:	printf("%d used, %d free, %l end\n", used, free, clearbusy(alloct));
+25:free(void *ap)
+59:  free((void*)(hp + 1));
+64:malloc(size_t nbytes)
+1:/*	$NetBSD: alloc.c,v 1.10 2007/12/12 22:55:42 lukem Exp $	*/
+29: * area-based allocation built on malloc/free
+32:__RCSID("$NetBSD: alloc.c,v 1.10 2007/12/12 22:55:42 lukem Exp $");
+55:		free(l);
+63:/* coverity[+alloc] */
+65:alloc(size_t size, Area *ap)
+69:	l = malloc(sizeof(struct link) + size);
+81:/* coverity[+alloc] */
+82:/* coverity[+free : arg-0] */
+89:		return alloc(size, ap);
+95:	l2 = realloc(l, sizeof(struct link) + size);
+108:/* coverity[+free : arg-0] */
+126:	free(l);
+1:/* $NetBSD: alloc.c,v 1.16 2024/04/24 15:46:20 nia Exp $ */
+35:static char sccsid[] = "@(#)alloc.c	8.1 (Berkeley) 5/31/93";
+37:__RCSID("$NetBSD: alloc.c,v 1.16 2024/04/24 15:46:20 nia Exp $");
+55:    if ((ptr = malloc(n)) == NULL) {
+67:    if ((ptr = realloc(p, n)) == NULL) {
+92:    if ((ptr = calloc(s, n)) == NULL) {
+81:#define ckfree(p)	free((pointer)(p))
+57: * Like malloc, but returns an error when out of space.
+65:	p = malloc(nbytes);
+73: * Same for realloc.
+79:	p = realloc(p, nbytes);
+106: * The size 504 was chosen because the Ultrix malloc handles that size
+214: * possibly moving it (like realloc).  Grabstackblock actually allocates the
+258:		stacknxt = p;			/* free the space */
+2: * @file malloc.c
+3: * @brief Legacy memory allocator now forwarded to kalloc.
+7:#include <kalloc.h>
+62:	      int calloc;	/*calloc clears an array of integers*/
+68:static	union store *allocx;	/*for benefit of realloc*/
+72:malloc(nbytes)
+137:free(ap)
+150:/*	realloc(p, nbytes) reallocates a block obtained from malloc()
+151: *	and freed since last call of malloc()
+157:realloc(p, nbytes)
+167:		free((char *)p);
+169:	q = (union store *)malloc(nbytes);
+204:char *malloc(unsigned nbytes) { return kalloc(nbytes); }
+205:void free(char *ap) { kfree(ap); }
+206:char *realloc(char *ptr, unsigned nbytes) { return krealloc(ptr, nbytes); }
+79:		 * Request failed, free virtual address space and return.
