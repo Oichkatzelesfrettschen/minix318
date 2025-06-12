@@ -1,9 +1,11 @@
-/ C library -- wait
-
-/ pid = wait(&status);
-/
-/ pid == -1 if error
-/ status indicates fate of process
+/**
+ * C library -- wait
+ *
+ * pid = wait(&status);
+ *
+ * pid == -1 if error
+ * status indicates fate of process
+ */
 
 .globl	_wait, cerror
 
