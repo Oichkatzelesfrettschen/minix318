@@ -1,5 +1,4 @@
 # minix/lib/klib/meson.build
-project('capability_klib', 'c') // Renamed project
 
 klib_sources = [
     'src/kmemory_c23.c',
@@ -13,21 +12,20 @@ klib_sources = [
 
 klib_include_dirs = include_directories('include')
 
-capability_klib = static_library('capability_klib', // Renamed library
+capability_klib = static_library('capability_klib', # Renamed library
     klib_sources,
     include_directories: klib_include_dirs,
     c_args: ['-std=c23', '-DKERNEL_SPACE', '-DKDEBUG',
              '-DMATHEMATICAL_VERIFICATION']
-    # pic: false // Explicitly false if this lib is kernel only and won't be linked to user space directly
+    # pic: false # Explicitly false if this lib is kernel only and won't be linked to user space directly
 )
 
-capability_klib_dep = declare_dependency( // Renamed dependency variable
+capability_klib_dep = declare_dependency( # Renamed dependency variable
     include_directories: klib_include_dirs,
     link_with: capability_klib
 )
 
-project('klib', 'c',
-  default_options : ['warning_level=2', 'c_std=c23'])
+# build the legacy 'klib' components within the same project
 
 # Common C arguments for klib
 klib_c_args = [
@@ -67,6 +65,3 @@ klib_dep = declare_dependency(
   include_directories : klib_inc
 )
 
-# For subproject access if klib_inc is needed directly by the parent project
-# This makes 'klib_include_dir' available via klib_proj.get_variable()
-meson.override_variable('klib_include_dir', klib_inc)

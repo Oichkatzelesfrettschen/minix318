@@ -1,15 +1,4 @@
 # meson.build - Complete kernel build configuration for MINIX
-project('minix-kernel', 'c',
-    version: '3.4.1-unofficial',
-    license: 'BSD-mixed',
-    default_options: [
-        'c_std=c23', // Changed to c23 to match capability libs, or ensure compatibility
-        'warning_level=3',
-        'b_staticpic=false',
-        'b_pie=false',
-        'b_lto=false',
-    ]
-)
 
 cc = meson.get_compiler('c')
 arch = host_machine.cpu_family()
@@ -54,9 +43,9 @@ endif
 kernel_includes = include_directories(
     'include',
     'include/arch/' + arch_subdir,
-    'klib/include', // Existing klib includes
+    'klib/include', # Existing klib includes
     '.',
-    'capability' // For headers like capability_syscalls.h in minix/kernel/capability
+    'capability' # For headers like capability_syscalls.h in minix/kernel/capability
 )
 
 # Existing Kernel library (klib)
@@ -73,7 +62,7 @@ kernel_capability_sources = [
     'capability/capability_proof.c',
     'capability/capability_verify.c',
     'capability/math_syscalls.c',
-    'capability/math_syscalls_extended.c', // Added this line
+    'capability/math_syscalls_extended.c', # Added this line
     'capability/capability_audit.c',
     'capability/capability_cache.c'
 ]
@@ -82,8 +71,8 @@ kernel_capability_sources = [
 kernel_capability_lib = static_library('kernel_capability',
     kernel_capability_sources,
     include_directories: kernel_includes, # Uses the same kernel_includes, which now includes 'capability' subdir
-    c_args: kernel_c_args + ['-DMATHEMATICAL_VERIFICATION'], // Add specific defines if any, like from issue
-    dependencies: [capability_klib_dep], // Depend on our new capability_klib
+    c_args: kernel_c_args + ['-DMATHEMATICAL_VERIFICATION'], # Add specific defines if any, like from issue
+    dependencies: [capability_klib_dep], # Depend on our new capability_klib
     install: false
 )
 
@@ -169,10 +158,10 @@ mdlm_sources = []
 if option_enable_mdlm
     # When MDLM source files are created, they will be added here:
     mdlm_sources += files(
-        'mdlm_cap_dag.c'       // MDLM Capability DAG component
-    #    'mdlm/thread_lattice.c', // Example future file
-    #    'mdlm/cap_dag.c',        // Example future file (Note: user plan had this, might be a typo for proc_dag.c)
-    #    'mdlm/security_lattice.c'// Example future file
+        'mdlm_cap_dag.c'       # MDLM Capability DAG component
+    #    'mdlm/thread_lattice.c', # Example future file
+    #    'mdlm/cap_dag.c',        # Example future file (Note: user plan had this, might be a typo for proc_dag.c)
+    #    'mdlm/security_lattice.c'# Example future file
     )
     message('MDLM sources enabled: mdlm_cap_dag.c') # Updated message
 endif
