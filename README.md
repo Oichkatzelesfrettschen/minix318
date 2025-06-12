@@ -35,6 +35,7 @@ sudo apt-get install -y cscope universal-ctags graphviz cloc build-essential git
 pip3 install pygraphviz matplotlib pandas
 ```
 
-Run `scripts/acpi_files.py` to list all ACPI related files for further
-refactoring.
+Run `scripts/acpi_files.py` to list all ACPI related files. Use
+`scripts/gen_acpi_tags.sh` to generate ctags and cscope databases for deeper
+analysis.
 

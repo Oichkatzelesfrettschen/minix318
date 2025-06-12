@@ -4,6 +4,9 @@
 This utility helps developers collect paths of ACPI-related files so the
 subsystem can be analyzed and unified. Paths are printed relative to the
 repository root.
+
+The script uses standard :mod:`pathlib` traversal and a case-insensitive
+regular expression to select matching files.
 """
 from __future__ import annotations
 
@@ -13,13 +16,28 @@ import sys
 
 
 def find_acpi_files(root: Path) -> list[Path]:
-    """Return a list of files whose path contains 'acpi' case-insensitively."""
+    """Return files with *acpi* in their path.
+
+    Parameters
+    ----------
+    root:
+        Repository directory to scan.
+
+    Returns
+    -------
+    list[Path]
+        All files whose path contains the substring ``acpi`` ignoring case.
+    """
     pattern = re.compile("acpi", re.IGNORECASE)
     return [p for p in root.rglob("*") if p.is_file() and pattern.search(str(p))]
 
 
 def main() -> None:
-    """Print ACPI-related file paths."""
+    """CLI entry point.
+
+    The function prints one path per line and gracefully handles broken pipe
+    errors so that callers can pipe the output to other utilities.
+    """
     repo_root = Path(__file__).resolve().parents[1]
     try:
         for path in sorted(find_acpi_files(repo_root)):
