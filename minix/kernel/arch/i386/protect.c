@@ -12,7 +12,7 @@
 // #include <sys/types.h> // Replaced
 #include <minix/cpufeature.h> // Kept
 // #include <sys/types.h> // Replaced
-#include "kernel/kernel.h"
+#include <kernel.h>
 
 #include "arch_proto.h"
 
@@ -21,10 +21,6 @@
 
 // Added kernel headers
 #include <minix/kernel_types.h> // For k_size_t and fixed-width types
-<<<<<<< HEAD
-=======
-#include <sys/kassert.h>
->>>>>>> 9ad73a70f (Hi there! I've made some good progress on the kernel refactor.)
 #include <klib/include/kprintf.h>
 #include <klib/include/kstring.h>
 #include <klib/include/kmemory.h>
@@ -231,11 +227,7 @@ int tss_init(unsigned cpu, void * kernel_stack)
 		set_star_cpu(5);
 		set_star_cpu(6);
 		set_star_cpu(7);
-<<<<<<< HEAD
-		KASSERT_PLACEHOLDER(CONFIG_MAX_CPUS <= 8); // MODIFIED
-=======
-		KASSERT(CONFIG_MAX_CPUS <= 8);
->>>>>>> 9ad73a70f (Hi there! I've made some good progress on the kernel refactor.)
+                KASSERT_PLACEHOLDER(CONFIG_MAX_CPUS <= 8); // MODIFIED
   	}
 
 	return SEG_SELECTOR(index);
@@ -300,11 +292,7 @@ multiboot_module_t *bootmod(int pnr)
 {
 	int i;
 
-<<<<<<< HEAD
-	KASSERT_PLACEHOLDER(pnr >= 0); // MODIFIED
-=======
-	KASSERT(pnr >= 0);
->>>>>>> 9ad73a70f (Hi there! I've made some good progress on the kernel refactor.)
+        KASSERT_PLACEHOLDER(pnr >= 0); // MODIFIED
 
 	/* Search for desired process in boot process
 	 * list. The first NR_TASKS ones do not correspond
@@ -314,13 +302,8 @@ multiboot_module_t *bootmod(int pnr)
 		int p;
 		p = i - NR_TASKS;
 		if(image[i].proc_nr == pnr) {
-<<<<<<< HEAD
-			KASSERT_PLACEHOLDER(p < MULTIBOOT_MAX_MODS); // MODIFIED
-			KASSERT_PLACEHOLDER(p < kinfo.mbi.mi_mods_count); // MODIFIED
-=======
-			KASSERT(p < MULTIBOOT_MAX_MODS);
-			KASSERT(p < kinfo.mbi.mi_mods_count);
->>>>>>> 9ad73a70f (Hi there! I've made some good progress on the kernel refactor.)
+                        KASSERT_PLACEHOLDER(p < MULTIBOOT_MAX_MODS); // MODIFIED
+                        KASSERT_PLACEHOLDER(p < kinfo.mbi.mi_mods_count); // MODIFIED
 			return &kinfo.module_list[p];
 		}
 	}

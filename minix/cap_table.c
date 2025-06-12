@@ -1,189 +1,234 @@
+// cap_table.c
+#include <stdint.h>
+#include <string.h>
+
 #include "cap.h"
 #include "defs.h"
 #include "spinlock.h"
 #include "types.h"
-#include <string.h>
-<<<<<<< HEAD
 
-    static struct spinlock cap_lock;
+//------------------------------------------------------------------------------
+// Globals
+//------------------------------------------------------------------------------
+
+// Protects concurrent access to cap_table[] and global_epoch.
+static struct spinlock cap_lock;
+
+// Capability table storage.
 static struct cap_entry cap_table[CAP_MAX];
-uint global_epoch;
 
-void cap_table_init(void) {
-  initlock(&cap_lock, "captbl");
-  memset(cap_table, 0, sizeof(cap_table));
-  global_epoch = 0;
-}
+// Monotonically increasing epoch used to tag new allocations.
+static uint16_t global_epoch;
 
-int cap_table_alloc(uint16_t type, uint resource, uint rights, uint owner) {
-  if (type == CAP_TYPE_NONE || type > CAP_TYPE_DMA)
-    return -1;
-  acquire(&cap_lock);
-  for (int i = 1; i < CAP_MAX; i++) {
-    if (cap_table[i].type == CAP_TYPE_NONE) {
-      cap_table[i].type = type;
-      cap_table[i].resource = resource;
-      cap_table[i].rights = rights;
-      cap_table[i].owner = owner;
-      cap_table[i].refcnt = 1;
-      cap_table[i].epoch = global_epoch;
-      release(&cap_lock);
-      return i;
-    }
-  }
-  release(&cap_lock);
-  return -1;
-}
+// Set once after cap_table_init() has run.
+static int cap_table_ready = 0;
 
-int cap_table_lookup(uint16_t id, struct cap_entry *out) {
-  acquire(&cap_lock);
-  if (id >= CAP_MAX || cap_table[id].type == CAP_TYPE_NONE) {
-    release(&cap_lock);
-    return -1;
-  }
-  if (out)
-    *out = cap_table[id];
-  release(&cap_lock);
-  return 0;
-}
+//------------------------------------------------------------------------------
+// forward declarations
+//------------------------------------------------------------------------------
+static void cap_table_init_if_needed(void);
 
-void cap_table_inc(uint16_t id) {
-  acquire(&cap_lock);
-  if (id < CAP_MAX && cap_table[id].type != CAP_TYPE_NONE &&
-      cap_table[id].epoch == global_epoch)
-    cap_table[id].refcnt++;
-  release(&cap_lock);
-}
+//------------------------------------------------------------------------------
+// cap_table_init_if_needed
+//
+// Ensures the table has been initialized exactly once.
+//------------------------------------------------------------------------------
+static void
+cap_table_init_if_needed(void)
+{
+    if (cap_table_ready)
+        return;
 
-void cap_table_dec(uint16_t id) {
-  acquire(&cap_lock);
-  if (id < CAP_MAX && cap_table[id].type != CAP_TYPE_NONE &&
-      cap_table[id].epoch == global_epoch) {
-    if (--cap_table[id].refcnt == 0)
-      cap_table[id].type = CAP_TYPE_NONE;
-  }
-  release(&cap_lock);
-}
-
-int cap_table_remove(uint16_t id) {
-  acquire(&cap_lock);
-  if (id >= CAP_MAX || cap_table[id].type == CAP_TYPE_NONE) {
-    release(&cap_lock);
-    return -1;
-  }
-  cap_table[id].type = CAP_TYPE_NONE;
-  release(&cap_lock);
-  return 0;
-=======
-#include <stdint.h>
-
-  static struct spinlock cap_lock;
-  static struct cap_entry cap_table[CAP_MAX];
-  uint32_t global_epoch;
-  int cap_table_ready = 0;
-
-  void cap_table_init(void) {
-    initlock(&cap_lock, "captbl");
+    initlock(&cap_lock, "cap_table");
     memset(cap_table, 0, sizeof(cap_table));
-    global_epoch = 0;
+
+    global_epoch = 1;          // start epochs at 1 so id=0 always invalid
     cap_table_ready = 1;
-  }
+}
 
-  int cap_table_alloc(uint16_t type, uint32_t resource, uint32_t rights,
-                      uint32_t owner) {
-    // Validate capability type.
-    // CAP_TYPE_NONE is invalid for allocation.
-    // The type must be one of the defined capability types.
-    // CAP_TYPE_CRYPTOKEY is currently the highest valid enum value.
-    // This check needs to be updated if new capability types with higher enum
-    // values are added.
-    if (type == CAP_TYPE_NONE || type > CAP_TYPE_CRYPTOKEY)
-      return -1;
+//------------------------------------------------------------------------------
+// cap_table_alloc
+//
+// Allocates a new capability entry.  Returns a 32-bit ID encoding
+// (global_epoch<<16)|index, or UINT32_MAX on failure.
+//
+// Valid type values are 1..CAP_TYPE_CRYPTOKEY inclusive.
+//------------------------------------------------------------------------------
+uint32_t
+cap_table_alloc(uint16_t type,
+                uint32_t resource,
+                uint32_t rights,
+                uint32_t owner)
+{
+    cap_table_init_if_needed();
+
+    if (type == CAP_TYPE_NONE || type > CAP_TYPE_CRYPTOKEY) {
+        return UINT32_MAX;
+    }
+
     acquire(&cap_lock);
-    for (int i = 1; i < CAP_MAX; i++) {
-      if (cap_table[i].type == CAP_TYPE_NONE) {
-        cap_table[i].type = type;
-        cap_table[i].resource = resource;
-        cap_table[i].rights = rights;
-        cap_table[i].owner = owner;
-        cap_table[i].refcnt = 1;
-        uint32_t id = ((uint32_t)cap_table[i].epoch << 16) | i;
+    for (uint16_t i = 1; i < CAP_MAX; i++) {
+        if (cap_table[i].type == CAP_TYPE_NONE) {
+            cap_table[i].type     = type;
+            cap_table[i].resource = resource;
+            cap_table[i].rights   = rights;
+            cap_table[i].owner    = owner;
+            cap_table[i].refcnt   = 1;
+            cap_table[i].epoch    = global_epoch;
+
+            uint32_t id = ((uint32_t)global_epoch << 16) | i;
+            release(&cap_lock);
+            return id;
+        }
+    }
+    release(&cap_lock);
+    return UINT32_MAX;
+}
+
+//------------------------------------------------------------------------------
+// cap_table_lookup
+//
+// Copies entry → *out if id is valid (same epoch, non-NONE type).
+// Returns 0 on success, –1 on failure.
+//------------------------------------------------------------------------------
+int
+cap_table_lookup(uint32_t id, struct cap_entry *out)
+{
+    cap_table_init_if_needed();
+
+    uint16_t idx   = (uint16_t)(id & 0xFFFF);
+    uint16_t epoch = (uint16_t)(id >> 16);
+
+    if (idx == 0 || idx >= CAP_MAX)
+        return -1;
+
+    acquire(&cap_lock);
+    if (cap_table[idx].type == CAP_TYPE_NONE
+        || cap_table[idx].epoch != epoch) {
         release(&cap_lock);
-        return id;
-      }
+        return -1;
     }
-    release(&cap_lock);
-    return -1;
-  }
 
-  int cap_table_lookup(uint32_t id, struct cap_entry *out) {
-    uint16_t idx = id & 0xffff;
-    uint16_t epoch = id >> 16;
-    acquire(&cap_lock);
-    if (idx >= CAP_MAX || cap_table[idx].type == CAP_TYPE_NONE ||
-        cap_table[idx].epoch != epoch) {
-      release(&cap_lock);
-      return -1;
-    }
     if (out)
-      *out = cap_table[idx];
+        *out = cap_table[idx];
     release(&cap_lock);
     return 0;
-  }
+}
 
-  void cap_table_inc(uint32_t id) {
-    uint16_t idx = id & 0xffff;
-    uint16_t epoch = id >> 16;
-    acquire(&cap_lock);
-    if (idx < CAP_MAX && cap_table[idx].type != CAP_TYPE_NONE &&
-        cap_table[idx].epoch == epoch)
-      cap_table[idx].refcnt++;
-    release(&cap_lock);
-  }
+//------------------------------------------------------------------------------
+// cap_table_inc
+//
+// Increment the refcount if id is valid.
+//------------------------------------------------------------------------------
+void
+cap_table_inc(uint32_t id)
+{
+    cap_table_init_if_needed();
 
-  void cap_table_dec(uint32_t id) {
-    uint16_t idx = id & 0xffff;
-    uint16_t epoch = id >> 16;
+    uint16_t idx   = (uint16_t)(id & 0xFFFF);
+    uint16_t epoch = (uint16_t)(id >> 16);
+
     acquire(&cap_lock);
-    if (idx < CAP_MAX && cap_table[idx].type != CAP_TYPE_NONE &&
-        cap_table[idx].epoch == epoch) {
-      if (--cap_table[idx].refcnt == 0)
-        cap_table[idx].type = CAP_TYPE_NONE;
+    if (idx > 0 && idx < CAP_MAX
+        && cap_table[idx].type != CAP_TYPE_NONE
+        && cap_table[idx].epoch == epoch) {
+        cap_table[idx].refcnt++;
     }
     release(&cap_lock);
-  }
+}
 
-  int cap_table_remove(uint32_t id) {
-    uint16_t idx = id & 0xffff;
-    uint16_t epoch = id >> 16;
+//------------------------------------------------------------------------------
+// cap_table_dec
+//
+// Decrement the refcount, freeing the entry if it drops to zero.
+//------------------------------------------------------------------------------
+void
+cap_table_dec(uint32_t id)
+{
+    cap_table_init_if_needed();
+
+    uint16_t idx   = (uint16_t)(id & 0xFFFF);
+    uint16_t epoch = (uint16_t)(id >> 16);
+
     acquire(&cap_lock);
-    if (idx >= CAP_MAX || cap_table[idx].type == CAP_TYPE_NONE ||
-        cap_table[idx].epoch != epoch) {
-      release(&cap_lock);
-      return -1;
+    if (idx > 0 && idx < CAP_MAX
+        && cap_table[idx].type != CAP_TYPE_NONE
+        && cap_table[idx].epoch == epoch) {
+        if (--cap_table[idx].refcnt == 0) {
+            cap_table[idx].type = CAP_TYPE_NONE;
+        }
     }
-    cap_table[idx].type = CAP_TYPE_NONE;
     release(&cap_lock);
-    return 0;
-  }
+}
 
-  int cap_revoke(uint32_t id) {
-    uint16_t idx = id & 0xffff;
-    uint16_t epoch = id >> 16;
+//------------------------------------------------------------------------------
+// cap_table_remove
+//
+// Forcibly removes the entry if id is valid.  Returns 0 on success,
+// –1 on failure.
+//------------------------------------------------------------------------------
+int
+cap_table_remove(uint32_t id)
+{
+    cap_table_init_if_needed();
+
+    uint16_t idx   = (uint16_t)(id & 0xFFFF);
+    uint16_t epoch = (uint16_t)(id >> 16);
+
+    if (idx == 0 || idx >= CAP_MAX)
+        return -1;
+
     acquire(&cap_lock);
-    if (idx >= CAP_MAX || cap_table[idx].type == CAP_TYPE_NONE ||
-        cap_table[idx].epoch != epoch) {
-      release(&cap_lock);
-      return -1;
+    if (cap_table[idx].type == CAP_TYPE_NONE
+        || cap_table[idx].epoch != epoch) {
+        release(&cap_lock);
+        return -1;
     }
-    if (cap_table[idx].epoch == 0xffff) {
-      release(&cap_lock);
-      return -1;
-    }
-    cap_table[idx].epoch++;
-    cap_table[idx].type = CAP_TYPE_NONE;
+
+    cap_table[idx].type   = CAP_TYPE_NONE;
     cap_table[idx].refcnt = 0;
     release(&cap_lock);
     return 0;
->>>>>>> origin/feature/epoch-cache-design-progress
-  }
+}
+
+//------------------------------------------------------------------------------
+// cap_revoke
+//
+// Revokes the given capability by advancing its epoch (and the global epoch),
+// preventing any past ID from matching again.  Returns 0 on success,
+// –1 on failure.
+//------------------------------------------------------------------------------
+int
+cap_revoke(uint32_t id)
+{
+    cap_table_init_if_needed();
+
+    uint16_t idx   = (uint16_t)(id & 0xFFFF);
+    uint16_t epoch = (uint16_t)(id >> 16);
+
+    if (idx == 0 || idx >= CAP_MAX)
+        return -1;
+
+    acquire(&cap_lock);
+    if (cap_table[idx].type == CAP_TYPE_NONE
+        || cap_table[idx].epoch != epoch) {
+        release(&cap_lock);
+        return -1;
+    }
+
+    // Avoid epoch overflow.
+    if (global_epoch == UINT16_MAX) {
+        release(&cap_lock);
+        return -1;
+    }
+
+    // Bump both the global and this entry’s epoch.
+    global_epoch++;
+    cap_table[idx].epoch = global_epoch;
+
+    // Clear the entry so it must be re-allocated.
+    cap_table[idx].type   = CAP_TYPE_NONE;
+    cap_table[idx].refcnt = 0;
+    release(&cap_lock);
+    return 0;
+}

@@ -1,11 +1,4 @@
 #pragma once
-<<<<<<< HEAD
-#include "fs.h"
-#include "file.h"
-
-int fs_read_block(struct exo_blockcap cap, void *dst);
-int fs_write_block(struct exo_blockcap cap, const void *src);
-=======
 #include "file.h"
 #include "fs.h"
 #include "include/exokernel.h"
@@ -22,4 +15,3 @@ void libfs_close(struct file *f);
 int libfs_unlink(const char *path);
 int libfs_rename(const char *oldpath, const char *newpath);
 int libfs_truncate(struct file *f, size_t length);
->>>>>>> origin/feature/epoch-cache-design-progress

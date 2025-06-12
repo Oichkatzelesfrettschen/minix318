@@ -1,8 +1,8 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -242,9 +242,31 @@ capnp_pointer_t capnp_make_far_pointer(uint32_t segment_id, uint32_t offset,
                                        bool landing_pad);
 
 // Endianness handling
-uint16_t capnp_le16(uint16_t value);
-uint32_t capnp_le32(uint32_t value);
-uint64_t capnp_le64(uint64_t value);
+static inline uint16_t capnp_le16(uint16_t value) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return value;
+#else
+  return ((value & 0xFF) << 8) | ((value >> 8) & 0xFF);
+#endif
+}
+
+static inline uint32_t capnp_le32(uint32_t value) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return value;
+#else
+  return ((value & 0xFF) << 24) | (((value >> 8) & 0xFF) << 16) |
+         (((value >> 16) & 0xFF) << 8) | ((value >> 24) & 0xFF);
+#endif
+}
+
+static inline uint64_t capnp_le64(uint64_t value) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  return value;
+#else
+  return ((uint64_t)capnp_le32(value & 0xFFFFFFFF) << 32) |
+         capnp_le32(value >> 32);
+#endif
+}
 
 // Memory alignment utilities
 size_t capnp_align_to_word(size_t bytes);

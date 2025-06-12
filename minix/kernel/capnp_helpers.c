@@ -1,37 +1,11 @@
 #include "capnp_helpers.h"
 #include <string.h>
-<<<<<<< HEAD
 #include <stdlib.h>
 
 // =============================================================================
 // UTILITY FUNCTIONS IMPLEMENTATION
 // =============================================================================
 
-static inline uint16_t capnp_le16(uint16_t value) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return value;
-#else
-  return ((value & 0xFF) << 8) | ((value >> 8) & 0xFF);
-#endif
-}
-
-static inline uint32_t capnp_le32(uint32_t value) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return value;
-#else
-  return ((value & 0xFF) << 24) | (((value >> 8) & 0xFF) << 16) |
-         (((value >> 16) & 0xFF) << 8) | ((value >> 24) & 0xFF);
-#endif
-}
-
-static inline uint64_t capnp_le64(uint64_t value) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  return value;
-#else
-  return ((uint64_t)capnp_le32(value & 0xFFFFFFFF) << 32) |
-         capnp_le32(value >> 32);
-#endif
-}
 
 size_t capnp_align_to_word(size_t bytes) { return (bytes + 7) & ~7; }
 
@@ -500,15 +474,3 @@ size_t capnp_decode(void *msg, size_t len, const unsigned char *buf) {
   memcpy(msg, buf + offset, data_size);
   return data_size;
 }
-=======
-
-size_t capnp_encode(const void *msg, size_t len, unsigned char *buf) {
-    memcpy(buf, msg, len);
-    return len;
-}
-
-size_t capnp_decode(void *msg, size_t len, const unsigned char *buf) {
-    memcpy(msg, buf, len);
-    return len;
-}
->>>>>>> origin/feature/epoch-cache-design-progress
