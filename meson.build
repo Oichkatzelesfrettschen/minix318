@@ -1,7 +1,7 @@
 # Meson build configuration for the MINIX project
 # The kernel sources are written in C11 and C23 with C11 --> C23 migration in progress.
 
-project('minix', 'c', default_options : ['c_std=c23'])
+project('minix', 'c', default_options : ['c_std=c2x'])
 # Configure global optimization
 
 # Detect C23 support and adjust the compilation standard accordingly.

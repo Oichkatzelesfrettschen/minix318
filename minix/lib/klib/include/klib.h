@@ -427,6 +427,11 @@ void kdebug_print(const char *fmt, ...); /* For debug-only messages */
 /* CPU feature detection function */
 void kcpu_detect_features(void);
 
+/* Memory allocation */
+void *kalloc(k_size_t size);
+void kfree(void *ptr);
+void *krealloc(void *ptr, k_size_t size);
+
 #endif /* _KLIB_H */
 #ifndef MINIX_KLIB_H
 #define MINIX_KLIB_H

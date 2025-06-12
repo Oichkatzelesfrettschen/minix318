@@ -62,11 +62,12 @@ capability_klib_dep = declare_dependency(
 # Sources for the core kernel support library
 core_klib_sources = [
   'src/kmemory_c23.c',                   
-  'src/kstring_c23.c',                   
-  'src/kcore.c',                         
-  'src/kconv.c',                         
-  'src/kdebug.c',                        
-  'src/kcapability_dag.c',               
+  'src/kstring_c23.c',
+  'src/kcore.c',
+  'src/kconv.c',
+  'src/kdebug.c',
+  'src/kalloc.c',
+  'src/kcapability_dag.c',
   'src/kassert_metrics.c',               
   'arch/i386/kcpu_detect_features_arch.c'
 ]
