@@ -1,6 +1,5 @@
 #pragma once
 #include "dag.h"
-
 /**
  * @brief Set the priority for a DAG node.
  *

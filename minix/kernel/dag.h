@@ -1,6 +1,11 @@
 #pragma once
-#include "types.h"
 #include "exo.h"
+#include "types.h"
+
+/**
+ * @file dag.h
+ * @brief Interfaces for the weighted DAG scheduler.
+ */
 
 struct dag_node;
 
@@ -16,15 +21,16 @@ struct dag_node_list {
  * @brief Node representing a schedulable unit in the DAG scheduler.
  */
 struct dag_node {
-  exo_cap ctx;                    /**< Execution context capability. */
+  exo_cap ctx;                    /**< Capability to resume the task. */
   int pending;                    /**< Number of unfinished dependencies. */
-  int priority;                   /**< Scheduling priority. */
-  int weight;                     /**< Relative weight used for ordering. */
-  struct dag_node_list *children; /**< List of dependent child nodes. */
-  struct dag_node *next;          /**< Next node in internal queues. */
-  struct dag_node **deps;         /**< Array of dependency pointers. */
+  int priority;                   /**< Historical priority field. */
+  int weight;                     /**< Scheduling weight. */
+  struct dag_node_list *children; /**< Child nodes depending on this node. */
+  struct dag_node *next;          /**< Internal link used by the scheduler. */
+  struct dag_node **deps;         /**< Array of parent dependencies. */
   int ndeps;                      /**< Number of entries in @c deps. */
-  int done;                       /**< Flag set once the node has run. */
+  int done;                       /**< Set once the node has run. */
+
 };
 
 /**
@@ -42,12 +48,18 @@ void dag_node_init(struct dag_node *n, exo_cap ctx);
  * @param priority Priority value.
  */
 void dag_node_set_priority(struct dag_node *n, int priority);
+/**
+ * @brief Set the scheduling weight of a node.
+ *
+ * Higher-weighted nodes are chosen before lower-weighted ones.
+
 
 /**
  * @brief Set the relative weight for a node.
  *
  * @param n      Node to update.
  * @param weight Weight used when ordering nodes.
+
  */
 void dag_node_set_weight(struct dag_node *n, int weight);
 
@@ -72,4 +84,3 @@ void dag_sched_submit(struct dag_node *n);
  * @brief Initialize the DAG scheduler subsystem.
  */
 void dag_sched_init(void);
-
