@@ -1,6 +1,17 @@
+/**
+ * @file malloc.c
+ * @brief Legacy memory allocator now forwarded to kalloc.
+ *
+ * The original implementation is preserved below and disabled.
+ */
+#include <kalloc.h>
+#if 0
 /* Copyright (c) 1979 Regents of the University of California */
 #ifdef debug
-#define ASSERT(p) if(!(p))botch("p");else
+#define ASSERT(p)                                                              \
+  if (!(p))                                                                    \
+    botch("p");                                                                \
+  else
 botch(s)
 char *s;
 {
@@ -39,12 +50,12 @@ char *s;
 #define ALIGN int
 #define NALIGN 1
 #define WORD sizeof(union store)
-#define BLOCK 1024	/* a multiple of WORD*/
+#define BLOCK 1024 /* a multiple of WORD*/
 #define BUSY 1
 #define NULL 0
-#define testbusy(p) ((INT)(p)&BUSY)
-#define setbusy(p) (union store *)((INT)(p)|BUSY)
-#define clearbusy(p) (union store *)((INT)(p)&~BUSY)
+#define testbusy(p) ((INT)(p) & BUSY)
+#define setbusy(p) (union store *)((INT)(p) | BUSY)
+#define clearbusy(p) (union store *)((INT)(p) & ~BUSY)
 
 union store { union store *ptr;
 	      ALIGN dummy[NALIGN];
@@ -188,3 +199,8 @@ allock()
 #endif
 }
 #endif
+#endif /* end legacy implementation */
+
+char *malloc(unsigned nbytes) { return kalloc(nbytes); }
+void free(char *ap) { kfree(ap); }
+char *realloc(char *ptr, unsigned nbytes) { return krealloc(ptr, nbytes); }

@@ -1,19 +1,23 @@
-# Meson build options for MINIX
+#Meson build options for MINIX
 
-# Select the target architecture for the build.
-option(
-    'arch',
-    type : 'combo',
-    choices : ['i386', 'x86_64', 'arm32', 'arm64'],
-    value : 'i386',
-    description : 'Target architecture'
-)
+#Select the target architecture for the build.
+option('arch',
+       type : 'combo',
+       choices : ['i386', 'x86_64', 'arm32', 'arm64'],
+       value : 'i386',
+       description : 'Target architecture')
 
-# Generic compilation options
+#Generic compilation options
+option('opt_level',
+       type : 'string',
+       value : '3',
+       description : 'Optimization level used as -O<level>')
 
-option(
-    'opt_level',
-    type : 'string',
-    value : '3',
-    description : 'Optimization level used as -O<level>'
-)
+#Select the C standard for libc's custom math component
+option('libc_c_std',
+       type : 'combo',
+       choices : ['c11', 'c17', 'c23'],
+       value : 'c23',
+       description : 'C standard to use when compiling libc custom math')
+
+

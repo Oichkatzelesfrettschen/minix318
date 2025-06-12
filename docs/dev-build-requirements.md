@@ -39,6 +39,22 @@ The following Debian/Ubuntu packages are installed:
 - nodejs
 - npm
 
+## Minimal build configuration
+
+The kernel and supporting libraries are compiled with `clang`. The
+recommended flags ensure reproducible behavior across architectures:
+
+```bash
+export CC=clang-18
+export CFLAGS="-O3 -pthread -fopenmp -Werror"
+meson setup build
+ninja -C build
+```
+
+The `-O3`, `-pthread`, and `-fopenmp` flags enable high optimization and
+parallelism while `-Werror` promotes warnings to errors to maintain code
+quality.
+
 ## Node dependencies
 
 After the system packages are installed, `npm ci` installs the Node-based developer tools defined in `package.json`. Currently this includes the `jscpd` copy/paste detector.
