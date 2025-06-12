@@ -4,7 +4,7 @@
 #include <kassert_metrics.h>    // For assertion metrics collection functions
 #include <kerrno.h>             // For K_EPERM, K_EINVAL etc.
 #include <ksignal.h>            // For K_SIGHUP, K_SIGINT etc.
-#include <minix/kernel_types.h> // For k_size_t
+#include <kernel_types.h> // For k_size_t
 #include <stdint.h>             // For uint32_t, etc.
 
 // Define kbool as _Bool from C23

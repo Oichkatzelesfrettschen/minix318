@@ -1,23 +1,23 @@
 # meson.build - Complete kernel build configuration for MINIX
-project('minix-kernel', 'c',
-    version: '3.4.1-unofficial',
-    license: 'BSD-mixed',
-    default_options: [
-        'c_std=c23', // Changed to c23 to match capability libs, or ensure compatibility
-        'warning_level=3',
-        'b_staticpic=false',
-        'b_pie=false',
-        'b_lto=false',
-    ]
-)
+# project('minix-kernel', 'c',
+#    version: '3.4.1-unofficial',
+#    license: 'BSD-mixed',
+#    default_options: [
+#        'c_std=c23', # Changed to c23 to match capability libs, or ensure compatibility
+#        'warning_level=3',
+#        'b_staticpic=false',
+#        'b_pie=false',
+#        'b_lto=false',
+#    ]
+# )
 
 cc = meson.get_compiler('c')
-arch = host_machine.cpu_family()
+# arch = host_machine.cpu_family()  # use arch option from parent project
 if arch == 'x86_64'
     arch_subdir = 'x86_64'
     arch_defines = ['-D__x86_64__', '-DARCH_X86_64']
     arch_flags = ['-m64', '-mcmodel=kernel', '-mno-red-zone', '-sse', '-sse2', '-fpu', '-mmx', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
-elif arch == 'x86'
+elif arch == 'x86' or arch == 'i386'
     arch_subdir = 'i386'
     arch_defines = ['-D__i386__', '-DARCH_I386']
     arch_flags = ['-m32', '-fno-omit-frame-pointer', '-fno-optimize-sibling-calls']
@@ -25,38 +25,38 @@ else
     error('Unsupported architecture: ' + arch)
 endif
 
-kernel_common_flags = ['-ffreestanding', '-fno-builtin', '-fno-stack-protector', '-nostdinc', '-nostdlib', '-Wall', '-Wextra', '-Wno-unused-parameter', '-Wno-missing-field-initializers']
+kernel_common_flags = ['-ffreestanding', '-fno-builtin', '-fno-stack-protector', '-nostdinc', '-nostdlib', '-Wall', '-Wextra', '-Wno-unused-parameter', '-Wno-missing-field-initializers', '-O' + get_option('opt_level')]
 kernel_c_args = kernel_common_flags + arch_flags + arch_defines
 kernel_link_args = arch_flags
 
 # Get dependency for capability_klib (defined in minix/lib/klib/meson.build)
-# This assumes minix/meson.build called subdir('lib/klib')
-capability_klib_dep = dependency('capability_klib', fallback: ['capability_klib', 'capability_klib_dep'])
+# This assumes minix/meson.build called subdir('lib/klib') and exposes capability_klib_dep
+# capability_klib_dep = dependency('capability_klib', fallback: ['capability_klib', 'capability_klib_dep'])
 
 # Add build option for profiling
-option_enable_profiling = get_option('enable_profiling') # Assuming 'enable_profiling' is defined in meson_options.txt
-if option_enable_profiling
-    add_project_arguments('-DCONFIG_PROFILING=1', language: 'c')
-    message('Kernel profiling enabled.')
-else
-    message('Kernel profiling disabled.')
-endif
+# option_enable_profiling = get_option('enable_profiling') # Assuming 'enable_profiling' is defined in meson_options.txt
+# if option_enable_profiling
+#     add_project_arguments('-DCONFIG_PROFILING=1', language: 'c')
+#     message('Kernel profiling enabled.')
+# else
+#     message('Kernel profiling disabled.')
+# endif
 
 # Add build option for MDLM
-option_enable_mdlm = get_option('enable_mdlm') # Assuming 'enable_mdlm' is defined in meson_options.txt
-if option_enable_mdlm
-    add_project_arguments('-DCONFIG_MDLM=1', language: 'c')
-    message('MDLM support enabled.')
-else
-    message('MDLM support disabled.')
-endif
+# option_enable_mdlm = get_option('enable_mdlm') # Assuming 'enable_mdlm' is defined in meson_options.txt
+# if option_enable_mdlm
+#     add_project_arguments('-DCONFIG_MDLM=1', language: 'c')
+#     message('MDLM support enabled.')
+# else
+#     message('MDLM support disabled.')
+# endif
 
 kernel_includes = include_directories(
     'include',
-    'include/arch/' + arch_subdir,
-    'klib/include', // Existing klib includes
+    '../include/arch/' + arch_subdir,
+    '../lib/klib/include', # Existing klib includes
     '.',
-    'capability' // For headers like capability_syscalls.h in minix/kernel/capability
+    'capability' # For headers like capability_syscalls.h in minix/kernel/capability
 )
 
 # Existing Kernel library (klib)
@@ -73,7 +73,7 @@ kernel_capability_sources = [
     'capability/capability_proof.c',
     'capability/capability_verify.c',
     'capability/math_syscalls.c',
-    'capability/math_syscalls_extended.c', // Added this line
+    'capability/math_syscalls_extended.c', # Added this line
     'capability/capability_audit.c',
     'capability/capability_cache.c'
 ]
@@ -82,8 +82,8 @@ kernel_capability_sources = [
 kernel_capability_lib = static_library('kernel_capability',
     kernel_capability_sources,
     include_directories: kernel_includes, # Uses the same kernel_includes, which now includes 'capability' subdir
-    c_args: kernel_c_args + ['-DMATHEMATICAL_VERIFICATION'], // Add specific defines if any, like from issue
-    dependencies: [capability_klib_dep], // Depend on our new capability_klib
+    c_args: kernel_c_args + ['-DMATHEMATICAL_VERIFICATION'], # Add specific defines if any, like from issue
+    dependencies: [capability_klib_dep], # Depend on our new capability_klib
     install: false
 )
 
@@ -166,20 +166,20 @@ endif
 
 # MDLM sources (initially empty, will be populated in later phases)
 mdlm_sources = []
-if option_enable_mdlm
-    # When MDLM source files are created, they will be added here:
-    mdlm_sources += files(
-        'mdlm_cap_dag.c'       // MDLM Capability DAG component
-    #    'mdlm/thread_lattice.c', // Example future file
-    #    'mdlm/cap_dag.c',        // Example future file (Note: user plan had this, might be a typo for proc_dag.c)
-    #    'mdlm/security_lattice.c'// Example future file
-    )
-    message('MDLM sources enabled: mdlm_cap_dag.c') # Updated message
-endif
+# if option_enable_mdlm
+#     # When MDLM source files are created, they will be added here:
+#     mdlm_sources += files(
+#         'mdlm_cap_dag.c'       # MDLM Capability DAG component
+#     #    'mdlm/thread_lattice.c', # Example future file
+#     #    'mdlm/cap_dag.c',        # Example future file (Note: user plan had this, might be a typo for proc_dag.c)
+#     #    'mdlm/security_lattice.c'# Example future file
+#     )
+#     message('MDLM sources enabled: mdlm_cap_dag.c') # Updated message
+# endif
 
 all_c_sources = kernel_core_sources + syscall_sources + arch_sources_list + mdlm_sources
 linker_script = meson.current_source_dir() / 'arch' / arch_subdir / 'kernel.lds'
-if not run_command('test', '-f', linker_script, check: false).returncode() == 0
+if run_command('test', '-f', linker_script, check: false).returncode() != 0
     error('Linker script not found: ' + linker_script +
           '. Please ensure it exists for architecture ' + arch_subdir)
 endif
