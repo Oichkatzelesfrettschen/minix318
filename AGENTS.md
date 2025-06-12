@@ -29,8 +29,11 @@ install the following tools using `apt`:
 sudo apt-get update
 sudo apt-get install -y clang-18 clang-tools-18 llvm-18-dev \
   libpolly-18-dev lld-18 lldb-18 bolt-18 build-essential binutils \
-  meson valgrind lcov
+  meson valgrind lcov clov
 ```
 
 Update this list as new major versions (e.g., `clang-19`) become available.
 Check with `apt-cache policy` before changing versions.
+
+The installed LLVM toolchain, `lcov`, `clov`, and `valgrind` form the
+official toolkit used throughout development and testing.

@@ -13,7 +13,7 @@ struct dag_node;
  * @brief Linked list element for DAG nodes.
  */
 struct dag_node_list {
-  struct dag_node *node; /**< Child node in the list. */
+  struct dag_node *node;      /**< Child node in the list. */
   struct dag_node_list *next; /**< Next element in the list. */
 };
 
@@ -31,7 +31,6 @@ struct dag_node {
   struct dag_node **deps;         /**< Array of parent dependencies. */
   int ndeps;                      /**< Number of entries in @c deps. */
   int done;                       /**< Set once the node has run. */
-
 };
 
 /**

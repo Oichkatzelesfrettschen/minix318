@@ -1,4 +1,4 @@
 #pragma once
-#include "../dag.h"
+#include <minix/dag.h>
 
 void libos_setup_beatty_dag(void);

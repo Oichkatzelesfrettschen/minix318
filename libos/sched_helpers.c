@@ -1,7 +1,7 @@
-#include "libos/sched.h"
-#include "dag.h"
-#include "user.h"
 #include "defs.h"
+#include "libos/sched.h"
+#include "user.h"
+#include <minix/dag.h>
 
 void libos_setup_beatty_dag(void) {
   // Initialize two schedulers already configured in the kernel
