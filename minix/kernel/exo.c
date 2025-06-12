@@ -1,30 +1,15 @@
 #include "defs.h"
-<<<<<<< HEAD
 #include "kernel/exo_cpu.h"
 #include "kernel/exo_disk.h"
 #include "kernel/exo_ipc.h"
 #include "mmu.h"
 #include "param.h"
-#include "mmu.h"
-=======
-#include "exo_cpu.h"
-#include "exo_disk.h"
-#include "exo_ipc.h"
-#include "mmu.h"
-#include "param.h"
->>>>>>> origin/feature/epoch-cache-design-progress
 #include "proc.h"
 #include "spinlock.h"
 #include "types.h"
 #include "x86.h"
 
 extern struct ptable ptable;
-
-<<<<<<< HEAD
-extern struct ptable ptable;
-
-=======
->>>>>>> origin/feature/epoch-cache-design-progress
 void exo_pctr_transfer(struct trapframe *tf) {
   uint32_t cap = tf->eax;
   struct proc *p;
@@ -35,21 +20,15 @@ void exo_pctr_transfer(struct trapframe *tf) {
     p->pctr_signal++;
   release(&ptable.lock);
 }
-<<<<<<< HEAD
-
 // Stubs for capability syscalls. Real implementations may reside in
-// platform-specific code, but we provide simple versions so that the
-// kernel links successfully.
-int
-exo_yield_to(exo_cap target)
-{
+// platform-specific code, but we provide simple versions so that the kernel
+// links successfully.
+int exo_yield_to(exo_cap target) {
   (void)target;
   return -1;
 }
 
-int
-exo_read_disk(exo_cap cap, void *dst, uint64_t off, uint64_t n)
-{
+int exo_read_disk(exo_cap cap, void *dst, uint64_t off, uint64_t n) {
   (void)cap;
   (void)dst;
   (void)off;
@@ -57,14 +36,10 @@ exo_read_disk(exo_cap cap, void *dst, uint64_t off, uint64_t n)
   return -1;
 }
 
-int
-exo_write_disk(exo_cap cap, const void *src, uint64_t off, uint64_t n)
-{
+int exo_write_disk(exo_cap cap, const void *src, uint64_t off, uint64_t n) {
   (void)cap;
   (void)src;
   (void)off;
   (void)n;
   return -1;
 }
-=======
->>>>>>> origin/feature/epoch-cache-design-progress
