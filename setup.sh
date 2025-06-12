@@ -23,17 +23,19 @@ apt-get install -y \
 	gdb-multiarch \
 	lldb \
 	strace \
-	ltrace \
-	valgrind \
-	radare2 \
-	afl \
-	cscope \
-	universal-ctags \
-	graphviz \
-	doxygen \
-	shfmt \
-	jq \
-	tree
+        ltrace \
+        valgrind \
+        radare2 \
+        cscope \
+        universal-ctags \
+        graphviz \
+        doxygen \
+        shfmt \
+        meson \
+        ninja-build \
+        pkg-config \
+        jq \
+        tree
 
 # Install virtualization and cross-development tools
 apt-get install -y \
@@ -46,8 +48,9 @@ apt-get install -y \
         python3 \
         python3-pip \
         python3-venv \
+        python3-setuptools \
+        python3-dev \
         cmake \
-        perf \
         lsof
 
 # Install Node.js and npm for JavaScript-based tooling

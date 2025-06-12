@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
-#define	CHAR
-#define	STATIC
+#define CHAR
+#define STATIC
 /* #define DEBUG */
 /*
  * pi - Pascal interpreter code translator
@@ -41,17 +41,17 @@
  * the current, top value, and optstk the value beneath it.
  * One refers to option `l' as, e.g., opt('l') in the text for clarity.
  */
-char	opts[26];
-int	optstk[26];
+char opts[26];
+int optstk[26];
 
-#define opt(c) opts[c-'a']
+#define opt(c) ((c >= 'a' && c <= 'z') ? opts[c - 'a'] : 0)
 
 /*
  * Monflg is set when we are generating
  * a profile
  */
-char	monflg;
-
+char monflg;
+
 /*
  * NOTES ON THE DYNAMIC NATURE OF THE DATA STRUCTURES
  *
@@ -63,10 +63,10 @@ char	monflg;
  * each uses approximately 1024 bytes.
  */
 
-#define	STRINC	1024		/* string space increment */
-#define	TRINC	512		/* tree space increment */
-#define	HASHINC	509		/* hash table size in words, each increment */
-#define	NLINC	56		/* namelist increment size in nl structs */
+#define STRINC 1024 /* string space increment */
+#define TRINC 512   /* tree space increment */
+#define HASHINC 509 /* hash table size in words, each increment */
+#define NLINC 56    /* namelist increment size in nl structs */
 
 /*
  * The initial sizes of the structures.
@@ -77,9 +77,9 @@ char	monflg;
  * these numbers can be trimmed to make the
  * compiler smaller.
  */
-#define	ITREE	512		/* Must be the same as TRINC */
-#define	INL	200
-#define	IHASH	509
+#define ITREE 512 /* Must be the same as TRINC */
+#define INL 200
+#define IHASH 509
 
 /*
  * The following limits on hash and tree tables currently
@@ -87,11 +87,11 @@ char	monflg;
  * space.  The fundamental limit of 64k total data space
  * should be exceeded well before these are full.
  */
-#define	MAXHASH	4
-#define	MAXNL	12
-#define	MAXTREE	30
-#define	MAXDEPTH 150
-
+#define MAXHASH 4
+#define MAXNL 12
+#define MAXTREE 30
+#define MAXDEPTH 150
+
 /*
  * ERROR RELATED DEFINITIONS
  */
@@ -104,15 +104,15 @@ char	monflg;
  * NOSTART	Errors before we ever got started
  * DIED		We ran out of memory or some such
  */
-#define	AOK	0
-#define	ERRS	1
-#define	NOSTART	2
-#define	DIED	3
+#define AOK 0
+#define ERRS 1
+#define NOSTART 2
+#define DIED 3
 
-#define	eholdnl()	Eholdnl = 1
-#define	nocascade()	Enocascade = 1
+#define eholdnl() Eholdnl = 1
+#define nocascade() Enocascade = 1
 
-char	Eholdnl, Enocascade;
+char Eholdnl, Enocascade;
 
 /*
  * The flag eflg is set whenever we have a hard error.
@@ -121,17 +121,16 @@ char	Eholdnl, Enocascade;
  * This happens whenver we have an error (i.e. if eflg is set)
  * and when we are walking the tree to determine types only.
  */
-int	eflg;
-char	errpfx;
+int eflg;
+char errpfx;
 
-#define	setpfx(x)	errpfx = x
+#define setpfx(x) errpfx = x
 
-#define	standard()	setpfx('s')
-#define	warning()	setpfx('w')
-#define	recovered()	setpfx('e')
+#define standard() setpfx('s')
+#define warning() setpfx('w')
+#define recovered() setpfx('e')
 
-int	cgenflg;
-
+int cgenflg;
 
 /*
  * The flag syneflg is used to suppress the diagnostics of the form
@@ -139,7 +138,7 @@ int	cgenflg;
  * when there were syntax errors in "someprocedure".
  * In this case, it is likely that these warinings would be spurious.
  */
-char	syneflg;
+char syneflg;
 
 /*
  * The compiler keeps its error messages in a file.
@@ -148,14 +147,14 @@ char	syneflg;
  * Similarly, the file ofil is the unit of the file
  * "obj" where we write the interpreter code.
  */
-char	efil, ofil;
-int	obuf[259];
+char efil, ofil;
+int obuf[259];
 
-#define	elineoff()	Enoline++
-#define	elineon()	Enoline = 0
+#define elineoff() Enoline++
+#define elineon() Enoline = 0
 
-char	Enoline;
-
+char Enoline;
+
 /*
  * SYMBOL TABLE STRUCTURE DEFINITIONS
  *
@@ -193,28 +192,28 @@ char	Enoline;
  * the string table; see the routines in the file "lookup.c" and also "fdec.c"
  * especially "funcend".
  */
-struct	nl {
-	char	*symbol;
-	char	class, nl_flags;
-	struct	nl *type;
-	struct	nl *chain, *nl_next;
-	double	real;
-} nl[], *nlp, *disptab[077+1];
+struct nl {
+  char *symbol;
+  char class, nl_flags;
+  struct nl *type;
+  struct nl *chain, *nl_next;
+  double real;
+} nl[MAXNL], *nlp, *disptab[077 + 1];
 
 struct {
-	char	*symbol;
-	char	class, nl_block;
-	struct	nl *type;
-	struct	nl *chain, *nl_next;
-	long	range[2];
+  char *symbol;
+  char class, nl_block;
+  struct nl *type;
+  struct nl *chain, *nl_next;
+  long range[2];
 };
 
 struct {
-	char	*symbol;
-	char	class, nl_flags;
-	struct	nl *type;
-	struct	nl *chain, *nl_next;
-	int	value[4];
+  char *symbol;
+  char class, nl_flags;
+  struct nl *type;
+  struct nl *chain, *nl_next;
+  int value[4];
 };
 
 /*
@@ -229,32 +228,32 @@ struct {
  * which records whether a structure contains any files.
  * Such structures are not allowed to be dynamically allocated.
  */
-#define	NPACKED	0200
-#define	NUSED	0100
-#define	NMOD	0040
-#define	NFORWD	0200
-#define	NFILES	0200
-
+#define NPACKED 0200
+#define NUSED 0100
+#define NMOD 0040
+#define NFORWD 0400
+#define NFILES 01000
+
 /*
  * Definition of the commonly used "value" fields.
  * The most important ones are NL_LOC which gives the location
  * in the code of a label or procedure, and NL_OFFS which gives
  * the offset of a variable in its stack mark.
  */
-#define NL_OFFS	0
-#define NL_LOC	1
-#define	NL_PATCH 2
+#define NL_OFFS 0
+#define NL_LOC 1
+#define NL_PATCH 2
 
-#define	NL_FVAR	3
+#define NL_FVAR 3
 
 #define NL_GOLEV 2
 #define NL_GOLINE 3
 #define NL_FORV 1
 
-#define	NL_FLDSZ 1
-#define	NL_VARNT 2
-#define	NL_VTOREC 2
-#define	NL_TAG	3
+#define NL_FLDSZ 1
+#define NL_VARNT 2
+#define NL_VTOREC 2
+#define NL_TAG 3
 
 /*
  * For BADUSE nl structures, NL_KINDS is a bit vector
@@ -263,10 +262,10 @@ struct {
  * The low bit is reserved as ISUNDEF to indicate whether
  * this identifier is totally undefined.
  */
-#define	NL_KINDS	0
+#define NL_KINDS 0
 
-#define	ISUNDEF		1
-
+#define ISUNDEF 1
+
 /*
  * NAMELIST CLASSES
  *
@@ -278,36 +277,36 @@ struct {
  * a number of structure definitions with one corresponding
  * to each namelist class, ala a variant record in Pascal.
  */
-#define	BADUSE	0
-#define	CONST	1
-#define	TYPE	2
-#define	VAR	3
-#define	ARRAY	4
-#define	PTRFILE	5
-#define	RECORD	6
-#define	FIELD	7
-#define	PROC	8
-#define	FUNC	9
-#define	FVAR	10
-#define	REF	11
-#define	PTR	12
-#define	FILE	13
-#define	SET	14
-#define	RANGE	15
-#define	LABEL	16
-#define	WITHPTR 17
-#define	SCAL	18
-#define	STR	19
-#define	PROG	20
-#define	IMPROPER 21
-#define	VARNT	22
+#define BADUSE 0
+#define CONST 1
+#define TYPE 2
+#define VAR 3
+#define ARRAY 4
+#define PTRFILE 5
+#define RECORD 6
+#define FIELD 7
+#define PROC 8
+#define FUNC 9
+#define FVAR 10
+#define REF 11
+#define PTR 12
+#define FILE 13
+#define SET 14
+#define RANGE 15
+#define LABEL 16
+#define WITHPTR 17
+#define SCAL 18
+#define STR 19
+#define PROG 20
+#define IMPROPER 21
+#define VARNT 22
 
 /*
  * Clnames points to an array of names for the
  * namelist classes.
  */
-char	**clnames;
-
+char **clnames;
+
 /*
  * PRE-DEFINED NAMELIST OFFSETS
  *
@@ -317,28 +316,28 @@ char	**clnames;
  * internally. These definitions are sensitive to the
  * initializations in nl.c.
  */
-#define	TFIRST -7
-#define	TFILE  -7
-#define	TREC   -6
-#define	TARY   -5
-#define	TSCAL  -4
-#define	TPTR   -3
-#define	TSET   -2
-#define	TSTR   -1
-#define	NIL	0
-#define	TBOOL	1
-#define	TCHAR	2
-#define	TINT	3
-#define	TDOUBLE	4
-#define	TNIL	5
-#define	T1INT	6
-#define	T2INT	7
-#define	T4INT	8
-#define	T1CHAR	9
-#define	T1BOOL	10
-#define	T8REAL	11
-#define TLAST	11
-
+#define TFIRST -7
+#define TFILE -7
+#define TREC -6
+#define TARY -5
+#define TSCAL -4
+#define TPTR -3
+#define TSET -2
+#define TSTR -1
+#define NIL 0
+#define TBOOL 1
+#define TCHAR 2
+#define TINT 3
+#define TDOUBLE 4
+#define TNIL 5
+#define T1INT 6
+#define T2INT 7
+#define T4INT 8
+#define T1CHAR 9
+#define T1BOOL 10
+#define T8REAL 11
+#define TLAST 11
+
 /*
  * SEMANTIC DEFINITIONS
  */
@@ -347,8 +346,8 @@ char	**clnames;
  * NOCON and SAWCON are flags in the tree telling whether
  * a constant set is part of an expression.
  */
-#define NOCON	0
-#define SAWCON	1
+#define NOCON 0
+#define SAWCON 1
 
 /*
  * The variable cbn gives the current block number,
@@ -356,14 +355,14 @@ char	**clnames;
  * lookup, and is the block number of the variable which
  * was found.
  */
-int	bn, cbn;
+int bn, cbn;
 
 /*
  * The variable line is the current semantic
  * line and is set in stat.c from the numbers
  * embedded in statement type tree nodes.
  */
-int	line;
+int line;
 
 /*
  * The size of the display
@@ -372,7 +371,7 @@ int	line;
  * Because of the flags in the current namelist
  * this must be no greater than 32.
  */
-#define	DSPLYSZ 20
+#define DSPLYSZ 20
 
 /*
  * The following structure is used
@@ -385,10 +384,10 @@ int	line;
  * numbers are thereby changed if necessary.
  */
 struct om {
-	long	om_off;
-	long	om_max;
+  long om_off;
+  long om_max;
 } sizes[DSPLYSZ];
-
+
 /*
  * Structure recording information about a constant
  * declaration.  It is actually the return value from
@@ -396,9 +395,9 @@ struct om {
  * record valued functions, this is more convenient.
  */
 struct {
-	int	ctype;
-	int	cival;
-	double	crval;
+  int ctype;
+  int cival;
+  double crval;
 } con;
 
 /*
@@ -408,7 +407,7 @@ struct {
  * the routine setran in var.c.
  */
 struct {
-	int lwrb, uprbp;
+  int lwrb, uprbp;
 } set;
 
 /*
@@ -420,12 +419,12 @@ struct {
  * to be formed when a for variable is assigned to in
  * the range of the loop.
  */
-#define	NOMOD	0
-#define	MOD	01
-#define	ASGN	02
-#define	NOUSE	04
+#define NOMOD 0
+#define MOD 01
+#define ASGN 02
+#define NOUSE 04
 
-double	MAXINT, MININT;
+double MAXINT, MININT;
 
 /*
  * Variables for generation of profile information.
@@ -434,22 +433,22 @@ double	MAXINT, MININT;
  * cnts records the current counter for generating
  * COUNT operators.
  */
-int	gocnt;
-int	cnts;
-
+int gocnt;
+int cnts;
+
 /*
  * Most routines call "incompat" rather than asking "!compat"
  * for historical reasons.
  */
-#define incompat 	!compat
+#define incompat !compat
 
 /*
  * Flags for the "you used / instead of div" diagnostic
  */
-char	divchk;
-char	divflg;
+char divchk;
+char divflg;
 
-int	errcnt[DSPLYSZ];
+int errcnt[DSPLYSZ];
 
 /*
  * Forechain links those types which are
@@ -457,18 +456,18 @@ int	errcnt[DSPLYSZ];
  * so that they can be evaluated later, permitting
  * circular, recursive list structures to be defined.
  */
-struct	nl *forechain;
+struct nl *forechain;
 
 /*
  * Withlist links all the records which are currently
  * opened scopes because of with statements.
  */
-struct	nl *withlist;
+struct nl *withlist;
 
-char	*intset;
-char	*input, *output;
-struct	nl *program;
-
+char *intset;
+char *input, *output;
+struct nl *program;
+
 /*
  * STRUCTURED STATEMENT GOTO CHECKING
  *
@@ -496,11 +495,11 @@ struct	nl *program;
  * must eventually be declared at this level or an outer level to this
  * one or a goto into a structured statement will exist.
  */
-int	level;
-struct	nl *gotos[DSPLYSZ];
+int level;
+struct nl *gotos[DSPLYSZ];
 
-#define	NOTYET	10000
-#define	DEAD	10000
+#define NOTYET 10000
+#define DEAD 10000
 
 /*
  * Noreach is true when the next statement will
@@ -508,8 +507,8 @@ struct	nl *gotos[DSPLYSZ];
  * (like exiting a looping construct) to save
  * the day.
  */
-int	noreach;
-
+int noreach;
+
 /*
  * CODE GENERATION DEFINITIONS
  */
@@ -518,10 +517,10 @@ int	noreach;
  * NSTAND is or'ed onto the abstract machine opcode
  * for non-standard built-in procedures and functions.
  */
-#define	NSTAND	0400
+#define NSTAND 0400
 
-#define	codeon()	cgenflg++
-#define	codeoff()	--cgenflg
+#define codeon() cgenflg++
+#define codeoff() --cgenflg
 
 /*
  * Offsets due to the structure of the runtime stack.
@@ -529,8 +528,8 @@ int	noreach;
  * as local variables for the runtime system.
  * DPOFF2 is the size of the block mark.
  */
-#define DPOFF1	0
-#define DPOFF2	16
+#define DPOFF1 0
+#define DPOFF2 16
 
 /*
  * Codeline is the last lino output in the code generator.
@@ -540,55 +539,55 @@ int	noreach;
  *
 int	codeline;
  */
-char	*lc;
-
+char *lc;
 
 /*
  * Routines which need types
  * other than "integer" to be
  * assumed by the compiler.
  */
-double	atof();
-long	lwidth();
-long	aryconst();
-long	a8tol();
-struct	nl *lookup();
-double	atof();
-int	*tree();
-char	*alloc();
+double atof();
+long lwidth();
+long aryconst();
+long a8tol();
+struct nl *lookup();
+int *tree();
+char *alloc();
 
 /*
  * Funny structures to use
  * pointers in wild and wooly ways
  */
 struct {
-	char	pchar;
+  char pchar;
+  int pint;
+  int pint2;
 };
 struct {
-	int	pint;
-	int	pint2;
+  long plong;
 };
 struct {
-	long	plong;
-};
-struct {
-	double	pdouble;
+  double pdouble;
 };
 
-#define	OCT	1
-#define	HEX	2
-
+#define OCT 1
+#define HEX 2
+
 /*
  * MAIN PROGRAM VARIABLES, MISCELLANY
  */
 
-
-char	*filename;		/* current source file name */
-char	snark[];		/* SNARK */
-char	*classes[];		/* maps namelist classes to string names */
-int	pfcnt;
-char	*errfile;
-char	holdderr;
+char *currentSourceFile; /* current source file name */
+char snark[];            /* SNARK */
+/*
+ * The 'classes' array maps namelist classes to their corresponding string
+ * names. Each entry in the array represents a specific class type, allowing for
+char holdderr = 0; // Initialize holdderr to 0 to avoid undefined behavior
+ */
+char *classes[]; /* maps namelist classes to string names */
+int pfcnt;
+char *errfile;
+char holdderr;
 #ifdef DEBUG
-char	hp21mx;
+// This block is used for debugging purposes.
 #endif

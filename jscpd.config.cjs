@@ -3,8 +3,13 @@
  * See: https://github.com/kucherenko/jscpd
  */
 module.exports = {
+
   // Directories to scan for duplicate code
-  path: ["kernel"], // analyze only the small kernel folder
+  path: ["minix/kernel"], // analyze only the small kernel folder inside the minix directory
+
+  // Analyze C code and accompanying headers together with assembler
+  // sources so jscpd can detect cross-language duplication.
+  pattern: "**/*.{c,h,s,S}",
 
   // Minimum tokens for duplication detection
   minTokens: 50,

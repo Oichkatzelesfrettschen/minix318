@@ -19,3 +19,18 @@ modern documentation.
   when possible.
 
 These rules apply to the entire repository.
+
+## Development Tools Setup
+
+The project expects a modern LLVM toolchain. Verify package availability and
+install the following tools using `apt`:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y clang-18 clang-tools-18 llvm-18-dev \
+  libpolly-18-dev lld-18 lldb-18 bolt-18 build-essential binutils \
+  meson valgrind lcov
+```
+
+Update this list as new major versions (e.g., `clang-19`) become available.
+Check with `apt-cache policy` before changing versions.

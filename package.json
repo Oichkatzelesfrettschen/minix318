@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test/basic.test.js",
     "jscpd": "jscpd",
     "jscpd:run": "node scripts/run-jscpd.js"
   },
@@ -16,6 +16,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "jscpd": "^4.0.5"
+    "jscpd": "^4.0.5",
+    "prettier": "^3.5.3"
   }
 }
