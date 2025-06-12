@@ -5,14 +5,14 @@ information. Legacy comments that predate Doxygen must **not** be removed.
 Instead, convert them to Doxygen style so their content remains available in
 modern documentation.
 
-* Never rewrite existing commits. Add new commits only.
 * During refactoring or migration to C23, retain existing comments and include
   them in new Doxygen blocks.
 * Modernize Meson build files but keep previous documentation intact.
 * Use Doxygen together with Sphinx, Graphviz and other supported tools to
   generate diagrams and metrics automatically.
-* All code must be formatted according to project conventions. Comments alone
-  should not trigger reformatting.
+* All code must be formatted according to project conventions using tools such
+  as ``clang-format`` or ``Black``. Comments alone should not trigger
+  reformatting.
 * Every function and structure requires comments; use Doxygen whenever
   applicable.
 * Documentation build steps should generate images and diagrams automatically
@@ -34,3 +34,4 @@ sudo apt-get install -y clang-18 clang-tools-18 llvm-18-dev \
 
 Update this list as new major versions (e.g., `clang-19`) become available.
 Check with `apt-cache policy` before changing versions.
+
