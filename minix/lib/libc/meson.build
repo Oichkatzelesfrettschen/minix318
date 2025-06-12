@@ -1,10 +1,20 @@
-```meson
 #------------------------------------------------------------------------------
 # minix/lib/libc/meson.build
 #
-# Builds the custom mathematical‐POSIX extensions to the MINIX C library.
-# Defines a static component 'libc_custom_math' for new math/POSIX support.
+# Static component for mathematical/POSIX extensions to the MINIX C library.
 #------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------  
+# Options  
+#------------------------------------------------------------------------------  
+# Choose the C standard for this component: c11, c17 or c23
+option(
+  'libc_c_std',
+  type        : 'string',
+  value       : 'c23',
+  choices     : ['c11', 'c17', 'c23'],
+  description : 'C standard to use when compiling libc custom math'
+)
 
 #------------------------------------------------------------------------------  
 # Include Directories  
@@ -23,7 +33,7 @@ libc_include_dirs = include_directories(
 #------------------------------------------------------------------------------  
 # - mathematical_posix.c : POSIX wrappers with formal math verification
 # - mathematical_init.c  : Initialization routines for the math subsystem
-# - math_control.c       : Future control interfaces (to be implemented)
+# - math_control.c       : Control interfaces (to be implemented)
 libc_sources = files(
   'sys-minix/mathematical_posix.c',
   'sys-minix/mathematical_init.c',
@@ -33,41 +43,43 @@ libc_sources = files(
 #------------------------------------------------------------------------------  
 # Compiler Arguments  
 #------------------------------------------------------------------------------  
-# Use C23 for portability within userland; treat warnings as errors
+# Use the selected C standard, enable all warnings as errors, and apply
+# the top-level optimization level.
 libc_c_args = [
-  '-std=c23,
+  '-std=' + get_option('libc_c_std'),
   '-Wall',
   '-Wextra',
-  '-Werror'
+  '-Werror',
+  '-O' + get_option('opt_level')
 ]
 
 #------------------------------------------------------------------------------  
 # Static Library Definition  
 #------------------------------------------------------------------------------  
-# Builds a static component for mathematical/POSIX extensions.
+# Builds a static library 'libc_custom_math' for mathematical/POSIX extensions.
 libc_custom_math = static_library(
-  'libc_custom_math',        # library name
-  libc_sources,              # source files
+  'libc_custom_math',
+  libc_sources,
   include_directories : libc_include_dirs,
   c_args              : libc_c_args,
-  install             : true,           # install into system libc path if appropriate
-  install_dir         : 'lib'           # adjust as needed for Minix userland
+  install             : true,        # install into userland libc path
+  install_dir         : 'lib'        # adjust to match Minix layout
 )
 
 #------------------------------------------------------------------------------  
 # Dependency Object  
 #------------------------------------------------------------------------------  
-# Provides include paths and link libraries for other Meson subprojects.
+# Exposes include paths and link libraries for downstream Meson projects.
 libc_custom_math_dep = declare_dependency(
   include_directories : libc_include_dirs,
   link_with           : libc_custom_math
 )
 
 #------------------------------------------------------------------------------  
-# Notes / TODO  
+# Functional Gaps / TODO  
 #------------------------------------------------------------------------------  
-# - In a full libc build, this file would be integrated into a shared/static libc.
-# - 'math_control.c' is a placeholder for future interfaces; implement as required.
-# - Adjust 'install_dir' to match your Minix filesystem layout.
+# - Integrate this component into the main libc build (shared/static libc).  
+# - Verify that 'sys-minix' source files exist; add fallbacks or generate stubs.  
+# - Populate math_control.c with actual control APIs or remove if unneeded.  
+# - Add Meson test cases to validate mathematical_posix and initialization logic.  
 #------------------------------------------------------------------------------
-```

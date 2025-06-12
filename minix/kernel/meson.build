@@ -1,264 +1,85 @@
 ```meson
 #------------------------------------------------------------------------------
-# meson.build — MINIX Kernel Build Configuration
+# minix/lib/libc/meson.build
 #
-# This file configures the MINIX kernel build for supported architectures,
-# integrating core sources, capability libraries, system-call handlers,
-# optional MDLM support, and architecture-specific files.
-#
-# Features:
-#  - C23 standard with strict warning levels
-#  - Host‐ or user‐selected architecture (i386, x86_64)
-#  - Automatic discovery of syscall handlers
-#  - Kernel capability library integration
-#  - Optional profiling and MDLM support
+# Builds the custom mathematical‐POSIX extensions to the MINIX C library.
+# Defines a static component 'libc_custom_math' that other parts of the system
+# can link against for math‐verified POSIX functionality.
 #------------------------------------------------------------------------------
-
-project(
-  'minix-kernel', 'c',
-  version : '3.4.1-unofficial',
-  license : 'BSD-mixed',
-  default_options : [
-    'c_std=c23',               # Use C23 to match capability libraries
-    'warning_level=3',
-    'b_staticpic=false',
-    'b_pie=false',
-    'b_lto=false',
-    'opt_level=2'              # Default optimization level (user can override)
-  ]
-)
 
 #------------------------------------------------------------------------------  
 # Options  
 #------------------------------------------------------------------------------  
-# Allow overriding target architecture
+# Allow overriding the C standard for this component (default: C11)
 option(
-  'arch',
+  'libc_c_std',
   type        : 'string',
-  value       : host_machine.cpu_family(),
-  choices     : ['i386', 'x86_64'],
-  description : 'Target CPU architecture'
+  value       : 'c23',
+  choices     : ['c11', 'c17', 'c23'],
+  description : 'C standard to use when compiling libc custom math'
 )
-
-# Toggle MDLM support
-option(
-  'enable_mdlm',
-  type        : 'boolean',
-  value       : false,
-  description : 'Enable MDLM capability-DAG support'
-)
-
-arch = get_option('arch')
-enable_mdlm = get_option('enable_mdlm')
-
-#------------------------------------------------------------------------------  
-# Compiler & Architecture Flags  
-#------------------------------------------------------------------------------  
-cc = meson.get_compiler('c')
-
-# Common flags for freestanding kernel
-kernel_common_flags = [
-  '-ffreestanding',
-  '-fno-builtin',
-  '-fno-stack-protector',
-  '-nostdinc',
-  '-nostdlib',
-  '-Wall',
-  '-Wextra',
-  '-Wno-unused-parameter',
-  '-Wno-missing-field-initializers',
-  '-O' + get_option('opt_level')
-]
-
-# Architecture‐specific definitions and flags
-if arch == 'x86_64'
-  arch_subdir   = 'x86_64'
-  arch_defines  = ['-D__x86_64__', '-DARCH_X86_64']
-  arch_flags    = [
-    '-m64', '-mcmodel=kernel', '-mno-red-zone',
-    '-msse', '-msse2', '-mfpu', '-mmx',
-    '-fno-omit-frame-pointer',
-    '-fno-optimize-sibling-calls'
-  ]
-elif arch == 'i386'
-  arch_subdir   = 'i386'
-  arch_defines  = ['-D__i386__', '-DARCH_I386']
-  arch_flags    = [
-    '-m32', '-fno-omit-frame-pointer',
-    '-fno-optimize-sibling-calls'
-  ]
-else
-  error('Unsupported architecture: ' + arch)
-endif
-
-# Combine into final C and linker arguments
-kernel_c_args    = kernel_common_flags + arch_flags + arch_defines
-kernel_link_args = arch_flags.to_list()  # copy arch_flags
 
 #------------------------------------------------------------------------------  
 # Include Directories  
 #------------------------------------------------------------------------------  
-kernel_includes = include_directories(
-  'include',
-  'include/arch/' + arch_subdir,
-  'lib/klib/include',
-  'capability'               # for headers under minix/kernel/capability
+# - '.'            : internal headers for this component
+# - '../../include': core MINIX libc headers (mathposix.h, ipc.h, callnr.h, etc.)
+# - '../../include/posix': POSIX types & definitions (sys/types.h, unistd.h, ...)
+libc_include_dirs = include_directories(
+  '.',
+  '../../include',
+  '../../include/posix'
 )
 
 #------------------------------------------------------------------------------  
-# Dependencies  
+# Source Files  
 #------------------------------------------------------------------------------  
-# Capability kernel-lib (fallback to subdir build defined in parent project)
-capability_klib_dep = dependency(
-  'capability_klib',
-  fallback : ['capability_klib', 'capability_klib_dep']
+# - mathematical_posix.c : POSIX wrappers with formal math verification
+# - mathematical_init.c  : Initialization routines for the math subsystem
+# - math_control.c       : Control interfaces (to be implemented)
+libc_sources = files(
+  'sys-minix/mathematical_posix.c',
+  'sys-minix/mathematical_init.c',
+  'sys-minix/math_control.c'
 )
 
 #------------------------------------------------------------------------------  
-# Kernel Libraries  
+# Compiler Arguments  
 #------------------------------------------------------------------------------  
-# Core klib (string, memory, panic, etc.)
-klib_sources = files(
-  'lib/klib/kstring.c',
-  'lib/klib/kmemory.c',
-  'lib/klib/kprintf_stub.c',
-  'lib/klib/kpanic.c'
-)
-klib = static_library(
-  'klib',
-  klib_sources,
-  c_args              : kernel_c_args,
-  include_directories : kernel_includes,
-  install             : false
-)
+# Uses the chosen C standard, enables all warnings as errors, and respects
+# the top‐level optimization level.
+libc_c_args = [
+  '-std=' + get_option('libc_c_std'),
+  '-Wall',
+  '-Wextra',
+  '-Werror',
+  '-O' + get_option('opt_level')
+]
 
-# Kernel capability library (proof, verify, syscalls, audit, cache)
-kernel_capability_lib = static_library(
-  'kernel_capability',
-  [
-    'kernel/capability/capability_proof.c',
-    'kernel/capability/capability_verify.c',
-    'kernel/capability/math_syscalls.c',
-    'kernel/capability/math_syscalls_extended.c',
-    'kernel/capability/capability_audit.c',
-    'kernel/capability/capability_cache.c'
-  ],
-  c_args              : kernel_c_args + ['-DMATHEMATICAL_VERIFICATION'],
-  include_directories : kernel_includes,
-  dependencies        : [ capability_klib_dep ],
-  install             : false
+#------------------------------------------------------------------------------  
+# Static Library Definition  
+#------------------------------------------------------------------------------  
+# Builds a static library 'libc_custom_math' for mathematical/POSIX extensions.
+libc_custom_math = static_library(
+  'libc_custom_math',            # library name
+  libc_sources,                  # source files
+  include_directories : libc_include_dirs,
+  c_args              : libc_c_args,
+  install             : true,    # install into userland libc path
+  install_dir         : 'lib'    # adjust to your Minix layout
 )
 
 #------------------------------------------------------------------------------  
-# Kernel Core & Syscall Sources  
+# Dependency Object  
 #------------------------------------------------------------------------------  
-kernel_core_sources = files(
-  'kernel/clock.c',
-  'kernel/cpulocals.c',
-  'kernel/debug.c',
-  'kernel/interrupt.c',
-  'kernel/main.c',
-  'kernel/proc.c',
-  'kernel/profile.c',
-  'kernel/smp.c',
-  'kernel/system.c',
-  'kernel/table.c',
-  'kernel/usermapped_data.c',
-  'kernel/utility.c',
-  'kernel/watchdog.c',
-  'kernel/clhlock.c',
-  'kernel/clh_bkl.c',
-  'kernel/capability.c'
-)
-
-# Dynamically discover syscall handlers under kernel/system/*.c
-syscall_sources = []
-syscall_files = run_command(
-  'find', 'kernel/system', '-maxdepth', '1', '-name', '*.c', '-print'
-).stdout().strip().split('\n')
-foreach src : syscall_files
-  if src != ''
-    syscall_sources += files(src)
-  endif
-endforeach
-
-#------------------------------------------------------------------------------  
-# Architecture-Specific C & Assembly Sources  
-#------------------------------------------------------------------------------  
-arch_c_sources   = []
-kernel_asm_sources = []
-if arch_subdir == 'i386'
-  arch_c_sources = files(
-    'arch/i386/acpi.c',
-    'arch/i386/apic.c',
-    # ... (other i386 C sources) ...
-    'arch/i386/usermapped_data_arch.c'
-  )
-  kernel_asm_sources = files(
-    'arch/i386/mpx.S',
-    'arch/i386/head.S',
-    'arch/i386/klib.S',
-    'arch/i386/apic_asm.S'
-  )
-elif arch_subdir == 'x86_64'
-  # TODO: add x86_64-specific C or ASM sources when available
-  arch_c_sources = files()
-  kernel_asm_sources = files()
-endif
-
-#------------------------------------------------------------------------------  
-# Optional MDLM Support  
-#------------------------------------------------------------------------------  
-mdlm_sources = []
-if enable_mdlm
-  mdlm_sources = files('kernel/mdlm/mdlm_cap_dag.c')
-  message('MDLM support enabled: building mdlm_cap_dag.c')
-endif
-
-#------------------------------------------------------------------------------  
-# Linker Script & Kernel Executable  
-#------------------------------------------------------------------------------  
-linker_script = meson.current_source_dir() / 'arch' / arch_subdir / 'kernel.lds'
-if not linker_script.exists()
-  error('Linker script not found: ' + linker_script)
-endif
-kernel_link_args += ['-T', linker_script, '-Wl,--build-id=none']
-
-all_c_sources = (
-  kernel_core_sources
-  + syscall_sources
-  + arch_c_sources
-  + mdlm_sources
-)
-
-kernel = executable(
-  'kernel',
-  all_c_sources + kernel_asm_sources,
-  link_with           : [ klib, kernel_capability_lib ],
-  c_args              : kernel_c_args,
-  link_args           : kernel_link_args,
-  include_directories : kernel_includes,
-  install             : true,
-  install_dir         : 'boot'
+# Exposes include paths and link libraries for other Meson subprojects.
+libc_custom_math_dep = declare_dependency(
+  include_directories : libc_include_dirs,
+  link_with           : libc_custom_math
 )
 
 #------------------------------------------------------------------------------  
-# Build Information  
+# Build Notice  
 #------------------------------------------------------------------------------  
-message('Building MINIX kernel for architecture: ' + arch)
-message('C compiler arguments: ' + ' '.join(kernel_c_args))
-message('Linker arguments: ' + ' '.join(kernel_link_args))
+message('Configured libc_custom_math with C standard: ' + get_option('libc_c_std'))
 ```
-
-**Summary of improvements**
-
-1. **Uncommented** and harmonized the `project()` declaration.
-2. **Defined** and used a Meson `option('arch')` for architecture selection.
-3. **Removed** all `<<<<<<<`/`>>>>>>>` merge artifacts.
-4. **Centralized** include paths and dependency declarations.
-5. **Automated** syscall discovery via `find`.
-6. **Guarded** linker‐script existence with a clear error.
-7. **Documented** every section and variable with concise hash-comments.
-8. **Added** Meson options for MDLM and provided a clean build path.
-
-This `meson.build` is now merge-clean, fully documented, and ready for production use.
