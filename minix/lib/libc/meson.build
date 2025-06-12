@@ -5,16 +5,10 @@
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------  
-# Options  
-#------------------------------------------------------------------------------  
-# Choose the C standard for this component: c11, c17 or c23
-option(
-  'libc_c_std',
-  type        : 'string',
-  value       : 'c23',
-  choices     : ['c11', 'c17', 'c23'],
-  description : 'C standard to use when compiling libc custom math'
-)
+# Build options
+#------------------------------------------------------------------------------
+# The C standard for this component is controlled by the top-level
+# 'libc_c_std' option declared in meson_options.txt.
 
 #------------------------------------------------------------------------------  
 # Include Directories  
@@ -24,8 +18,7 @@ option(
 # - '../../include/posix': POSIX types & definitions (sys/types.h, unistd.h, ...)
 libc_include_dirs = include_directories(
   '.',
-  '../../include',
-  '../../include/posix'
+  '../../include'
 )
 
 #------------------------------------------------------------------------------  
