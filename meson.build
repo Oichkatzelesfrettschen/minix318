@@ -3,8 +3,16 @@
 project(
     'minix',
     'c',
-    default_options: ['c_std=c11']
 )
+
+# Detect C23 support and adjust the compilation standard accordingly.
+cc = meson.get_compiler('c')
+if cc.has_argument('-std=c23')
+  add_project_arguments('-std=c23', language: 'c')
+else
+  # Fall back to C17 when the compiler lacks C23 support.
+  add_project_arguments('-std=c17', language: 'c')
+endif
 
 # Select the build architecture.
 arch = get_option('arch')
