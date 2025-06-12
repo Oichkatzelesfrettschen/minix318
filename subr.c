@@ -116,7 +116,7 @@ calloc(num, size)
 	if ((p1 = alloc(nbyte)) == -1 || p1==0)
 		return (-1);
 	p2 = p1;
-	nbyte =>> 1;		/* 2 bytes/word */
+	nbyte >>= 1; /* 2 bytes/word */
 	do {
 		*p2++ = 0;
 	} while (--nbyte);
@@ -196,8 +196,8 @@ opush(c)
 {
 
 	c =- 'a';
-	optstk[c] =<< 1;
-	optstk[c] =| opts[c];
+	optstk[c] <<= 1;
+	optstk[c] |= opts[c];
 	opts[c] = 1;
 #ifdef PI0
 	send(ROPUSH, c);
@@ -210,7 +210,7 @@ opop(c)
 
 	c =- 'a';
 	opts[c] = optstk[c] & 1;
-	optstk[c] =>> 1;
+	optstk[c] >>= 1;
 #ifdef PI0
 	send(ROPOP, c);
 #endif
