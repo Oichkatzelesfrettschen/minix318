@@ -3,8 +3,8 @@
  * @brief C23 compliant memory manipulation functions for klib.
  */
 
-#include <klib.h>         // For k_size_t, function declarations
-#include <sys/kassert.h>  // For KASSERT
+#include <klib.h>        // For k_size_t, function declarations
+#include <sys/kassert.h> // For KASSERT
 
 /**
  * @brief Sets the first n bytes of the memory area pointed to by s to the
@@ -15,9 +15,9 @@
  * @param n Number of bytes to be set.
  * @return A pointer to the memory area s.
  */
-void* kmemset_c23(void* s, int c, k_size_t n) {
+void *kmemset_c23(void *s, int c, k_size_t n) {
   KASSERT(s != NULL);
-  unsigned char* p = (unsigned char*)s;
+  unsigned char *p = (unsigned char *)s;
   unsigned char val = (unsigned char)c;
 
   for (k_size_t i = 0; i < n; ++i) {
@@ -40,12 +40,12 @@ void* kmemset_c23(void* s, int c, k_size_t n) {
  * @param n Number of bytes to copy.
  * @return A pointer to the destination memory area dest.
  */
-void* kmemcpy_c23(void* restrict dest, const void* restrict src, k_size_t n) {
+void *kmemcpy_c23(void *restrict dest, const void *restrict src, k_size_t n) {
   KASSERT(dest != NULL);
   KASSERT(src != NULL);
 
-  unsigned char* d = (unsigned char*)dest;
-  const unsigned char* s = (const unsigned char*)src;
+  unsigned char *d = (unsigned char *)dest;
+  const unsigned char *s = (const unsigned char *)src;
 
   if (n == 0) {
     return dest;
@@ -80,12 +80,12 @@ void* kmemcpy_c23(void* restrict dest, const void* restrict src, k_size_t n) {
  *         bytes of s1 is found, respectively, to be less than, to match, or be
  *         greater than the first n bytes of s2.
  */
-int kmemcmp_c23(const void* s1, const void* s2, k_size_t n) {
+int kmemcmp_c23(const void *s1, const void *s2, k_size_t n) {
   KASSERT(s1 != NULL);
   KASSERT(s2 != NULL);
 
-  const unsigned char* p1 = (const unsigned char*)s1;
-  const unsigned char* p2 = (const unsigned char*)s2;
+  const unsigned char *p1 = (const unsigned char *)s1;
+  const unsigned char *p2 = (const unsigned char *)s2;
 
   if (n == 0) {
     return 0;
