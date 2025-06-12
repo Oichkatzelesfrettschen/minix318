@@ -1,9 +1,9 @@
-#include "types.h"
-#include "defs.h"
-#include "spinlock.h"
 #include "dag.h"
-#include "exo_stream.h"
+#include "defs.h"
 #include "exo_cpu.h"
+#include "exo_stream.h"
+#include "spinlock.h"
+#include "types.h"
 #include <string.h>
 
 static struct spinlock dag_lock;
@@ -12,7 +12,15 @@ static struct dag_node *ready_head;
 static struct exo_sched_ops dag_ops;
 static struct exo_stream dag_stream;
 
-static inline int node_weight(struct dag_node *n) { return n->priority; }
+/**
+ * Return the scheduling weight for a DAG node.
+ *
+ * Older code relied solely on the priority field.  When weight is zero the
+ * priority provides a fallback value so existing callers continue to work.
+ */
+static inline int node_weight(struct dag_node *n) {
+  return n->weight ? n->weight : n->priority;
+}
 
 void dag_node_init(struct dag_node *n, exo_cap ctx) {
   memset(n, 0, sizeof(*n));
@@ -22,6 +30,9 @@ void dag_node_init(struct dag_node *n, exo_cap ctx) {
 void dag_node_set_priority(struct dag_node *n, int priority) {
   n->priority = priority;
 }
+
+/** Assign a relative weight to a DAG node for scheduling. */
+void dag_node_set_weight(struct dag_node *n, int weight) { n->weight = weight; }
 
 void dag_node_add_dep(struct dag_node *parent, struct dag_node *child) {
   struct dag_node_list *l = (struct dag_node_list *)kalloc();
