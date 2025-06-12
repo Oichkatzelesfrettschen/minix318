@@ -3,8 +3,8 @@
  * See: https://github.com/kucherenko/jscpd
  */
 module.exports = {
-  // Directories to scan for duplicate code
-  path: ["kernel"], // analyze only the small kernel folder
+  // Directories to scan for duplicate code. Start with the kernel folder
+  path: ["minix/kernel"],
 
   // Minimum tokens for duplication detection
   minTokens: 50,
