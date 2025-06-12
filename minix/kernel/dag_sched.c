@@ -52,8 +52,10 @@ void dag_node_add_dep(struct dag_node *parent, struct dag_node *child) {
 }
 
 static void heap_push(struct dag_node *n) {
-  if (ready_size >= DAG_HEAP_CAPACITY)
+  if (ready_size >= DAG_HEAP_CAPACITY) {
+    printf("dag_sched: heap_push overflow, node dropped!\n");
     return;
+  }
   int i = ready_size++;
   while (i > 0) {
     int p = (i - 1) / 2;
