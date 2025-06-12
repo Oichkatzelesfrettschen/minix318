@@ -4,6 +4,8 @@
 
 const { execFileSync } = require("child_process");
 
+console.log("Running jscpd with CLI:", args.join(" "));
+execFileSync("npx", args, { stdio: "inherit" });
 /**
  * Run jscpd iteratively for each supported extension. Splitting the
  * execution keeps the log output manageable and avoids timeouts.
