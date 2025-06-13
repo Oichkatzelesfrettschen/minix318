@@ -1775,3 +1775,1953 @@ ACPI_NAMESPACE_NODE *AcpiDbLocalNsLookup(char *Name);
 void AcpiDbUint32ToHexString(UINT32 Value, char *Buffer);
 
 #endif /* __ACDEBUG_H__ */
+
+/**
+ * @section minix_drivers_power_acpi_include_acdebug_h
+ * @brief Original file: minix/drivers/power/acpi/include/acdebug.h
+ */
+/******************************************************************************
+ *
+ * Name: acdebug.h - ACPI/AML debugger
+ *
+ *****************************************************************************/
+
+/*
+ * Copyright (C) 2000 - 2014, Intel Corp.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions, and the following disclaimer,
+ *    without modification.
+ * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+ *    substantially similar to the "NO WARRANTY" disclaimer below
+ *    ("Disclaimer") and any redistribution must be conditioned upon
+ *    including a substantially similar Disclaimer requirement for further
+ *    binary redistribution.
+ * 3. Neither the names of the above-listed copyright holders nor the names
+ *    of any contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * Alternatively, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") version 2 as published by the Free
+ * Software Foundation.
+ *
+ * NO WARRANTY
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGES.
+ */
+
+#ifndef __ACDEBUG_H__
+#define __ACDEBUG_H__
+
+#define ACPI_DEBUG_BUFFER_SIZE 0x4000 /* 16K buffer for return objects */
+
+typedef struct acpi_db_command_info {
+  char *Name;    /* Command Name */
+  UINT8 MinArgs; /* Minimum arguments required */
+
+} ACPI_DB_COMMAND_INFO;
+
+typedef struct acpi_db_command_help {
+  UINT8 LineCount;   /* Number of help lines */
+  char *Invocation;  /* Command Invocation */
+  char *Description; /* Command Description */
+
+} ACPI_DB_COMMAND_HELP;
+
+typedef struct acpi_db_argument_info {
+  char *Name; /* Argument Name */
+
+} ACPI_DB_ARGUMENT_INFO;
+
+typedef struct acpi_db_execute_walk {
+  UINT32 Count;
+  UINT32 MaxCount;
+
+} ACPI_DB_EXECUTE_WALK;
+
+#define PARAM_LIST(pl) pl
+#define DBTEST_OUTPUT_LEVEL(lvl) if (AcpiGbl_DbOpt_verbose)
+#define VERBOSE_PRINT(fp)                                                      \
+  DBTEST_OUTPUT_LEVEL(lvl) { AcpiOsPrintf PARAM_LIST(fp); }
+
+#define EX_NO_SINGLE_STEP 1
+#define EX_SINGLE_STEP 2
+
+/*
+ * dbxface - external debugger interfaces
+ */
+ACPI_STATUS
+AcpiDbInitialize(void);
+
+void AcpiDbTerminate(void);
+
+ACPI_STATUS
+AcpiDbSingleStep(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op,
+                 UINT32 OpType);
+
+/*
+ * dbcmds - debug commands and output routines
+ */
+ACPI_NAMESPACE_NODE *AcpiDbConvertToNode(char *InString);
+
+void AcpiDbDisplayTableInfo(char *TableArg);
+
+void AcpiDbDisplayTemplate(char *BufferArg);
+
+void AcpiDbUnloadAcpiTable(char *Name);
+
+void AcpiDbSendNotify(char *Name, UINT32 Value);
+
+void AcpiDbDisplayInterfaces(char *ActionArg, char *InterfaceNameArg);
+
+ACPI_STATUS
+AcpiDbSleep(char *ObjectArg);
+
+void AcpiDbDisplayLocks(void);
+
+void AcpiDbDisplayResources(char *ObjectArg);
+
+ACPI_HW_DEPENDENT_RETURN_VOID(void AcpiDbDisplayGpes(void))
+
+void AcpiDbDisplayHandlers(void);
+
+ACPI_HW_DEPENDENT_RETURN_VOID(void AcpiDbGenerateGpe(char *GpeArg,
+                                                     char *BlockArg))
+
+ACPI_HW_DEPENDENT_RETURN_VOID(void AcpiDbGenerateSci(void))
+
+void AcpiDbExecuteTest(char *TypeArg);
+
+/*
+ * dbconvert - miscellaneous conversion routines
+ */
+ACPI_STATUS
+AcpiDbHexCharToValue(int HexChar, UINT8 *ReturnValue);
+
+ACPI_STATUS
+AcpiDbConvertToPackage(char *String, ACPI_OBJECT *Object);
+
+ACPI_STATUS
+AcpiDbConvertToObject(ACPI_OBJECT_TYPE Type, char *String, ACPI_OBJECT *Object);
+
+UINT8 *AcpiDbEncodePldBuffer(ACPI_PLD_INFO *PldInfo);
+
+void AcpiDbDumpPldBuffer(ACPI_OBJECT *ObjDesc);
+
+/*
+ * dbmethod - control method commands
+ */
+void AcpiDbSetMethodBreakpoint(char *Location, ACPI_WALK_STATE *WalkState,
+                               ACPI_PARSE_OBJECT *Op);
+
+void AcpiDbSetMethodCallBreakpoint(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDbSetMethodData(char *TypeArg, char *IndexArg, char *ValueArg);
+
+ACPI_STATUS
+AcpiDbDisassembleMethod(char *Name);
+
+void AcpiDbDisassembleAml(char *Statements, ACPI_PARSE_OBJECT *Op);
+
+void AcpiDbBatchExecute(char *CountArg);
+
+/*
+ * dbnames - namespace commands
+ */
+void AcpiDbSetScope(char *Name);
+
+void AcpiDbDumpNamespace(char *StartArg, char *DepthArg);
+
+void AcpiDbDumpNamespacePaths(void);
+
+void AcpiDbDumpNamespaceByOwner(char *OwnerArg, char *DepthArg);
+
+ACPI_STATUS
+AcpiDbFindNameInNamespace(char *NameArg);
+
+void AcpiDbCheckPredefinedNames(void);
+
+ACPI_STATUS
+AcpiDbDisplayObjects(char *ObjTypeArg, char *DisplayCountArg);
+
+void AcpiDbCheckIntegrity(void);
+
+void AcpiDbFindReferences(char *ObjectArg);
+
+void AcpiDbGetBusInfo(void);
+
+/*
+ * dbdisply - debug display commands
+ */
+void AcpiDbDisplayMethodInfo(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDbDecodeAndDisplayObject(char *Target, char *OutputType);
+
+void AcpiDbDisplayResultObject(ACPI_OPERAND_OBJECT *ObjDesc,
+                               ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDbDisplayAllMethods(char *DisplayCountArg);
+
+void AcpiDbDisplayArguments(void);
+
+void AcpiDbDisplayLocals(void);
+
+void AcpiDbDisplayResults(void);
+
+void AcpiDbDisplayCallingTree(void);
+
+void AcpiDbDisplayObjectType(char *ObjectArg);
+
+void AcpiDbDisplayArgumentObject(ACPI_OPERAND_OBJECT *ObjDesc,
+                                 ACPI_WALK_STATE *WalkState);
+
+/*
+ * dbexec - debugger control method execution
+ */
+void AcpiDbExecute(char *Name, char **Args, ACPI_OBJECT_TYPE *Types,
+                   UINT32 Flags);
+
+void AcpiDbCreateExecutionThreads(char *NumThreadsArg, char *NumLoopsArg,
+                                  char *MethodNameArg);
+
+void AcpiDbDeleteObjects(UINT32 Count, ACPI_OBJECT *Objects);
+
+#ifdef ACPI_DBG_TRACK_ALLOCATIONS
+UINT32
+AcpiDbGetCacheInfo(ACPI_MEMORY_LIST *Cache);
+#endif
+
+/*
+ * dbfileio - Debugger file I/O commands
+ */
+ACPI_OBJECT_TYPE
+AcpiDbMatchArgument(char *UserArgument, ACPI_DB_ARGUMENT_INFO *Arguments);
+
+void AcpiDbCloseDebugFile(void);
+
+void AcpiDbOpenDebugFile(char *Name);
+
+ACPI_STATUS
+AcpiDbLoadAcpiTable(char *Filename);
+
+ACPI_STATUS
+AcpiDbGetTableFromFile(char *Filename, ACPI_TABLE_HEADER **Table);
+
+/*
+ * dbhistry - debugger HISTORY command
+ */
+void AcpiDbAddToHistory(char *CommandLine);
+
+void AcpiDbDisplayHistory(void);
+
+char *AcpiDbGetFromHistory(char *CommandNumArg);
+
+char *AcpiDbGetHistoryByIndex(UINT32 CommanddNum);
+
+/*
+ * dbinput - user front-end to the AML debugger
+ */
+ACPI_STATUS
+AcpiDbCommandDispatch(char *InputBuffer, ACPI_WALK_STATE *WalkState,
+                      ACPI_PARSE_OBJECT *Op);
+
+void ACPI_SYSTEM_XFACE AcpiDbExecuteThread(void *Context);
+
+ACPI_STATUS
+AcpiDbUserCommands(char Prompt, ACPI_PARSE_OBJECT *Op);
+
+char *AcpiDbGetNextToken(char *String, char **Next,
+                         ACPI_OBJECT_TYPE *ReturnType);
+
+/*
+ * dbstats - Generation and display of ACPI table statistics
+ */
+void AcpiDbGenerateStatistics(ACPI_PARSE_OBJECT *Root, BOOLEAN IsMethod);
+
+ACPI_STATUS
+AcpiDbDisplayStatistics(char *TypeArg);
+
+/*
+ * dbutils - AML debugger utilities
+ */
+void AcpiDbSetOutputDestination(UINT32 Where);
+
+void AcpiDbDumpExternalObject(ACPI_OBJECT *ObjDesc, UINT32 Level);
+
+void AcpiDbPrepNamestring(char *Name);
+
+ACPI_NAMESPACE_NODE *AcpiDbLocalNsLookup(char *Name);
+
+void AcpiDbUint32ToHexString(UINT32 Value, char *Buffer);
+
+#endif /* __ACDEBUG_H__ */
+
+/**
+ * @section minix_drivers_power_acpi_include_acdisasm_h
+ * @brief Original file: minix/drivers/power/acpi/include/acdisasm.h
+ */
+/******************************************************************************
+ *
+ * Name: acdisasm.h - AML disassembler
+ *
+ *****************************************************************************/
+
+/*
+ * Copyright (C) 2000 - 2014, Intel Corp.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions, and the following disclaimer,
+ *    without modification.
+ * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+ *    substantially similar to the "NO WARRANTY" disclaimer below
+ *    ("Disclaimer") and any redistribution must be conditioned upon
+ *    including a substantially similar Disclaimer requirement for further
+ *    binary redistribution.
+ * 3. Neither the names of the above-listed copyright holders nor the names
+ *    of any contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * Alternatively, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") version 2 as published by the Free
+ * Software Foundation.
+ *
+ * NO WARRANTY
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGES.
+ */
+
+#ifndef __ACDISASM_H__
+#define __ACDISASM_H__
+
+#include "amlresrc.h"
+
+#define BLOCK_NONE 0
+#define BLOCK_PAREN 1
+#define BLOCK_BRACE 2
+#define BLOCK_COMMA_LIST 4
+#define ACPI_DEFAULT_RESNAME *(UINT32 *)"__RD"
+
+/*
+ * Raw table data header. Used by disassembler and data table compiler.
+ * Do not change.
+ */
+#define ACPI_RAW_TABLE_DATA_HEADER "Raw Table Data"
+
+typedef const struct acpi_dmtable_info {
+  UINT8 Opcode;
+  UINT16 Offset;
+  char *Name;
+  UINT8 Flags;
+
+} ACPI_DMTABLE_INFO;
+
+/* Values for Flags field above */
+
+#define DT_LENGTH 0x01   /* Field is a subtable length */
+#define DT_FLAG 0x02     /* Field is a flag value */
+#define DT_NON_ZERO 0x04 /* Field must be non-zero */
+#define DT_OPTIONAL 0x08 /* Field is optional */
+#define DT_DESCRIBES_OPTIONAL                                                  \
+  0x10                /* Field describes an optional field (length, etc.) */
+#define DT_COUNT 0x20 /* Currently not used */
+
+/*
+ * Values for Opcode above.
+ * Note: 0-7 must not change, they are used as a flag shift value. Other
+ * than those, new values can be added wherever appropriate.
+ */
+typedef enum {
+  /* Simple Data Types */
+
+  ACPI_DMT_FLAG0 = 0,
+  ACPI_DMT_FLAG1 = 1,
+  ACPI_DMT_FLAG2 = 2,
+  ACPI_DMT_FLAG3 = 3,
+  ACPI_DMT_FLAG4 = 4,
+  ACPI_DMT_FLAG5 = 5,
+  ACPI_DMT_FLAG6 = 6,
+  ACPI_DMT_FLAG7 = 7,
+  ACPI_DMT_FLAGS0,
+  ACPI_DMT_FLAGS1,
+  ACPI_DMT_FLAGS2,
+  ACPI_DMT_FLAGS4,
+  ACPI_DMT_UINT8,
+  ACPI_DMT_UINT16,
+  ACPI_DMT_UINT24,
+  ACPI_DMT_UINT32,
+  ACPI_DMT_UINT40,
+  ACPI_DMT_UINT48,
+  ACPI_DMT_UINT56,
+  ACPI_DMT_UINT64,
+  ACPI_DMT_BUF7,
+  ACPI_DMT_BUF10,
+  ACPI_DMT_BUF16,
+  ACPI_DMT_BUF128,
+  ACPI_DMT_SIG,
+  ACPI_DMT_STRING,
+  ACPI_DMT_NAME4,
+  ACPI_DMT_NAME6,
+  ACPI_DMT_NAME8,
+
+  /* Types that are decoded to strings and miscellaneous */
+
+  ACPI_DMT_ACCWIDTH,
+  ACPI_DMT_CHKSUM,
+  ACPI_DMT_GAS,
+  ACPI_DMT_SPACEID,
+  ACPI_DMT_UNICODE,
+  ACPI_DMT_UUID,
+
+  /* Types used only for the Data Table Compiler */
+
+  ACPI_DMT_BUFFER,
+  ACPI_DMT_DEVICE_PATH,
+  ACPI_DMT_LABEL,
+  ACPI_DMT_PCI_PATH,
+
+  /* Types that are specific to particular ACPI tables */
+
+  ACPI_DMT_ASF,
+  ACPI_DMT_DMAR,
+  ACPI_DMT_DMAR_SCOPE,
+  ACPI_DMT_EINJACT,
+  ACPI_DMT_EINJINST,
+  ACPI_DMT_ERSTACT,
+  ACPI_DMT_ERSTINST,
+  ACPI_DMT_FADTPM,
+  ACPI_DMT_GTDT,
+  ACPI_DMT_HEST,
+  ACPI_DMT_HESTNTFY,
+  ACPI_DMT_HESTNTYP,
+  ACPI_DMT_IVRS,
+  ACPI_DMT_LPIT,
+  ACPI_DMT_MADT,
+  ACPI_DMT_PCCT,
+  ACPI_DMT_PMTT,
+  ACPI_DMT_SLIC,
+  ACPI_DMT_SRAT,
+
+  /* Special opcodes */
+
+  ACPI_DMT_EXTRA_TEXT,
+  ACPI_DMT_EXIT
+
+} ACPI_ENTRY_TYPES;
+
+typedef void (*ACPI_DMTABLE_HANDLER)(ACPI_TABLE_HEADER *Table);
+
+typedef ACPI_STATUS (*ACPI_CMTABLE_HANDLER)(void **PFieldList);
+
+typedef struct acpi_dmtable_data {
+  char *Signature;
+  ACPI_DMTABLE_INFO *TableInfo;
+  ACPI_DMTABLE_HANDLER TableHandler;
+  ACPI_CMTABLE_HANDLER CmTableHandler;
+  const unsigned char *Template;
+  char *Name;
+
+} ACPI_DMTABLE_DATA;
+
+typedef struct acpi_op_walk_info {
+  UINT32 Level;
+  UINT32 LastLevel;
+  UINT32 Count;
+  UINT32 BitOffset;
+  UINT32 Flags;
+  ACPI_WALK_STATE *WalkState;
+  ACPI_PARSE_OBJECT *MappingOp;
+
+} ACPI_OP_WALK_INFO;
+
+/*
+ * TBD - another copy of this is in asltypes.h, fix
+ */
+#ifndef ASL_WALK_CALLBACK_DEFINED
+typedef ACPI_STATUS (*ASL_WALK_CALLBACK)(ACPI_PARSE_OBJECT *Op, UINT32 Level,
+                                         void *Context);
+#define ASL_WALK_CALLBACK_DEFINED
+#endif
+
+typedef void (*ACPI_RESOURCE_HANDLER)(ACPI_OP_WALK_INFO *Info,
+                                      AML_RESOURCE *Resource, UINT32 Length,
+                                      UINT32 Level);
+
+typedef struct acpi_resource_tag {
+  UINT32 BitIndex;
+  char *Tag;
+
+} ACPI_RESOURCE_TAG;
+
+/* Strings used for decoding flags to ASL keywords */
+
+extern const char *AcpiGbl_WordDecode[];
+extern const char *AcpiGbl_IrqDecode[];
+extern const char *AcpiGbl_LockRule[];
+extern const char *AcpiGbl_AccessTypes[];
+extern const char *AcpiGbl_UpdateRules[];
+extern const char *AcpiGbl_MatchOps[];
+
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoAsf0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoAsf1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoAsf1a[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoAsf2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoAsf2a[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoAsf3[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoAsf4[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoAsfHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoBoot[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoBert[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoBgrt[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoCpep[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoCpep0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoCsrt0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoCsrt1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoCsrt2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDbg2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDbg2Device[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDbg2Addr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDbg2Size[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDbg2Name[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDbg2OemData[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDbgp[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDmar[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDmarHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDmarScope[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDmar0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDmar1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDmar2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDmar3[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDmar4[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoDrtm[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoEcdt[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoEinj[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoEinj0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoErst[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoErst0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFacs[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFadt1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFadt2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFadt3[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFadt5[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFpdt[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFpdtHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFpdt0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoFpdt1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoGas[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoGtdt[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoGtdtHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoGtdt0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoGtdt0a[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoGtdt1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHeader[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHest[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHest0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHest1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHest2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHest6[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHest7[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHest8[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHest9[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHestNotify[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHestBank[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoHpet[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoLpitHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoLpit0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoLpit1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoIvrs[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoIvrs0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoIvrs1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoIvrs4[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoIvrs8a[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoIvrs8b[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoIvrs8c[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoIvrsHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt3[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt4[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt5[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt6[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt7[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt8[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt9[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt10[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt11[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt12[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt13[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadt14[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMadtHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMcfg[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMcfg0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMchi[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMpst[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMpst0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMpst0A[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMpst0B[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMpst1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMpst2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMsct[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMsct0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMtmr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoMtmr0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPmtt[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPmtt0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPmtt1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPmtt1a[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPmtt2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPmttHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPcct[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPcctHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPcct0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoPcct1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoRsdp1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoRsdp2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoS3pt[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoS3ptHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoS3pt0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoS3pt1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSbst[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSlicHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSlic0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSlic1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSlit[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSpcr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSpmi[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSrat[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSratHdr[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSrat0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSrat1[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSrat2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoSrat3[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoTcpa[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoTpm2[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoUefi[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoVrtc[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoVrtc0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoWaet[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoWdat[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoWdat0[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoWddt[];
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoWdrt[];
+
+extern ACPI_DMTABLE_INFO AcpiDmTableInfoGeneric[][2];
+
+/*
+ * dmtable
+ */
+extern ACPI_DMTABLE_DATA AcpiDmTableData[];
+
+UINT8
+AcpiDmGenerateChecksum(void *Table, UINT32 Length, UINT8 OriginalChecksum);
+
+ACPI_DMTABLE_DATA *AcpiDmGetTableData(char *Signature);
+
+void AcpiDmDumpDataTable(ACPI_TABLE_HEADER *Table);
+
+ACPI_STATUS
+AcpiDmDumpTable(UINT32 TableLength, UINT32 TableOffset, void *Table,
+                UINT32 SubTableLength, ACPI_DMTABLE_INFO *Info);
+
+void AcpiDmLineHeader(UINT32 Offset, UINT32 ByteLength, char *Name);
+
+void AcpiDmLineHeader2(UINT32 Offset, UINT32 ByteLength, char *Name,
+                       UINT32 Value);
+
+/*
+ * dmtbdump
+ */
+void AcpiDmDumpAsf(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpCpep(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpCsrt(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpDbg2(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpDmar(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpEinj(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpErst(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpFadt(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpFpdt(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpGtdt(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpHest(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpIvrs(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpLpit(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpMadt(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpMcfg(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpMpst(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpMsct(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpMtmr(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpPcct(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpPmtt(ACPI_TABLE_HEADER *Table);
+
+UINT32
+AcpiDmDumpRsdp(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpRsdt(ACPI_TABLE_HEADER *Table);
+
+UINT32
+AcpiDmDumpS3pt(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpSlic(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpSlit(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpSrat(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpVrtc(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpWdat(ACPI_TABLE_HEADER *Table);
+
+void AcpiDmDumpXsdt(ACPI_TABLE_HEADER *Table);
+
+/*
+ * dmwalk
+ */
+void AcpiDmDisassemble(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Origin,
+                       UINT32 NumOpcodes);
+
+void AcpiDmWalkParseTree(ACPI_PARSE_OBJECT *Op,
+                         ASL_WALK_CALLBACK DescendingCallback,
+                         ASL_WALK_CALLBACK AscendingCallback, void *Context);
+
+/*
+ * dmopcode
+ */
+void AcpiDmDisassembleOneOp(ACPI_WALK_STATE *WalkState, ACPI_OP_WALK_INFO *Info,
+                            ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmDecodeInternalObject(ACPI_OPERAND_OBJECT *ObjDesc);
+
+UINT32
+AcpiDmListType(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmMethodFlags(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmDisplayTargetPathname(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmNotifyDescription(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmPredefinedDescription(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmFieldPredefinedDescription(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmFieldFlags(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmAddressSpace(UINT8 SpaceId);
+
+void AcpiDmRegionFlags(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmMatchOp(ACPI_PARSE_OBJECT *Op);
+
+/*
+ * dmnames
+ */
+UINT32
+AcpiDmDumpName(UINT32 Name);
+
+ACPI_STATUS
+AcpiPsDisplayObjectPathname(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmNamestring(char *Name);
+
+/*
+ * dmobject
+ */
+void AcpiDmDisplayInternalObject(ACPI_OPERAND_OBJECT *ObjDesc,
+                                 ACPI_WALK_STATE *WalkState);
+
+void AcpiDmDisplayArguments(ACPI_WALK_STATE *WalkState);
+
+void AcpiDmDisplayLocals(ACPI_WALK_STATE *WalkState);
+
+void AcpiDmDumpMethodInfo(ACPI_STATUS Status, ACPI_WALK_STATE *WalkState,
+                          ACPI_PARSE_OBJECT *Op);
+
+/*
+ * dmbuffer
+ */
+void AcpiDmDisasmByteList(UINT32 Level, UINT8 *ByteData, UINT32 ByteCount);
+
+void AcpiDmByteList(ACPI_OP_WALK_INFO *Info, ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmCheckForHardwareId(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmDecompressEisaId(UINT32 EncodedId);
+
+BOOLEAN
+AcpiDmIsUuidBuffer(ACPI_PARSE_OBJECT *Op);
+
+BOOLEAN
+AcpiDmIsUnicodeBuffer(ACPI_PARSE_OBJECT *Op);
+
+BOOLEAN
+AcpiDmIsStringBuffer(ACPI_PARSE_OBJECT *Op);
+
+BOOLEAN
+AcpiDmIsPldBuffer(ACPI_PARSE_OBJECT *Op);
+
+/*
+ * dmdeferred
+ */
+ACPI_STATUS
+AcpiDmParseDeferredOps(ACPI_PARSE_OBJECT *Root);
+
+/*
+ * dmextern
+ */
+ACPI_STATUS
+AcpiDmAddToExternalFileList(char *PathList);
+
+void AcpiDmClearExternalFileList(void);
+
+void AcpiDmAddOpToExternalList(ACPI_PARSE_OBJECT *Op, char *Path, UINT8 Type,
+                               UINT32 Value, UINT16 Flags);
+
+void AcpiDmAddNodeToExternalList(ACPI_NAMESPACE_NODE *Node, UINT8 Type,
+                                 UINT32 Value, UINT16 Flags);
+
+void AcpiDmAddExternalsToNamespace(void);
+
+UINT32
+AcpiDmGetExternalMethodCount(void);
+
+void AcpiDmClearExternalList(void);
+
+void AcpiDmEmitExternals(void);
+
+void AcpiDmUnresolvedWarning(UINT8 Type);
+
+void AcpiDmGetExternalsFromFile(void);
+
+/*
+ * dmresrc
+ */
+void AcpiDmDumpInteger8(UINT8 Value, char *Name);
+
+void AcpiDmDumpInteger16(UINT16 Value, char *Name);
+
+void AcpiDmDumpInteger32(UINT32 Value, char *Name);
+
+void AcpiDmDumpInteger64(UINT64 Value, char *Name);
+
+void AcpiDmResourceTemplate(ACPI_OP_WALK_INFO *Info, ACPI_PARSE_OBJECT *Op,
+                            UINT8 *ByteData, UINT32 ByteCount);
+
+ACPI_STATUS
+AcpiDmIsResourceTemplate(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmBitList(UINT16 Mask);
+
+void AcpiDmDescriptorName(void);
+
+/*
+ * dmresrcl
+ */
+void AcpiDmWordDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                          UINT32 Length, UINT32 Level);
+
+void AcpiDmDwordDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                           UINT32 Length, UINT32 Level);
+
+void AcpiDmExtendedDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                              UINT32 Length, UINT32 Level);
+
+void AcpiDmQwordDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                           UINT32 Length, UINT32 Level);
+
+void AcpiDmMemory24Descriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                              UINT32 Length, UINT32 Level);
+
+void AcpiDmMemory32Descriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                              UINT32 Length, UINT32 Level);
+
+void AcpiDmFixedMemory32Descriptor(ACPI_OP_WALK_INFO *Info,
+                                   AML_RESOURCE *Resource, UINT32 Length,
+                                   UINT32 Level);
+
+void AcpiDmGenericRegisterDescriptor(ACPI_OP_WALK_INFO *Info,
+                                     AML_RESOURCE *Resource, UINT32 Length,
+                                     UINT32 Level);
+
+void AcpiDmInterruptDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                               UINT32 Length, UINT32 Level);
+
+void AcpiDmVendorLargeDescriptor(ACPI_OP_WALK_INFO *Info,
+                                 AML_RESOURCE *Resource, UINT32 Length,
+                                 UINT32 Level);
+
+void AcpiDmGpioDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                          UINT32 Length, UINT32 Level);
+
+void AcpiDmSerialBusDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                               UINT32 Length, UINT32 Level);
+
+void AcpiDmVendorCommon(char *Name, UINT8 *ByteData, UINT32 Length,
+                        UINT32 Level);
+
+/*
+ * dmresrcs
+ */
+void AcpiDmIrqDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                         UINT32 Length, UINT32 Level);
+
+void AcpiDmDmaDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                         UINT32 Length, UINT32 Level);
+
+void AcpiDmFixedDmaDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                              UINT32 Length, UINT32 Level);
+
+void AcpiDmIoDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                        UINT32 Length, UINT32 Level);
+
+void AcpiDmFixedIoDescriptor(ACPI_OP_WALK_INFO *Info, AML_RESOURCE *Resource,
+                             UINT32 Length, UINT32 Level);
+
+void AcpiDmStartDependentDescriptor(ACPI_OP_WALK_INFO *Info,
+                                    AML_RESOURCE *Resource, UINT32 Length,
+                                    UINT32 Level);
+
+void AcpiDmEndDependentDescriptor(ACPI_OP_WALK_INFO *Info,
+                                  AML_RESOURCE *Resource, UINT32 Length,
+                                  UINT32 Level);
+
+void AcpiDmVendorSmallDescriptor(ACPI_OP_WALK_INFO *Info,
+                                 AML_RESOURCE *Resource, UINT32 Length,
+                                 UINT32 Level);
+
+/*
+ * dmutils
+ */
+void AcpiDmDecodeAttribute(UINT8 Attribute);
+
+void AcpiDmIndent(UINT32 Level);
+
+BOOLEAN
+AcpiDmCommaIfListMember(ACPI_PARSE_OBJECT *Op);
+
+void AcpiDmCommaIfFieldMember(ACPI_PARSE_OBJECT *Op);
+
+/*
+ * dmrestag
+ */
+void AcpiDmFindResources(ACPI_PARSE_OBJECT *Root);
+
+void AcpiDmCheckResourceReference(ACPI_PARSE_OBJECT *Op,
+                                  ACPI_WALK_STATE *WalkState);
+
+/*
+ * dmcstyle
+ */
+BOOLEAN
+AcpiDmCheckForSymbolicOpcode(ACPI_PARSE_OBJECT *Op, ACPI_OP_WALK_INFO *Info);
+
+void AcpiDmCloseOperator(ACPI_PARSE_OBJECT *Op);
+
+/*
+ * acdisasm
+ */
+void AdDisassemblerHeader(char *Filename);
+
+#endif /* __ACDISASM_H__ */
+
+/**
+ * @section minix_drivers_power_acpi_include_acdispat_h
+ * @brief Original file: minix/drivers/power/acpi/include/acdispat.h
+ */
+/******************************************************************************
+ *
+ * Name: acdispat.h - dispatcher (parser to interpreter interface)
+ *
+ *****************************************************************************/
+
+/*
+ * Copyright (C) 2000 - 2014, Intel Corp.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions, and the following disclaimer,
+ *    without modification.
+ * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+ *    substantially similar to the "NO WARRANTY" disclaimer below
+ *    ("Disclaimer") and any redistribution must be conditioned upon
+ *    including a substantially similar Disclaimer requirement for further
+ *    binary redistribution.
+ * 3. Neither the names of the above-listed copyright holders nor the names
+ *    of any contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * Alternatively, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") version 2 as published by the Free
+ * Software Foundation.
+ *
+ * NO WARRANTY
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGES.
+ */
+
+#ifndef _ACDISPAT_H_
+#define _ACDISPAT_H_
+
+#define NAMEOF_LOCAL_NTE "__L0"
+#define NAMEOF_ARG_NTE "__A0"
+
+/*
+ * dsargs - execution of dynamic arguments for static objects
+ */
+ACPI_STATUS
+AcpiDsGetBufferFieldArguments(ACPI_OPERAND_OBJECT *ObjDesc);
+
+ACPI_STATUS
+AcpiDsGetBankFieldArguments(ACPI_OPERAND_OBJECT *ObjDesc);
+
+ACPI_STATUS
+AcpiDsGetRegionArguments(ACPI_OPERAND_OBJECT *RgnDesc);
+
+ACPI_STATUS
+AcpiDsGetBufferArguments(ACPI_OPERAND_OBJECT *ObjDesc);
+
+ACPI_STATUS
+AcpiDsGetPackageArguments(ACPI_OPERAND_OBJECT *ObjDesc);
+
+/*
+ * dscontrol - support for execution control opcodes
+ */
+ACPI_STATUS
+AcpiDsExecBeginControlOp(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op);
+
+ACPI_STATUS
+AcpiDsExecEndControlOp(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op);
+
+/*
+ * dsopcode - support for late operand evaluation
+ */
+ACPI_STATUS
+AcpiDsEvalBufferFieldOperands(ACPI_WALK_STATE *WalkState,
+                              ACPI_PARSE_OBJECT *Op);
+
+ACPI_STATUS
+AcpiDsEvalRegionOperands(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op);
+
+ACPI_STATUS
+AcpiDsEvalTableRegionOperands(ACPI_WALK_STATE *WalkState,
+                              ACPI_PARSE_OBJECT *Op);
+
+ACPI_STATUS
+AcpiDsEvalDataObjectOperands(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op,
+                             ACPI_OPERAND_OBJECT *ObjDesc);
+
+ACPI_STATUS
+AcpiDsEvalBankFieldOperands(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op);
+
+ACPI_STATUS
+AcpiDsInitializeRegion(ACPI_HANDLE ObjHandle);
+
+/*
+ * dsexec - Parser/Interpreter interface, method execution callbacks
+ */
+ACPI_STATUS
+AcpiDsGetPredicateValue(ACPI_WALK_STATE *WalkState,
+                        ACPI_OPERAND_OBJECT *ResultObj);
+
+ACPI_STATUS
+AcpiDsExecBeginOp(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT **OutOp);
+
+ACPI_STATUS
+AcpiDsExecEndOp(ACPI_WALK_STATE *State);
+
+/*
+ * dsfield - Parser/Interpreter interface for AML fields
+ */
+ACPI_STATUS
+AcpiDsCreateField(ACPI_PARSE_OBJECT *Op, ACPI_NAMESPACE_NODE *RegionNode,
+                  ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsCreateBankField(ACPI_PARSE_OBJECT *Op, ACPI_NAMESPACE_NODE *RegionNode,
+                      ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsCreateIndexField(ACPI_PARSE_OBJECT *Op, ACPI_NAMESPACE_NODE *RegionNode,
+                       ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsCreateBufferField(ACPI_PARSE_OBJECT *Op, ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsInitFieldObjects(ACPI_PARSE_OBJECT *Op, ACPI_WALK_STATE *WalkState);
+
+/*
+ * dsload - Parser/Interpreter interface
+ */
+ACPI_STATUS
+AcpiDsInitCallbacks(ACPI_WALK_STATE *WalkState, UINT32 PassNumber);
+
+/* dsload - pass 1 namespace load callbacks */
+
+ACPI_STATUS
+AcpiDsLoad1BeginOp(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT **OutOp);
+
+ACPI_STATUS
+AcpiDsLoad1EndOp(ACPI_WALK_STATE *WalkState);
+
+/* dsload - pass 2 namespace load callbacks */
+
+ACPI_STATUS
+AcpiDsLoad2BeginOp(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT **OutOp);
+
+ACPI_STATUS
+AcpiDsLoad2EndOp(ACPI_WALK_STATE *WalkState);
+
+/*
+ * dsmthdat - method data (locals/args)
+ */
+ACPI_STATUS
+AcpiDsStoreObjectToLocal(UINT8 Type, UINT32 Index, ACPI_OPERAND_OBJECT *SrcDesc,
+                         ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsMethodDataGetEntry(UINT16 Opcode, UINT32 Index,
+                         ACPI_WALK_STATE *WalkState,
+                         ACPI_OPERAND_OBJECT ***Node);
+
+void AcpiDsMethodDataDeleteAll(ACPI_WALK_STATE *WalkState);
+
+BOOLEAN
+AcpiDsIsMethodValue(ACPI_OPERAND_OBJECT *ObjDesc);
+
+ACPI_STATUS
+AcpiDsMethodDataGetValue(UINT8 Type, UINT32 Index, ACPI_WALK_STATE *WalkState,
+                         ACPI_OPERAND_OBJECT **DestDesc);
+
+ACPI_STATUS
+AcpiDsMethodDataInitArgs(ACPI_OPERAND_OBJECT **Params, UINT32 MaxParamCount,
+                         ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsMethodDataGetNode(UINT8 Type, UINT32 Index, ACPI_WALK_STATE *WalkState,
+                        ACPI_NAMESPACE_NODE **Node);
+
+void AcpiDsMethodDataInit(ACPI_WALK_STATE *WalkState);
+
+/*
+ * dsmethod - Parser/Interpreter interface - control method parsing
+ */
+ACPI_STATUS
+AcpiDsAutoSerializeMethod(ACPI_NAMESPACE_NODE *Node,
+                          ACPI_OPERAND_OBJECT *ObjDesc);
+
+ACPI_STATUS
+AcpiDsCallControlMethod(ACPI_THREAD_STATE *Thread, ACPI_WALK_STATE *WalkState,
+                        ACPI_PARSE_OBJECT *Op);
+
+ACPI_STATUS
+AcpiDsRestartControlMethod(ACPI_WALK_STATE *WalkState,
+                           ACPI_OPERAND_OBJECT *ReturnDesc);
+
+void AcpiDsTerminateControlMethod(ACPI_OPERAND_OBJECT *MethodDesc,
+                                  ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsBeginMethodExecution(ACPI_NAMESPACE_NODE *MethodNode,
+                           ACPI_OPERAND_OBJECT *ObjDesc,
+                           ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsMethodError(ACPI_STATUS Status, ACPI_WALK_STATE *WalkState);
+
+/*
+ * dsinit
+ */
+ACPI_STATUS
+AcpiDsInitializeObjects(UINT32 TableIndex, ACPI_NAMESPACE_NODE *StartNode);
+
+/*
+ * dsobject - Parser/Interpreter interface - object initialization and
+ * conversion
+ */
+ACPI_STATUS
+AcpiDsBuildInternalBufferObj(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op,
+                             UINT32 BufferLength,
+                             ACPI_OPERAND_OBJECT **ObjDescPtr);
+
+ACPI_STATUS
+AcpiDsBuildInternalPackageObj(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *op,
+                              UINT32 PackageLength,
+                              ACPI_OPERAND_OBJECT **ObjDesc);
+
+ACPI_STATUS
+AcpiDsInitObjectFromOp(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op,
+                       UINT16 Opcode, ACPI_OPERAND_OBJECT **ObjDesc);
+
+ACPI_STATUS
+AcpiDsCreateNode(ACPI_WALK_STATE *WalkState, ACPI_NAMESPACE_NODE *Node,
+                 ACPI_PARSE_OBJECT *Op);
+
+/*
+ * dsutils - Parser/Interpreter interface utility routines
+ */
+void AcpiDsClearImplicitReturn(ACPI_WALK_STATE *WalkState);
+
+BOOLEAN
+AcpiDsDoImplicitReturn(ACPI_OPERAND_OBJECT *ReturnDesc,
+                       ACPI_WALK_STATE *WalkState, BOOLEAN AddReference);
+
+BOOLEAN
+AcpiDsIsResultUsed(ACPI_PARSE_OBJECT *Op, ACPI_WALK_STATE *WalkState);
+
+void AcpiDsDeleteResultIfNotUsed(ACPI_PARSE_OBJECT *Op,
+                                 ACPI_OPERAND_OBJECT *ResultObj,
+                                 ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsCreateOperand(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Arg,
+                    UINT32 ArgsRemaining);
+
+ACPI_STATUS
+AcpiDsCreateOperands(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *FirstArg);
+
+ACPI_STATUS
+AcpiDsResolveOperands(ACPI_WALK_STATE *WalkState);
+
+void AcpiDsClearOperands(ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsEvaluateNamePath(ACPI_WALK_STATE *WalkState);
+
+/*
+ * dswscope - Scope Stack manipulation
+ */
+ACPI_STATUS
+AcpiDsScopeStackPush(ACPI_NAMESPACE_NODE *Node, ACPI_OBJECT_TYPE Type,
+                     ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsScopeStackPop(ACPI_WALK_STATE *WalkState);
+
+void AcpiDsScopeStackClear(ACPI_WALK_STATE *WalkState);
+
+/*
+ * dswstate - parser WALK_STATE management routines
+ */
+ACPI_STATUS
+AcpiDsObjStackPush(void *Object, ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsObjStackPop(UINT32 PopCount, ACPI_WALK_STATE *WalkState);
+
+ACPI_WALK_STATE *AcpiDsCreateWalkState(ACPI_OWNER_ID OwnerId,
+                                       ACPI_PARSE_OBJECT *Origin,
+                                       ACPI_OPERAND_OBJECT *MthDesc,
+                                       ACPI_THREAD_STATE *Thread);
+
+ACPI_STATUS
+AcpiDsInitAmlWalk(ACPI_WALK_STATE *WalkState, ACPI_PARSE_OBJECT *Op,
+                  ACPI_NAMESPACE_NODE *MethodNode, UINT8 *AmlStart,
+                  UINT32 AmlLength, ACPI_EVALUATE_INFO *Info, UINT8 PassNumber);
+
+void AcpiDsObjStackPopAndDelete(UINT32 PopCount, ACPI_WALK_STATE *WalkState);
+
+void AcpiDsDeleteWalkState(ACPI_WALK_STATE *WalkState);
+
+ACPI_WALK_STATE *AcpiDsPopWalkState(ACPI_THREAD_STATE *Thread);
+
+void AcpiDsPushWalkState(ACPI_WALK_STATE *WalkState, ACPI_THREAD_STATE *Thread);
+
+ACPI_STATUS
+AcpiDsResultStackClear(ACPI_WALK_STATE *WalkState);
+
+ACPI_WALK_STATE *AcpiDsGetCurrentWalkState(ACPI_THREAD_STATE *Thread);
+
+ACPI_STATUS
+AcpiDsResultPop(ACPI_OPERAND_OBJECT **Object, ACPI_WALK_STATE *WalkState);
+
+ACPI_STATUS
+AcpiDsResultPush(ACPI_OPERAND_OBJECT *Object, ACPI_WALK_STATE *WalkState);
+
+#endif /* _ACDISPAT_H_ */
+
+/**
+ * @section minix_drivers_power_acpi_include_acevents_h
+ * @brief Original file: minix/drivers/power/acpi/include/acevents.h
+ */
+/******************************************************************************
+ *
+ * Name: acevents.h - Event subcomponent prototypes and defines
+ *
+ *****************************************************************************/
+
+/*
+ * Copyright (C) 2000 - 2014, Intel Corp.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions, and the following disclaimer,
+ *    without modification.
+ * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+ *    substantially similar to the "NO WARRANTY" disclaimer below
+ *    ("Disclaimer") and any redistribution must be conditioned upon
+ *    including a substantially similar Disclaimer requirement for further
+ *    binary redistribution.
+ * 3. Neither the names of the above-listed copyright holders nor the names
+ *    of any contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * Alternatively, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") version 2 as published by the Free
+ * Software Foundation.
+ *
+ * NO WARRANTY
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGES.
+ */
+
+#ifndef __ACEVENTS_H__
+#define __ACEVENTS_H__
+
+/*
+ * evevent
+ */
+ACPI_STATUS
+AcpiEvInitializeEvents(void);
+
+ACPI_STATUS
+AcpiEvInstallXruptHandlers(void);
+
+UINT32
+AcpiEvFixedEventDetect(void);
+
+/*
+ * evmisc
+ */
+BOOLEAN
+AcpiEvIsNotifyObject(ACPI_NAMESPACE_NODE *Node);
+
+UINT32
+AcpiEvGetGpeNumberIndex(UINT32 GpeNumber);
+
+ACPI_STATUS
+AcpiEvQueueNotifyRequest(ACPI_NAMESPACE_NODE *Node, UINT32 NotifyValue);
+
+/*
+ * evglock - Global Lock support
+ */
+ACPI_STATUS
+AcpiEvInitGlobalLockHandler(void);
+
+ACPI_HW_DEPENDENT_RETURN_OK(ACPI_STATUS AcpiEvAcquireGlobalLock(UINT16 Timeout))
+
+ACPI_HW_DEPENDENT_RETURN_OK(ACPI_STATUS AcpiEvReleaseGlobalLock(void))
+
+ACPI_STATUS
+AcpiEvRemoveGlobalLockHandler(void);
+
+/*
+ * evgpe - Low-level GPE support
+ */
+UINT32
+AcpiEvGpeDetect(ACPI_GPE_XRUPT_INFO *GpeXruptList);
+
+ACPI_STATUS
+AcpiEvUpdateGpeEnableMask(ACPI_GPE_EVENT_INFO *GpeEventInfo);
+
+ACPI_STATUS
+AcpiEvEnableGpe(ACPI_GPE_EVENT_INFO *GpeEventInfo);
+
+ACPI_STATUS
+AcpiEvAddGpeReference(ACPI_GPE_EVENT_INFO *GpeEventInfo);
+
+ACPI_STATUS
+AcpiEvRemoveGpeReference(ACPI_GPE_EVENT_INFO *GpeEventInfo);
+
+ACPI_GPE_EVENT_INFO *AcpiEvGetGpeEventInfo(ACPI_HANDLE GpeDevice,
+                                           UINT32 GpeNumber);
+
+ACPI_GPE_EVENT_INFO *AcpiEvLowGetGpeInfo(UINT32 GpeNumber,
+                                         ACPI_GPE_BLOCK_INFO *GpeBlock);
+
+ACPI_STATUS
+AcpiEvFinishGpe(ACPI_GPE_EVENT_INFO *GpeEventInfo);
+
+/*
+ * evgpeblk - Upper-level GPE block support
+ */
+ACPI_STATUS
+AcpiEvCreateGpeBlock(ACPI_NAMESPACE_NODE *GpeDevice, UINT64 Address,
+                     UINT8 SpaceId, UINT32 RegisterCount,
+                     UINT16 GpeBlockBaseNumber, UINT32 InterruptNumber,
+                     ACPI_GPE_BLOCK_INFO **ReturnGpeBlock);
+
+ACPI_STATUS
+AcpiEvInitializeGpeBlock(ACPI_GPE_XRUPT_INFO *GpeXruptInfo,
+                         ACPI_GPE_BLOCK_INFO *GpeBlock, void *Context);
+
+ACPI_HW_DEPENDENT_RETURN_OK(
+    ACPI_STATUS AcpiEvDeleteGpeBlock(ACPI_GPE_BLOCK_INFO *GpeBlock))
+
+UINT32
+AcpiEvGpeDispatch(ACPI_NAMESPACE_NODE *GpeDevice,
+                  ACPI_GPE_EVENT_INFO *GpeEventInfo, UINT32 GpeNumber);
+
+/*
+ * evgpeinit - GPE initialization and update
+ */
+ACPI_STATUS
+AcpiEvGpeInitialize(void);
+
+ACPI_HW_DEPENDENT_RETURN_VOID(void AcpiEvUpdateGpes(ACPI_OWNER_ID TableOwnerId))
+
+ACPI_STATUS
+AcpiEvMatchGpeMethod(ACPI_HANDLE ObjHandle, UINT32 Level, void *Context,
+                     void **ReturnValue);
+
+/*
+ * evgpeutil - GPE utilities
+ */
+ACPI_STATUS
+AcpiEvWalkGpeList(ACPI_GPE_CALLBACK GpeWalkCallback, void *Context);
+
+BOOLEAN
+AcpiEvValidGpeEvent(ACPI_GPE_EVENT_INFO *GpeEventInfo);
+
+ACPI_STATUS
+AcpiEvGetGpeDevice(ACPI_GPE_XRUPT_INFO *GpeXruptInfo,
+                   ACPI_GPE_BLOCK_INFO *GpeBlock, void *Context);
+
+ACPI_STATUS
+AcpiEvGetGpeXruptBlock(UINT32 InterruptNumber,
+                       ACPI_GPE_XRUPT_INFO **GpeXruptBlock);
+
+ACPI_STATUS
+AcpiEvDeleteGpeXrupt(ACPI_GPE_XRUPT_INFO *GpeXrupt);
+
+ACPI_STATUS
+AcpiEvDeleteGpeHandlers(ACPI_GPE_XRUPT_INFO *GpeXruptInfo,
+                        ACPI_GPE_BLOCK_INFO *GpeBlock, void *Context);
+
+/*
+ * evhandler - Address space handling
+ */
+BOOLEAN
+AcpiEvHasDefaultHandler(ACPI_NAMESPACE_NODE *Node, ACPI_ADR_SPACE_TYPE SpaceId);
+
+ACPI_STATUS
+AcpiEvInstallRegionHandlers(void);
+
+ACPI_STATUS
+AcpiEvInstallSpaceHandler(ACPI_NAMESPACE_NODE *Node,
+                          ACPI_ADR_SPACE_TYPE SpaceId,
+                          ACPI_ADR_SPACE_HANDLER Handler,
+                          ACPI_ADR_SPACE_SETUP Setup, void *Context);
+
+/*
+ * evregion - Operation region support
+ */
+ACPI_STATUS
+AcpiEvInitializeOpRegions(void);
+
+ACPI_STATUS
+AcpiEvAddressSpaceDispatch(ACPI_OPERAND_OBJECT *RegionObj,
+                           ACPI_OPERAND_OBJECT *FieldObj, UINT32 Function,
+                           UINT32 RegionOffset, UINT32 BitWidth, UINT64 *Value);
+
+ACPI_STATUS
+AcpiEvAttachRegion(ACPI_OPERAND_OBJECT *HandlerObj,
+                   ACPI_OPERAND_OBJECT *RegionObj, BOOLEAN AcpiNsIsLocked);
+
+void AcpiEvDetachRegion(ACPI_OPERAND_OBJECT *RegionObj, BOOLEAN AcpiNsIsLocked);
+
+ACPI_STATUS
+AcpiEvExecuteRegMethods(ACPI_NAMESPACE_NODE *Node, ACPI_ADR_SPACE_TYPE SpaceId);
+
+ACPI_STATUS
+AcpiEvExecuteRegMethod(ACPI_OPERAND_OBJECT *RegionObj, UINT32 Function);
+
+/*
+ * evregini - Region initialization and setup
+ */
+ACPI_STATUS
+AcpiEvSystemMemoryRegionSetup(ACPI_HANDLE Handle, UINT32 Function,
+                              void *HandlerContext, void **RegionContext);
+
+ACPI_STATUS
+AcpiEvIoSpaceRegionSetup(ACPI_HANDLE Handle, UINT32 Function,
+                         void *HandlerContext, void **RegionContext);
+
+ACPI_STATUS
+AcpiEvPciConfigRegionSetup(ACPI_HANDLE Handle, UINT32 Function,
+                           void *HandlerContext, void **RegionContext);
+
+ACPI_STATUS
+AcpiEvCmosRegionSetup(ACPI_HANDLE Handle, UINT32 Function, void *HandlerContext,
+                      void **RegionContext);
+
+ACPI_STATUS
+AcpiEvPciBarRegionSetup(ACPI_HANDLE Handle, UINT32 Function,
+                        void *HandlerContext, void **RegionContext);
+
+ACPI_STATUS
+AcpiEvDefaultRegionSetup(ACPI_HANDLE Handle, UINT32 Function,
+                         void *HandlerContext, void **RegionContext);
+
+ACPI_STATUS
+AcpiEvInitializeRegion(ACPI_OPERAND_OBJECT *RegionObj, BOOLEAN AcpiNsLocked);
+
+/*
+ * evsci - SCI (System Control Interrupt) handling/dispatch
+ */
+UINT32 ACPI_SYSTEM_XFACE AcpiEvGpeXruptHandler(void *Context);
+
+UINT32
+AcpiEvSciDispatch(void);
+
+UINT32
+AcpiEvInstallSciHandler(void);
+
+ACPI_STATUS
+AcpiEvRemoveAllSciHandlers(void);
+
+ACPI_HW_DEPENDENT_RETURN_VOID(void AcpiEvTerminate(void))
+
+#endif /* __ACEVENTS_H__  */
+
+/**
+ * @section minix_drivers_power_acpi_include_acexcep_h
+ * @brief Original file: minix/drivers/power/acpi/include/acexcep.h
+ */
+/******************************************************************************
+ *
+ * Name: acexcep.h - Exception codes returned by the ACPI subsystem
+ *
+ *****************************************************************************/
+
+/*
+ * Copyright (C) 2000 - 2014, Intel Corp.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions, and the following disclaimer,
+ *    without modification.
+ * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+ *    substantially similar to the "NO WARRANTY" disclaimer below
+ *    ("Disclaimer") and any redistribution must be conditioned upon
+ *    including a substantially similar Disclaimer requirement for further
+ *    binary redistribution.
+ * 3. Neither the names of the above-listed copyright holders nor the names
+ *    of any contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * Alternatively, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") version 2 as published by the Free
+ * Software Foundation.
+ *
+ * NO WARRANTY
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGES.
+ */
+
+#ifndef __ACEXCEP_H__
+#define __ACEXCEP_H__
+
+/* This module contains all possible exception codes for ACPI_STATUS */
+
+/*
+ * Exception code classes
+ */
+#define AE_CODE_ENVIRONMENTAL 0x0000 /* General ACPICA environment */
+#define AE_CODE_PROGRAMMER 0x1000    /* External ACPICA interface caller */
+#define AE_CODE_ACPI_TABLES 0x2000   /* ACPI tables */
+#define AE_CODE_AML 0x3000           /* From executing AML code */
+#define AE_CODE_CONTROL 0x4000       /* Internal control codes */
+
+#define AE_CODE_MAX 0x4000
+#define AE_CODE_MASK 0xF000
+
+/*
+ * Macros to insert the exception code classes
+ */
+#define EXCEP_ENV(code) ((ACPI_STATUS)(code | AE_CODE_ENVIRONMENTAL))
+#define EXCEP_PGM(code) ((ACPI_STATUS)(code | AE_CODE_PROGRAMMER))
+#define EXCEP_TBL(code) ((ACPI_STATUS)(code | AE_CODE_ACPI_TABLES))
+#define EXCEP_AML(code) ((ACPI_STATUS)(code | AE_CODE_AML))
+#define EXCEP_CTL(code) ((ACPI_STATUS)(code | AE_CODE_CONTROL))
+
+/*
+ * Exception info table. The "Description" field is used only by the
+ * ACPICA help application (acpihelp).
+ */
+typedef struct acpi_exception_info {
+  char *Name;
+
+#ifdef ACPI_HELP_APP
+  char *Description;
+#endif
+} ACPI_EXCEPTION_INFO;
+
+#ifdef ACPI_HELP_APP
+#define EXCEP_TXT(Name, Description) {Name, Description}
+#else
+#define EXCEP_TXT(Name, Description) {Name}
+#endif
+
+/*
+ * Success is always zero, failure is non-zero
+ */
+#define ACPI_SUCCESS(a) (!(a))
+#define ACPI_FAILURE(a) (a)
+
+#define AE_OK (ACPI_STATUS)0x0000
+
+/*
+ * Environmental exceptions
+ */
+#define AE_ERROR EXCEP_ENV(0x0001)
+#define AE_NO_ACPI_TABLES EXCEP_ENV(0x0002)
+#define AE_NO_NAMESPACE EXCEP_ENV(0x0003)
+#define AE_NO_MEMORY EXCEP_ENV(0x0004)
+#define AE_NOT_FOUND EXCEP_ENV(0x0005)
+#define AE_NOT_EXIST EXCEP_ENV(0x0006)
+#define AE_ALREADY_EXISTS EXCEP_ENV(0x0007)
+#define AE_TYPE EXCEP_ENV(0x0008)
+#define AE_NULL_OBJECT EXCEP_ENV(0x0009)
+#define AE_NULL_ENTRY EXCEP_ENV(0x000A)
+#define AE_BUFFER_OVERFLOW EXCEP_ENV(0x000B)
+#define AE_STACK_OVERFLOW EXCEP_ENV(0x000C)
+#define AE_STACK_UNDERFLOW EXCEP_ENV(0x000D)
+#define AE_NOT_IMPLEMENTED EXCEP_ENV(0x000E)
+#define AE_SUPPORT EXCEP_ENV(0x000F)
+#define AE_LIMIT EXCEP_ENV(0x0010)
+#define AE_TIME EXCEP_ENV(0x0011)
+#define AE_ACQUIRE_DEADLOCK EXCEP_ENV(0x0012)
+#define AE_RELEASE_DEADLOCK EXCEP_ENV(0x0013)
+#define AE_NOT_ACQUIRED EXCEP_ENV(0x0014)
+#define AE_ALREADY_ACQUIRED EXCEP_ENV(0x0015)
+#define AE_NO_HARDWARE_RESPONSE EXCEP_ENV(0x0016)
+#define AE_NO_GLOBAL_LOCK EXCEP_ENV(0x0017)
+#define AE_ABORT_METHOD EXCEP_ENV(0x0018)
+#define AE_SAME_HANDLER EXCEP_ENV(0x0019)
+#define AE_NO_HANDLER EXCEP_ENV(0x001A)
+#define AE_OWNER_ID_LIMIT EXCEP_ENV(0x001B)
+#define AE_NOT_CONFIGURED EXCEP_ENV(0x001C)
+#define AE_ACCESS EXCEP_ENV(0x001D)
+
+#define AE_CODE_ENV_MAX 0x001D
+
+/*
+ * Programmer exceptions
+ */
+#define AE_BAD_PARAMETER EXCEP_PGM(0x0001)
+#define AE_BAD_CHARACTER EXCEP_PGM(0x0002)
+#define AE_BAD_PATHNAME EXCEP_PGM(0x0003)
+#define AE_BAD_DATA EXCEP_PGM(0x0004)
+#define AE_BAD_HEX_CONSTANT EXCEP_PGM(0x0005)
+#define AE_BAD_OCTAL_CONSTANT EXCEP_PGM(0x0006)
+#define AE_BAD_DECIMAL_CONSTANT EXCEP_PGM(0x0007)
+#define AE_MISSING_ARGUMENTS EXCEP_PGM(0x0008)
+#define AE_BAD_ADDRESS EXCEP_PGM(0x0009)
+
+#define AE_CODE_PGM_MAX 0x0009
+
+/*
+ * Acpi table exceptions
+ */
+#define AE_BAD_SIGNATURE EXCEP_TBL(0x0001)
+#define AE_BAD_HEADER EXCEP_TBL(0x0002)
+#define AE_BAD_CHECKSUM EXCEP_TBL(0x0003)
+#define AE_BAD_VALUE EXCEP_TBL(0x0004)
+#define AE_INVALID_TABLE_LENGTH EXCEP_TBL(0x0005)
+
+#define AE_CODE_TBL_MAX 0x0005
+
+/*
+ * AML exceptions. These are caused by problems with
+ * the actual AML byte stream
+ */
+#define AE_AML_BAD_OPCODE EXCEP_AML(0x0001)
+#define AE_AML_NO_OPERAND EXCEP_AML(0x0002)
+#define AE_AML_OPERAND_TYPE EXCEP_AML(0x0003)
+#define AE_AML_OPERAND_VALUE EXCEP_AML(0x0004)
+#define AE_AML_UNINITIALIZED_LOCAL EXCEP_AML(0x0005)
+#define AE_AML_UNINITIALIZED_ARG EXCEP_AML(0x0006)
+#define AE_AML_UNINITIALIZED_ELEMENT EXCEP_AML(0x0007)
+#define AE_AML_NUMERIC_OVERFLOW EXCEP_AML(0x0008)
+#define AE_AML_REGION_LIMIT EXCEP_AML(0x0009)
+#define AE_AML_BUFFER_LIMIT EXCEP_AML(0x000A)
+#define AE_AML_PACKAGE_LIMIT EXCEP_AML(0x000B)
+#define AE_AML_DIVIDE_BY_ZERO EXCEP_AML(0x000C)
+#define AE_AML_BAD_NAME EXCEP_AML(0x000D)
+#define AE_AML_NAME_NOT_FOUND EXCEP_AML(0x000E)
+#define AE_AML_INTERNAL EXCEP_AML(0x000F)
+#define AE_AML_INVALID_SPACE_ID EXCEP_AML(0x0010)
+#define AE_AML_STRING_LIMIT EXCEP_AML(0x0011)
+#define AE_AML_NO_RETURN_VALUE EXCEP_AML(0x0012)
+#define AE_AML_METHOD_LIMIT EXCEP_AML(0x0013)
+#define AE_AML_NOT_OWNER EXCEP_AML(0x0014)
+#define AE_AML_MUTEX_ORDER EXCEP_AML(0x0015)
+#define AE_AML_MUTEX_NOT_ACQUIRED EXCEP_AML(0x0016)
+#define AE_AML_INVALID_RESOURCE_TYPE EXCEP_AML(0x0017)
+#define AE_AML_INVALID_INDEX EXCEP_AML(0x0018)
+#define AE_AML_REGISTER_LIMIT EXCEP_AML(0x0019)
+#define AE_AML_NO_WHILE EXCEP_AML(0x001A)
+#define AE_AML_ALIGNMENT EXCEP_AML(0x001B)
+#define AE_AML_NO_RESOURCE_END_TAG EXCEP_AML(0x001C)
+#define AE_AML_BAD_RESOURCE_VALUE EXCEP_AML(0x001D)
+#define AE_AML_CIRCULAR_REFERENCE EXCEP_AML(0x001E)
+#define AE_AML_BAD_RESOURCE_LENGTH EXCEP_AML(0x001F)
+#define AE_AML_ILLEGAL_ADDRESS EXCEP_AML(0x0020)
+#define AE_AML_INFINITE_LOOP EXCEP_AML(0x0021)
+
+#define AE_CODE_AML_MAX 0x0021
+
+/*
+ * Internal exceptions used for control
+ */
+#define AE_CTRL_RETURN_VALUE EXCEP_CTL(0x0001)
+#define AE_CTRL_PENDING EXCEP_CTL(0x0002)
+#define AE_CTRL_TERMINATE EXCEP_CTL(0x0003)
+#define AE_CTRL_TRUE EXCEP_CTL(0x0004)
+#define AE_CTRL_FALSE EXCEP_CTL(0x0005)
+#define AE_CTRL_DEPTH EXCEP_CTL(0x0006)
+#define AE_CTRL_END EXCEP_CTL(0x0007)
+#define AE_CTRL_TRANSFER EXCEP_CTL(0x0008)
+#define AE_CTRL_BREAK EXCEP_CTL(0x0009)
+#define AE_CTRL_CONTINUE EXCEP_CTL(0x000A)
+#define AE_CTRL_SKIP EXCEP_CTL(0x000B)
+#define AE_CTRL_PARSE_CONTINUE EXCEP_CTL(0x000C)
+#define AE_CTRL_PARSE_PENDING EXCEP_CTL(0x000D)
+
+#define AE_CODE_CTRL_MAX 0x000D
+
+/* Exception strings for AcpiFormatException */
+
+#ifdef ACPI_DEFINE_EXCEPTION_TABLE
+
+/*
+ * String versions of the exception codes above
+ * These strings must match the corresponding defines exactly
+ */
+static const ACPI_EXCEPTION_INFO AcpiGbl_ExceptionNames_Env[] = {
+    EXCEP_TXT("AE_OK", "No error"),
+    EXCEP_TXT("AE_ERROR", "Unspecified error"),
+    EXCEP_TXT("AE_NO_ACPI_TABLES", "ACPI tables could not be found"),
+    EXCEP_TXT("AE_NO_NAMESPACE", "A namespace has not been loaded"),
+    EXCEP_TXT("AE_NO_MEMORY", "Insufficient dynamic memory"),
+    EXCEP_TXT("AE_NOT_FOUND", "A requested entity is not found"),
+    EXCEP_TXT("AE_NOT_EXIST", "A required entity does not exist"),
+    EXCEP_TXT("AE_ALREADY_EXISTS", "An entity already exists"),
+    EXCEP_TXT("AE_TYPE", "The object type is incorrect"),
+    EXCEP_TXT("AE_NULL_OBJECT", "A required object was missing"),
+    EXCEP_TXT("AE_NULL_ENTRY", "The requested object does not exist"),
+    EXCEP_TXT("AE_BUFFER_OVERFLOW", "The buffer provided is too small"),
+    EXCEP_TXT("AE_STACK_OVERFLOW", "An internal stack overflowed"),
+    EXCEP_TXT("AE_STACK_UNDERFLOW", "An internal stack underflowed"),
+    EXCEP_TXT("AE_NOT_IMPLEMENTED", "The feature is not implemented"),
+    EXCEP_TXT("AE_SUPPORT", "The feature is not supported"),
+    EXCEP_TXT("AE_LIMIT", "A predefined limit was exceeded"),
+    EXCEP_TXT("AE_TIME", "A time limit or timeout expired"),
+    EXCEP_TXT("AE_ACQUIRE_DEADLOCK", "Internal error, attempt was made to "
+                                     "acquire a mutex in improper order"),
+    EXCEP_TXT("AE_RELEASE_DEADLOCK", "Internal error, attempt was made to "
+                                     "release a mutex in improper order"),
+    EXCEP_TXT("AE_NOT_ACQUIRED", "An attempt to release a mutex or Global Lock "
+                                 "without a previous acquire"),
+    EXCEP_TXT("AE_ALREADY_ACQUIRED",
+              "Internal error, attempt was made to acquire a mutex twice"),
+    EXCEP_TXT("AE_NO_HARDWARE_RESPONSE",
+              "Hardware did not respond after an I/O operation"),
+    EXCEP_TXT("AE_NO_GLOBAL_LOCK", "There is no FACS Global Lock"),
+    EXCEP_TXT("AE_ABORT_METHOD", "A control method was aborted"),
+    EXCEP_TXT("AE_SAME_HANDLER", "Attempt was made to install the same handler "
+                                 "that is already installed"),
+    EXCEP_TXT("AE_NO_HANDLER", "A handler for the operation is not installed"),
+    EXCEP_TXT("AE_OWNER_ID_LIMIT", "There are no more Owner IDs available for "
+                                   "ACPI tables or control methods"),
+    EXCEP_TXT(
+        "AE_NOT_CONFIGURED",
+        "The interface is not part of the current subsystem configuration"),
+    EXCEP_TXT("AE_ACCESS", "Permission denied for the requested operation")};
+
+static const ACPI_EXCEPTION_INFO AcpiGbl_ExceptionNames_Pgm[] = {
+    EXCEP_TXT(NULL, NULL),
+    EXCEP_TXT("AE_BAD_PARAMETER", "A parameter is out of range or invalid"),
+    EXCEP_TXT("AE_BAD_CHARACTER", "An invalid character was found in a name"),
+    EXCEP_TXT("AE_BAD_PATHNAME",
+              "An invalid character was found in a pathname"),
+    EXCEP_TXT("AE_BAD_DATA", "A package or buffer contained incorrect data"),
+    EXCEP_TXT("AE_BAD_HEX_CONSTANT", "Invalid character in a Hex constant"),
+    EXCEP_TXT("AE_BAD_OCTAL_CONSTANT",
+              "Invalid character in an Octal constant"),
+    EXCEP_TXT("AE_BAD_DECIMAL_CONSTANT",
+              "Invalid character in a Decimal constant"),
+    EXCEP_TXT("AE_MISSING_ARGUMENTS",
+              "Too few arguments were passed to a control method"),
+    EXCEP_TXT("AE_BAD_ADDRESS", "An illegal null I/O address")};
+
+static const ACPI_EXCEPTION_INFO AcpiGbl_ExceptionNames_Tbl[] = {
+    EXCEP_TXT(NULL, NULL),
+    EXCEP_TXT("AE_BAD_SIGNATURE", "An ACPI table has an invalid signature"),
+    EXCEP_TXT("AE_BAD_HEADER", "Invalid field in an ACPI table header"),
+    EXCEP_TXT("AE_BAD_CHECKSUM", "An ACPI table checksum is not correct"),
+    EXCEP_TXT("AE_BAD_VALUE", "An invalid value was found in a table"),
+    EXCEP_TXT("AE_INVALID_TABLE_LENGTH",
+              "The FADT or FACS has improper length")};
+
+static const ACPI_EXCEPTION_INFO AcpiGbl_ExceptionNames_Aml[] = {
+    EXCEP_TXT(NULL, NULL),
+    EXCEP_TXT("AE_AML_BAD_OPCODE", "Invalid AML opcode encountered"),
+    EXCEP_TXT("AE_AML_NO_OPERAND", "A required operand is missing"),
+    EXCEP_TXT("AE_AML_OPERAND_TYPE",
+              "An operand of an incorrect type was encountered"),
+    EXCEP_TXT("AE_AML_OPERAND_VALUE",
+              "The operand had an inappropriate or invalid value"),
+    EXCEP_TXT("AE_AML_UNINITIALIZED_LOCAL",
+              "Method tried to use an uninitialized local variable"),
+    EXCEP_TXT("AE_AML_UNINITIALIZED_ARG",
+              "Method tried to use an uninitialized argument"),
+    EXCEP_TXT("AE_AML_UNINITIALIZED_ELEMENT",
+              "Method tried to use an empty package element"),
+    EXCEP_TXT("AE_AML_NUMERIC_OVERFLOW",
+              "Overflow during BCD conversion or other"),
+    EXCEP_TXT("AE_AML_REGION_LIMIT",
+              "Tried to access beyond the end of an Operation Region"),
+    EXCEP_TXT("AE_AML_BUFFER_LIMIT",
+              "Tried to access beyond the end of a buffer"),
+    EXCEP_TXT("AE_AML_PACKAGE_LIMIT",
+              "Tried to access beyond the end of a package"),
+    EXCEP_TXT("AE_AML_DIVIDE_BY_ZERO",
+              "During execution of AML Divide operator"),
+    EXCEP_TXT("AE_AML_BAD_NAME", "An ACPI name contains invalid character(s)"),
+    EXCEP_TXT("AE_AML_NAME_NOT_FOUND", "Could not resolve a named reference"),
+    EXCEP_TXT("AE_AML_INTERNAL", "An internal error within the interprete"),
+    EXCEP_TXT("AE_AML_INVALID_SPACE_ID",
+              "An Operation Region SpaceID is invalid"),
+    EXCEP_TXT("AE_AML_STRING_LIMIT", "String is longer than 200 characters"),
+    EXCEP_TXT("AE_AML_NO_RETURN_VALUE",
+              "A method did not return a required value"),
+    EXCEP_TXT("AE_AML_METHOD_LIMIT",
+              "A control method reached the maximum reentrancy limit of 255"),
+    EXCEP_TXT("AE_AML_NOT_OWNER",
+              "A thread tried to release a mutex that it does not own"),
+    EXCEP_TXT("AE_AML_MUTEX_ORDER", "Mutex SyncLevel release mismatch"),
+    EXCEP_TXT("AE_AML_MUTEX_NOT_ACQUIRED",
+              "Attempt to release a mutex that was not previously acquired"),
+    EXCEP_TXT("AE_AML_INVALID_RESOURCE_TYPE",
+              "Invalid resource type in resource list"),
+    EXCEP_TXT("AE_AML_INVALID_INDEX", "Invalid Argx or Localx (x too large)"),
+    EXCEP_TXT("AE_AML_REGISTER_LIMIT",
+              "Bank value or Index value beyond range of register"),
+    EXCEP_TXT("AE_AML_NO_WHILE", "Break or Continue without a While"),
+    EXCEP_TXT(
+        "AE_AML_ALIGNMENT",
+        "Non-aligned memory transfer on platform that does not support this"),
+    EXCEP_TXT("AE_AML_NO_RESOURCE_END_TAG", "No End Tag in a resource list"),
+    EXCEP_TXT("AE_AML_BAD_RESOURCE_VALUE",
+              "Invalid value of a resource element"),
+    EXCEP_TXT("AE_AML_CIRCULAR_REFERENCE",
+              "Two references refer to each other"),
+    EXCEP_TXT("AE_AML_BAD_RESOURCE_LENGTH",
+              "The length of a Resource Descriptor in the AML is incorrect"),
+    EXCEP_TXT("AE_AML_ILLEGAL_ADDRESS",
+              "A memory, I/O, or PCI configuration address is invalid"),
+    EXCEP_TXT("AE_AML_INFINITE_LOOP",
+              "An apparent infinite AML While loop, method was aborted")};
+
+static const ACPI_EXCEPTION_INFO AcpiGbl_ExceptionNames_Ctrl[] = {
+    EXCEP_TXT(NULL, NULL),
+    EXCEP_TXT("AE_CTRL_RETURN_VALUE", "A Method returned a value"),
+    EXCEP_TXT("AE_CTRL_PENDING", "Method is calling another method"),
+    EXCEP_TXT("AE_CTRL_TERMINATE", "Terminate the executing method"),
+    EXCEP_TXT("AE_CTRL_TRUE", "An If or While predicate result"),
+    EXCEP_TXT("AE_CTRL_FALSE", "An If or While predicate result"),
+    EXCEP_TXT("AE_CTRL_DEPTH", "Maximum search depth has been reached"),
+    EXCEP_TXT("AE_CTRL_END", "An If or While predicate is false"),
+    EXCEP_TXT("AE_CTRL_TRANSFER", "Transfer control to called method"),
+    EXCEP_TXT("AE_CTRL_BREAK", "A Break has been executed"),
+    EXCEP_TXT("AE_CTRL_CONTINUE", "A Continue has been executed"),
+    EXCEP_TXT("AE_CTRL_SKIP", "Not currently used"),
+    EXCEP_TXT("AE_CTRL_PARSE_CONTINUE", "Used to skip over bad opcodes"),
+    EXCEP_TXT("AE_CTRL_PARSE_PENDING", "Used to implement AML While loops")};
+
+#endif /* EXCEPTION_TABLE */
+
+#endif /* __ACEXCEP_H__ */

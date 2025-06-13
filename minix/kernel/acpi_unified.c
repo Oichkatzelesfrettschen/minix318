@@ -4101,3 +4101,5200 @@ static void * acpi_madt_get_item(struct acpi_madt_hdr * hdr,
         return (PSM_FAILURE);
       }
     }
+
+    /**
+     * @section minix_drivers_power_acpi_dispatcher_dscontrol_c
+     * @brief Original file: minix/drivers/power/acpi/dispatcher/dscontrol.c
+     */
+    /******************************************************************************
+     *
+     * Module Name: dscontrol - Support for execution control opcodes -
+     *                          if/else/while/return
+     *
+     *****************************************************************************/
+
+    /*
+     * Copyright (C) 2000 - 2014, Intel Corp.
+     * All rights reserved.
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions, and the following disclaimer,
+     *    without modification.
+     * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+     *    substantially similar to the "NO WARRANTY" disclaimer below
+     *    ("Disclaimer") and any redistribution must be conditioned upon
+     *    including a substantially similar Disclaimer requirement for further
+     *    binary redistribution.
+     * 3. Neither the names of the above-listed copyright holders nor the names
+     *    of any contributors may be used to endorse or promote products derived
+     *    from this software without specific prior written permission.
+     *
+     * Alternatively, this software may be distributed under the terms of the
+     * GNU General Public License ("GPL") version 2 as published by the Free
+     * Software Foundation.
+     *
+     * NO WARRANTY
+     * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+     * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+     * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+     * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+     * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR
+     * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+     * THE POSSIBILITY OF SUCH DAMAGES.
+     */
+
+#include "accommon.h"
+#include "acdispat.h"
+#include "acinterp.h"
+#include "acpi.h"
+#include "amlcode.h"
+
+#define _COMPONENT ACPI_DISPATCHER
+    ACPI_MODULE_NAME("dscontrol")
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsExecBeginControlOp
+     *
+     * PARAMETERS:  WalkList        - The list that owns the walk stack
+     *              Op              - The control Op
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Handles all control ops encountered during control method
+     *              execution.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsExecBeginControlOp(ACPI_WALK_STATE * WalkState,
+                             ACPI_PARSE_OBJECT * Op) {
+      ACPI_STATUS Status = AE_OK;
+      ACPI_GENERIC_STATE *ControlState;
+
+      ACPI_FUNCTION_NAME(DsExecBeginControlOp);
+
+      ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH, "Op=%p Opcode=%2.2X State=%p\n", Op,
+                        Op->Common.AmlOpcode, WalkState));
+
+      switch (Op->Common.AmlOpcode) {
+      case AML_WHILE_OP:
+        /*
+         * If this is an additional iteration of a while loop, continue.
+         * There is no need to allocate a new control state.
+         */
+        if (WalkState->ControlState) {
+          if (WalkState->ControlState->Control.AmlPredicateStart ==
+              (WalkState->ParserState.Aml - 1)) {
+            /* Reset the state to start-of-loop */
+
+            WalkState->ControlState->Common.State =
+                ACPI_CONTROL_CONDITIONAL_EXECUTING;
+            break;
+          }
+        }
+
+        /*lint -fallthrough */
+
+      case AML_IF_OP:
+        /*
+         * IF/WHILE: Create a new control state to manage these
+         * constructs. We need to manage these as a stack, in order
+         * to handle nesting.
+         */
+        ControlState = AcpiUtCreateControlState();
+        if (!ControlState) {
+          Status = AE_NO_MEMORY;
+          break;
+        }
+        /*
+         * Save a pointer to the predicate for multiple executions
+         * of a loop
+         */
+        ControlState->Control.AmlPredicateStart =
+            WalkState->ParserState.Aml - 1;
+        ControlState->Control.PackageEnd = WalkState->ParserState.PkgEnd;
+        ControlState->Control.Opcode = Op->Common.AmlOpcode;
+
+        /* Push the control state on this walk's control stack */
+
+        AcpiUtPushGenericState(&WalkState->ControlState, ControlState);
+        break;
+
+      case AML_ELSE_OP:
+
+        /* Predicate is in the state object */
+        /* If predicate is true, the IF was executed, ignore ELSE part */
+
+        if (WalkState->LastPredicate) {
+          Status = AE_CTRL_TRUE;
+        }
+
+        break;
+
+      case AML_RETURN_OP:
+
+        break;
+
+      default:
+
+        break;
+      }
+
+      return (Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsExecEndControlOp
+     *
+     * PARAMETERS:  WalkList        - The list that owns the walk stack
+     *              Op              - The control Op
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Handles all control ops encountered during control method
+     *              execution.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsExecEndControlOp(ACPI_WALK_STATE * WalkState,
+                           ACPI_PARSE_OBJECT * Op) {
+      ACPI_STATUS Status = AE_OK;
+      ACPI_GENERIC_STATE *ControlState;
+
+      ACPI_FUNCTION_NAME(DsExecEndControlOp);
+
+      switch (Op->Common.AmlOpcode) {
+      case AML_IF_OP:
+
+        ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH, "[IF_OP] Op=%p\n", Op));
+
+        /*
+         * Save the result of the predicate in case there is an
+         * ELSE to come
+         */
+        WalkState->LastPredicate =
+            (BOOLEAN)WalkState->ControlState->Common.Value;
+
+        /*
+         * Pop the control state that was created at the start
+         * of the IF and free it
+         */
+        ControlState = AcpiUtPopGenericState(&WalkState->ControlState);
+        AcpiUtDeleteGenericState(ControlState);
+        break;
+
+      case AML_ELSE_OP:
+
+        break;
+
+      case AML_WHILE_OP:
+
+        ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH, "[WHILE_OP] Op=%p\n", Op));
+
+        ControlState = WalkState->ControlState;
+        if (ControlState->Common.Value) {
+          /* Predicate was true, the body of the loop was just executed */
+
+          /*
+           * This loop counter mechanism allows the interpreter to escape
+           * possibly infinite loops. This can occur in poorly written AML
+           * when the hardware does not respond within a while loop and the
+           * loop does not implement a timeout.
+           */
+          ControlState->Control.LoopCount++;
+          if (ControlState->Control.LoopCount > ACPI_MAX_LOOP_ITERATIONS) {
+            Status = AE_AML_INFINITE_LOOP;
+            break;
+          }
+
+          /*
+           * Go back and evaluate the predicate and maybe execute the loop
+           * another time
+           */
+          Status = AE_CTRL_PENDING;
+          WalkState->AmlLastWhile = ControlState->Control.AmlPredicateStart;
+          break;
+        }
+
+        /* Predicate was false, terminate this while loop */
+
+        ACPI_DEBUG_PRINT(
+            (ACPI_DB_DISPATCH, "[WHILE_OP] termination! Op=%p\n", Op));
+
+        /* Pop this control state and free it */
+
+        ControlState = AcpiUtPopGenericState(&WalkState->ControlState);
+        AcpiUtDeleteGenericState(ControlState);
+        break;
+
+      case AML_RETURN_OP:
+
+        ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH, "[RETURN_OP] Op=%p Arg=%p\n", Op,
+                          Op->Common.Value.Arg));
+
+        /*
+         * One optional operand -- the return value
+         * It can be either an immediate operand or a result that
+         * has been bubbled up the tree
+         */
+        if (Op->Common.Value.Arg) {
+          /* Since we have a real Return(), delete any implicit return */
+
+          AcpiDsClearImplicitReturn(WalkState);
+
+          /* Return statement has an immediate operand */
+
+          Status = AcpiDsCreateOperands(WalkState, Op->Common.Value.Arg);
+          if (ACPI_FAILURE(Status)) {
+            return (Status);
+          }
+
+          /*
+           * If value being returned is a Reference (such as
+           * an arg or local), resolve it now because it may
+           * cease to exist at the end of the method.
+           */
+          Status = AcpiExResolveToValue(&WalkState->Operands[0], WalkState);
+          if (ACPI_FAILURE(Status)) {
+            return (Status);
+          }
+
+          /*
+           * Get the return value and save as the last result
+           * value. This is the only place where WalkState->ReturnDesc
+           * is set to anything other than zero!
+           */
+          WalkState->ReturnDesc = WalkState->Operands[0];
+        } else if (WalkState->ResultCount) {
+          /* Since we have a real Return(), delete any implicit return */
+
+          AcpiDsClearImplicitReturn(WalkState);
+
+          /*
+           * The return value has come from a previous calculation.
+           *
+           * If value being returned is a Reference (such as
+           * an arg or local), resolve it now because it may
+           * cease to exist at the end of the method.
+           *
+           * Allow references created by the Index operator to return
+           * unchanged.
+           */
+          if ((ACPI_GET_DESCRIPTOR_TYPE(
+                   WalkState->Results->Results.ObjDesc[0]) ==
+               ACPI_DESC_TYPE_OPERAND) &&
+              ((WalkState->Results->Results.ObjDesc[0])->Common.Type ==
+               ACPI_TYPE_LOCAL_REFERENCE) &&
+              ((WalkState->Results->Results.ObjDesc[0])->Reference.Class !=
+               ACPI_REFCLASS_INDEX)) {
+            Status = AcpiExResolveToValue(
+                &WalkState->Results->Results.ObjDesc[0], WalkState);
+            if (ACPI_FAILURE(Status)) {
+              return (Status);
+            }
+          }
+
+          WalkState->ReturnDesc = WalkState->Results->Results.ObjDesc[0];
+        } else {
+          /* No return operand */
+
+          if (WalkState->NumOperands) {
+            AcpiUtRemoveReference(WalkState->Operands[0]);
+          }
+
+          WalkState->Operands[0] = NULL;
+          WalkState->NumOperands = 0;
+          WalkState->ReturnDesc = NULL;
+        }
+
+        ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH,
+                          "Completed RETURN_OP State=%p, RetVal=%p\n",
+                          WalkState, WalkState->ReturnDesc));
+
+        /* End the control method execution right now */
+
+        Status = AE_CTRL_TERMINATE;
+        break;
+
+      case AML_NOOP_OP:
+
+        /* Just do nothing! */
+
+        break;
+
+      case AML_BREAK_POINT_OP:
+
+        /*
+         * Set the single-step flag. This will cause the debugger (if present)
+         * to break to the console within the AML debugger at the start of the
+         * next AML instruction.
+         */
+        ACPI_DEBUGGER_EXEC(AcpiGbl_CmSingleStep = TRUE);
+        ACPI_DEBUGGER_EXEC(
+            AcpiOsPrintf("**break** Executed AML BreakPoint opcode\n"));
+
+        /* Call to the OSL in case OS wants a piece of the action */
+
+        Status = AcpiOsSignal(ACPI_SIGNAL_BREAKPOINT,
+                              "Executed AML Breakpoint opcode");
+        break;
+
+      case AML_BREAK_OP:
+      case AML_CONTINUE_OP: /* ACPI 2.0 */
+
+        /* Pop and delete control states until we find a while */
+
+        while (WalkState->ControlState &&
+               (WalkState->ControlState->Control.Opcode != AML_WHILE_OP)) {
+          ControlState = AcpiUtPopGenericState(&WalkState->ControlState);
+          AcpiUtDeleteGenericState(ControlState);
+        }
+
+        /* No while found? */
+
+        if (!WalkState->ControlState) {
+          return (AE_AML_NO_WHILE);
+        }
+
+        /* Was: WalkState->AmlLastWhile =
+         * WalkState->ControlState->Control.AmlPredicateStart; */
+
+        WalkState->AmlLastWhile = WalkState->ControlState->Control.PackageEnd;
+
+        /* Return status depending on opcode */
+
+        if (Op->Common.AmlOpcode == AML_BREAK_OP) {
+          Status = AE_CTRL_BREAK;
+        } else {
+          Status = AE_CTRL_CONTINUE;
+        }
+        break;
+
+      default:
+
+        ACPI_ERROR((AE_INFO, "Unknown control opcode=0x%X Op=%p",
+                    Op->Common.AmlOpcode, Op));
+
+        Status = AE_AML_BAD_OPCODE;
+        break;
+      }
+
+      return (Status);
+    }
+
+    /**
+     * @section minix_drivers_power_acpi_dispatcher_dsfield_c
+     * @brief Original file: minix/drivers/power/acpi/dispatcher/dsfield.c
+     */
+    /******************************************************************************
+     *
+     * Module Name: dsfield - Dispatcher field routines
+     *
+     *****************************************************************************/
+
+    /*
+     * Copyright (C) 2000 - 2014, Intel Corp.
+     * All rights reserved.
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions, and the following disclaimer,
+     *    without modification.
+     * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+     *    substantially similar to the "NO WARRANTY" disclaimer below
+     *    ("Disclaimer") and any redistribution must be conditioned upon
+     *    including a substantially similar Disclaimer requirement for further
+     *    binary redistribution.
+     * 3. Neither the names of the above-listed copyright holders nor the names
+     *    of any contributors may be used to endorse or promote products derived
+     *    from this software without specific prior written permission.
+     *
+     * Alternatively, this software may be distributed under the terms of the
+     * GNU General Public License ("GPL") version 2 as published by the Free
+     * Software Foundation.
+     *
+     * NO WARRANTY
+     * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+     * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+     * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+     * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+     * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR
+     * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+     * THE POSSIBILITY OF SUCH DAMAGES.
+     */
+
+#include "accommon.h"
+#include "acdispat.h"
+#include "acinterp.h"
+#include "acnamesp.h"
+#include "acparser.h"
+#include "acpi.h"
+#include "amlcode.h"
+
+#define _COMPONENT ACPI_DISPATCHER
+    ACPI_MODULE_NAME("dsfield")
+
+    /* Local prototypes */
+
+#ifdef ACPI_ASL_COMPILER
+#include "acdisasm.h"
+
+    static ACPI_STATUS AcpiDsCreateExternalRegion(
+        ACPI_STATUS LookupStatus, ACPI_PARSE_OBJECT * Op, char *Path,
+        ACPI_WALK_STATE *WalkState, ACPI_NAMESPACE_NODE **Node);
+#endif
+
+    static ACPI_STATUS AcpiDsGetFieldNames(ACPI_CREATE_FIELD_INFO * Info,
+                                           ACPI_WALK_STATE * WalkState,
+                                           ACPI_PARSE_OBJECT * Arg);
+
+#ifdef ACPI_ASL_COMPILER
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateExternalRegion (iASL Disassembler only)
+     *
+     * PARAMETERS:  LookupStatus    - Status from NsLookup operation
+     *              Op              - Op containing the Field definition and
+     *args Path            - Pathname of the region `           WalkState -
+     *Current method state Node            - Where the new region node is
+     *returned
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Add region to the external list if NOT_FOUND. Create a new
+     *              region node/object.
+     *
+     ******************************************************************************/
+
+    static ACPI_STATUS AcpiDsCreateExternalRegion(
+        ACPI_STATUS LookupStatus, ACPI_PARSE_OBJECT * Op, char *Path,
+        ACPI_WALK_STATE *WalkState, ACPI_NAMESPACE_NODE **Node) {
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+
+      if (LookupStatus != AE_NOT_FOUND) {
+        return (LookupStatus);
+      }
+
+      /*
+       * Table disassembly:
+       * OperationRegion not found. Generate an External for it, and
+       * insert the name into the namespace.
+       */
+      AcpiDmAddOpToExternalList(Op, Path, ACPI_TYPE_REGION, 0, 0);
+      Status = AcpiNsLookup(WalkState->ScopeInfo, Path, ACPI_TYPE_REGION,
+                            ACPI_IMODE_LOAD_PASS1, ACPI_NS_SEARCH_PARENT,
+                            WalkState, Node);
+      if (ACPI_FAILURE(Status)) {
+        return (Status);
+      }
+
+      /* Must create and install a region object for the new node */
+
+      ObjDesc = AcpiUtCreateInternalObject(ACPI_TYPE_REGION);
+      if (!ObjDesc) {
+        return (AE_NO_MEMORY);
+      }
+
+      ObjDesc->Region.Node = *Node;
+      Status = AcpiNsAttachObject(*Node, ObjDesc, ACPI_TYPE_REGION);
+      return (Status);
+    }
+#endif
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateBufferField
+     *
+     * PARAMETERS:  Op                  - Current parse op (CreateXXField)
+     *              WalkState           - Current state
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Execute the CreateField operators:
+     *              CreateBitFieldOp,
+     *              CreateByteFieldOp,
+     *              CreateWordFieldOp,
+     *              CreateDwordFieldOp,
+     *              CreateQwordFieldOp,
+     *              CreateFieldOp       (all of which define a field in a
+     *buffer)
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsCreateBufferField(ACPI_PARSE_OBJECT * Op,
+                            ACPI_WALK_STATE * WalkState) {
+      ACPI_PARSE_OBJECT *Arg;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_OPERAND_OBJECT *SecondDesc = NULL;
+      UINT32 Flags;
+
+      ACPI_FUNCTION_TRACE(DsCreateBufferField);
+
+      /*
+       * Get the NameString argument (name of the new BufferField)
+       */
+      if (Op->Common.AmlOpcode == AML_CREATE_FIELD_OP) {
+        /* For CreateField, name is the 4th argument */
+
+        Arg = AcpiPsGetArg(Op, 3);
+      } else {
+        /* For all other CreateXXXField operators, name is the 3rd argument */
+
+        Arg = AcpiPsGetArg(Op, 2);
+      }
+
+      if (!Arg) {
+        return_ACPI_STATUS(AE_AML_NO_OPERAND);
+      }
+
+      if (WalkState->DeferredNode) {
+        Node = WalkState->DeferredNode;
+        Status = AE_OK;
+      } else {
+        /* Execute flag should always be set when this function is entered */
+
+        if (!(WalkState->ParseFlags & ACPI_PARSE_EXECUTE)) {
+          return_ACPI_STATUS(AE_AML_INTERNAL);
+        }
+
+        /* Creating new namespace node, should not already exist */
+
+        Flags = ACPI_NS_NO_UPSEARCH | ACPI_NS_DONT_OPEN_SCOPE |
+                ACPI_NS_ERROR_IF_FOUND;
+
+        /*
+         * Mark node temporary if we are executing a normal control
+         * method. (Don't mark if this is a module-level code method)
+         */
+        if (WalkState->MethodNode &&
+            !(WalkState->ParseFlags & ACPI_PARSE_MODULE_LEVEL)) {
+          Flags |= ACPI_NS_TEMPORARY;
+        }
+
+        /* Enter the NameString into the namespace */
+
+        Status = AcpiNsLookup(WalkState->ScopeInfo, Arg->Common.Value.String,
+                              ACPI_TYPE_ANY, ACPI_IMODE_LOAD_PASS1, Flags,
+                              WalkState, &Node);
+        if (ACPI_FAILURE(Status)) {
+          ACPI_ERROR_NAMESPACE(Arg->Common.Value.String, Status);
+          return_ACPI_STATUS(Status);
+        }
+      }
+
+      /*
+       * We could put the returned object (Node) on the object stack for later,
+       * but for now, we will put it in the "op" object that the parser uses,
+       * so we can get it again at the end of this scope.
+       */
+      Op->Common.Node = Node;
+
+      /*
+       * If there is no object attached to the node, this node was just created
+       * and we need to create the field object. Otherwise, this was a lookup
+       * of an existing node and we don't want to create the field object again.
+       */
+      ObjDesc = AcpiNsGetAttachedObject(Node);
+      if (ObjDesc) {
+        return_ACPI_STATUS(AE_OK);
+      }
+
+      /*
+       * The Field definition is not fully parsed at this time.
+       * (We must save the address of the AML for the buffer and index operands)
+       */
+
+      /* Create the buffer field object */
+
+      ObjDesc = AcpiUtCreateInternalObject(ACPI_TYPE_BUFFER_FIELD);
+      if (!ObjDesc) {
+        Status = AE_NO_MEMORY;
+        goto Cleanup;
+      }
+
+      /*
+       * Remember location in AML stream of the field unit opcode and operands
+       * -- since the buffer and index operands must be evaluated.
+       */
+      SecondDesc = ObjDesc->Common.NextObject;
+      SecondDesc->Extra.AmlStart = Op->Named.Data;
+      SecondDesc->Extra.AmlLength = Op->Named.Length;
+      ObjDesc->BufferField.Node = Node;
+
+      /* Attach constructed field descriptors to parent node */
+
+      Status = AcpiNsAttachObject(Node, ObjDesc, ACPI_TYPE_BUFFER_FIELD);
+      if (ACPI_FAILURE(Status)) {
+        goto Cleanup;
+      }
+
+    Cleanup:
+
+      /* Remove local reference to the object */
+
+      AcpiUtRemoveReference(ObjDesc);
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsGetFieldNames
+     *
+     * PARAMETERS:  Info            - CreateField info structure
+     *  `           WalkState       - Current method state
+     *              Arg             - First parser arg for the field name list
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Process all named fields in a field declaration. Names are
+     *              entered into the namespace.
+     *
+     ******************************************************************************/
+
+    static ACPI_STATUS AcpiDsGetFieldNames(ACPI_CREATE_FIELD_INFO * Info,
+                                           ACPI_WALK_STATE * WalkState,
+                                           ACPI_PARSE_OBJECT * Arg) {
+      ACPI_STATUS Status;
+      UINT64 Position;
+      ACPI_PARSE_OBJECT *Child;
+
+      ACPI_FUNCTION_TRACE_PTR(DsGetFieldNames, Info);
+
+      /* First field starts at bit zero */
+
+      Info->FieldBitPosition = 0;
+
+      /* Process all elements in the field list (of parse nodes) */
+
+      while (Arg) {
+        /*
+         * Four types of field elements are handled:
+         * 1) Name - Enters a new named field into the namespace
+         * 2) Offset - specifies a bit offset
+         * 3) AccessAs - changes the access mode/attributes
+         * 4) Connection - Associate a resource template with the field
+         */
+        switch (Arg->Common.AmlOpcode) {
+        case AML_INT_RESERVEDFIELD_OP:
+
+          Position =
+              (UINT64)Info->FieldBitPosition + (UINT64)Arg->Common.Value.Size;
+
+          if (Position > ACPI_UINT32_MAX) {
+            ACPI_ERROR(
+                (AE_INFO, "Bit offset within field too large (> 0xFFFFFFFF)"));
+            return_ACPI_STATUS(AE_SUPPORT);
+          }
+
+          Info->FieldBitPosition = (UINT32)Position;
+          break;
+
+        case AML_INT_ACCESSFIELD_OP:
+        case AML_INT_EXTACCESSFIELD_OP:
+          /*
+           * Get new AccessType, AccessAttribute, and AccessLength fields
+           * -- to be used for all field units that follow, until the
+           * end-of-field or another AccessAs keyword is encountered.
+           * NOTE. These three bytes are encoded in the integer value
+           * of the parseop for convenience.
+           *
+           * In FieldFlags, preserve the flag bits other than the
+           * ACCESS_TYPE bits.
+           */
+
+          /* AccessType (ByteAcc, WordAcc, etc.) */
+
+          Info->FieldFlags =
+              (UINT8)((Info->FieldFlags & ~(AML_FIELD_ACCESS_TYPE_MASK)) |
+                      ((UINT8)((UINT32)(Arg->Common.Value.Integer & 0x07))));
+
+          /* AccessAttribute (AttribQuick, AttribByte, etc.) */
+
+          Info->Attribute = (UINT8)((Arg->Common.Value.Integer >> 8) & 0xFF);
+
+          /* AccessLength (for serial/buffer protocols) */
+
+          Info->AccessLength =
+              (UINT8)((Arg->Common.Value.Integer >> 16) & 0xFF);
+          break;
+
+        case AML_INT_CONNECTION_OP:
+          /*
+           * Clear any previous connection. New connection is used for all
+           * fields that follow, similar to AccessAs
+           */
+          Info->ResourceBuffer = NULL;
+          Info->ConnectionNode = NULL;
+          Info->PinNumberIndex = 0;
+
+          /*
+           * A Connection() is either an actual resource descriptor (buffer)
+           * or a named reference to a resource template
+           */
+          Child = Arg->Common.Value.Arg;
+          if (Child->Common.AmlOpcode == AML_INT_BYTELIST_OP) {
+            Info->ResourceBuffer = Child->Named.Data;
+            Info->ResourceLength = (UINT16)Child->Named.Value.Integer;
+          } else {
+            /* Lookup the Connection() namepath, it should already exist */
+
+            Status = AcpiNsLookup(WalkState->ScopeInfo,
+                                  Child->Common.Value.Name, ACPI_TYPE_ANY,
+                                  ACPI_IMODE_EXECUTE, ACPI_NS_DONT_OPEN_SCOPE,
+                                  WalkState, &Info->ConnectionNode);
+            if (ACPI_FAILURE(Status)) {
+              ACPI_ERROR_NAMESPACE(Child->Common.Value.Name, Status);
+              return_ACPI_STATUS(Status);
+            }
+          }
+          break;
+
+        case AML_INT_NAMEDFIELD_OP:
+
+          /* Lookup the name, it should already exist */
+
+          Status = AcpiNsLookup(WalkState->ScopeInfo, (char *)&Arg->Named.Name,
+                                Info->FieldType, ACPI_IMODE_EXECUTE,
+                                ACPI_NS_DONT_OPEN_SCOPE, WalkState,
+                                &Info->FieldNode);
+          if (ACPI_FAILURE(Status)) {
+            ACPI_ERROR_NAMESPACE((char *)&Arg->Named.Name, Status);
+            return_ACPI_STATUS(Status);
+          } else {
+            Arg->Common.Node = Info->FieldNode;
+            Info->FieldBitLength = Arg->Common.Value.Size;
+
+            /*
+             * If there is no object attached to the node, this node was
+             * just created and we need to create the field object.
+             * Otherwise, this was a lookup of an existing node and we
+             * don't want to create the field object again.
+             */
+            if (!AcpiNsGetAttachedObject(Info->FieldNode)) {
+              Status = AcpiExPrepFieldValue(Info);
+              if (ACPI_FAILURE(Status)) {
+                return_ACPI_STATUS(Status);
+              }
+            }
+          }
+
+          /* Keep track of bit position for the next field */
+
+          Position =
+              (UINT64)Info->FieldBitPosition + (UINT64)Arg->Common.Value.Size;
+
+          if (Position > ACPI_UINT32_MAX) {
+            ACPI_ERROR((AE_INFO,
+                        "Field [%4.4s] bit offset too large (> 0xFFFFFFFF)",
+                        ACPI_CAST_PTR(char, &Info->FieldNode->Name)));
+            return_ACPI_STATUS(AE_SUPPORT);
+          }
+
+          Info->FieldBitPosition += Info->FieldBitLength;
+          Info->PinNumberIndex++; /* Index relative to previous Connection() */
+          break;
+
+        default:
+
+          ACPI_ERROR((AE_INFO, "Invalid opcode in field list: 0x%X",
+                      Arg->Common.AmlOpcode));
+          return_ACPI_STATUS(AE_AML_BAD_OPCODE);
+        }
+
+        Arg = Arg->Common.Next;
+      }
+
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateField
+     *
+     * PARAMETERS:  Op              - Op containing the Field definition and
+     *args RegionNode      - Object for the containing Operation Region `
+     *WalkState       - Current method state
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Create a new field in the specified operation region
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsCreateField(ACPI_PARSE_OBJECT * Op, ACPI_NAMESPACE_NODE * RegionNode,
+                      ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      ACPI_PARSE_OBJECT *Arg;
+      ACPI_CREATE_FIELD_INFO Info;
+
+      ACPI_FUNCTION_TRACE_PTR(DsCreateField, Op);
+
+      /* First arg is the name of the parent OpRegion (must already exist) */
+
+      Arg = Op->Common.Value.Arg;
+
+      if (!RegionNode) {
+        Status = AcpiNsLookup(WalkState->ScopeInfo, Arg->Common.Value.Name,
+                              ACPI_TYPE_REGION, ACPI_IMODE_EXECUTE,
+                              ACPI_NS_SEARCH_PARENT, WalkState, &RegionNode);
+#ifdef ACPI_ASL_COMPILER
+        Status = AcpiDsCreateExternalRegion(Status, Arg, Arg->Common.Value.Name,
+                                            WalkState, &RegionNode);
+#endif
+        if (ACPI_FAILURE(Status)) {
+          ACPI_ERROR_NAMESPACE(Arg->Common.Value.Name, Status);
+          return_ACPI_STATUS(Status);
+        }
+      }
+
+      ACPI_MEMSET(&Info, 0, sizeof(ACPI_CREATE_FIELD_INFO));
+
+      /* Second arg is the field flags */
+
+      Arg = Arg->Common.Next;
+      Info.FieldFlags = (UINT8)Arg->Common.Value.Integer;
+      Info.Attribute = 0;
+
+      /* Each remaining arg is a Named Field */
+
+      Info.FieldType = ACPI_TYPE_LOCAL_REGION_FIELD;
+      Info.RegionNode = RegionNode;
+
+      Status = AcpiDsGetFieldNames(&Info, WalkState, Arg->Common.Next);
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsInitFieldObjects
+     *
+     * PARAMETERS:  Op              - Op containing the Field definition and
+     *args `           WalkState       - Current method state
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: For each "Field Unit" name in the argument list that is
+     *              part of the field declaration, enter the name into the
+     *              namespace.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsInitFieldObjects(ACPI_PARSE_OBJECT * Op,
+                           ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      ACPI_PARSE_OBJECT *Arg = NULL;
+      ACPI_NAMESPACE_NODE *Node;
+      UINT8 Type = 0;
+      UINT32 Flags;
+
+      ACPI_FUNCTION_TRACE_PTR(DsInitFieldObjects, Op);
+
+      /* Execute flag should always be set when this function is entered */
+
+      if (!(WalkState->ParseFlags & ACPI_PARSE_EXECUTE)) {
+        if (WalkState->ParseFlags & ACPI_PARSE_DEFERRED_OP) {
+          /* BankField Op is deferred, just return OK */
+
+          return_ACPI_STATUS(AE_OK);
+        }
+
+        return_ACPI_STATUS(AE_AML_INTERNAL);
+      }
+
+      /*
+       * Get the FieldList argument for this opcode. This is the start of the
+       * list of field elements.
+       */
+      switch (WalkState->Opcode) {
+      case AML_FIELD_OP:
+
+        Arg = AcpiPsGetArg(Op, 2);
+        Type = ACPI_TYPE_LOCAL_REGION_FIELD;
+        break;
+
+      case AML_BANK_FIELD_OP:
+
+        Arg = AcpiPsGetArg(Op, 4);
+        Type = ACPI_TYPE_LOCAL_BANK_FIELD;
+        break;
+
+      case AML_INDEX_FIELD_OP:
+
+        Arg = AcpiPsGetArg(Op, 3);
+        Type = ACPI_TYPE_LOCAL_INDEX_FIELD;
+        break;
+
+      default:
+
+        return_ACPI_STATUS(AE_BAD_PARAMETER);
+      }
+
+      /* Creating new namespace node(s), should not already exist */
+
+      Flags = ACPI_NS_NO_UPSEARCH | ACPI_NS_DONT_OPEN_SCOPE |
+              ACPI_NS_ERROR_IF_FOUND;
+
+      /*
+       * Mark node(s) temporary if we are executing a normal control
+       * method. (Don't mark if this is a module-level code method)
+       */
+      if (WalkState->MethodNode &&
+          !(WalkState->ParseFlags & ACPI_PARSE_MODULE_LEVEL)) {
+        Flags |= ACPI_NS_TEMPORARY;
+      }
+
+      /*
+       * Walk the list of entries in the FieldList
+       * Note: FieldList can be of zero length. In this case, Arg will be NULL.
+       */
+      while (Arg) {
+        /*
+         * Ignore OFFSET/ACCESSAS/CONNECTION terms here; we are only interested
+         * in the field names in order to enter them into the namespace.
+         */
+        if (Arg->Common.AmlOpcode == AML_INT_NAMEDFIELD_OP) {
+          Status =
+              AcpiNsLookup(WalkState->ScopeInfo, (char *)&Arg->Named.Name, Type,
+                           ACPI_IMODE_LOAD_PASS1, Flags, WalkState, &Node);
+          if (ACPI_FAILURE(Status)) {
+            ACPI_ERROR_NAMESPACE((char *)&Arg->Named.Name, Status);
+            if (Status != AE_ALREADY_EXISTS) {
+              return_ACPI_STATUS(Status);
+            }
+
+            /* Name already exists, just ignore this error */
+
+            Status = AE_OK;
+          }
+
+          Arg->Common.Node = Node;
+        }
+
+        /* Get the next field element in the list */
+
+        Arg = Arg->Common.Next;
+      }
+
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateBankField
+     *
+     * PARAMETERS:  Op              - Op containing the Field definition and
+     *args RegionNode      - Object for the containing Operation Region
+     *              WalkState       - Current method state
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Create a new bank field in the specified operation region
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsCreateBankField(ACPI_PARSE_OBJECT * Op,
+                          ACPI_NAMESPACE_NODE * RegionNode,
+                          ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      ACPI_PARSE_OBJECT *Arg;
+      ACPI_CREATE_FIELD_INFO Info;
+
+      ACPI_FUNCTION_TRACE_PTR(DsCreateBankField, Op);
+
+      /* First arg is the name of the parent OpRegion (must already exist) */
+
+      Arg = Op->Common.Value.Arg;
+      if (!RegionNode) {
+        Status = AcpiNsLookup(WalkState->ScopeInfo, Arg->Common.Value.Name,
+                              ACPI_TYPE_REGION, ACPI_IMODE_EXECUTE,
+                              ACPI_NS_SEARCH_PARENT, WalkState, &RegionNode);
+#ifdef ACPI_ASL_COMPILER
+        Status = AcpiDsCreateExternalRegion(Status, Arg, Arg->Common.Value.Name,
+                                            WalkState, &RegionNode);
+#endif
+        if (ACPI_FAILURE(Status)) {
+          ACPI_ERROR_NAMESPACE(Arg->Common.Value.Name, Status);
+          return_ACPI_STATUS(Status);
+        }
+      }
+
+      /* Second arg is the Bank Register (Field) (must already exist) */
+
+      Arg = Arg->Common.Next;
+      Status =
+          AcpiNsLookup(WalkState->ScopeInfo, Arg->Common.Value.String,
+                       ACPI_TYPE_ANY, ACPI_IMODE_EXECUTE, ACPI_NS_SEARCH_PARENT,
+                       WalkState, &Info.RegisterNode);
+      if (ACPI_FAILURE(Status)) {
+        ACPI_ERROR_NAMESPACE(Arg->Common.Value.String, Status);
+        return_ACPI_STATUS(Status);
+      }
+
+      /*
+       * Third arg is the BankValue
+       * This arg is a TermArg, not a constant
+       * It will be evaluated later, by AcpiDsEvalBankFieldOperands
+       */
+      Arg = Arg->Common.Next;
+
+      /* Fourth arg is the field flags */
+
+      Arg = Arg->Common.Next;
+      Info.FieldFlags = (UINT8)Arg->Common.Value.Integer;
+
+      /* Each remaining arg is a Named Field */
+
+      Info.FieldType = ACPI_TYPE_LOCAL_BANK_FIELD;
+      Info.RegionNode = RegionNode;
+
+      /*
+       * Use Info.DataRegisterNode to store BankField Op
+       * It's safe because DataRegisterNode will never be used when create bank
+       * field We store AmlStart and AmlLength in the BankField Op for late
+       * evaluation Used in AcpiExPrepFieldValue(Info)
+       *
+       * TBD: Or, should we add a field in ACPI_CREATE_FIELD_INFO, like "void
+       * *ParentOp"?
+       */
+      Info.DataRegisterNode = (ACPI_NAMESPACE_NODE *)Op;
+
+      Status = AcpiDsGetFieldNames(&Info, WalkState, Arg->Common.Next);
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateIndexField
+     *
+     * PARAMETERS:  Op              - Op containing the Field definition and
+     *args RegionNode      - Object for the containing Operation Region `
+     *WalkState       - Current method state
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Create a new index field in the specified operation region
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsCreateIndexField(ACPI_PARSE_OBJECT * Op,
+                           ACPI_NAMESPACE_NODE * RegionNode,
+                           ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      ACPI_PARSE_OBJECT *Arg;
+      ACPI_CREATE_FIELD_INFO Info;
+
+      ACPI_FUNCTION_TRACE_PTR(DsCreateIndexField, Op);
+
+      /* First arg is the name of the Index register (must already exist) */
+
+      Arg = Op->Common.Value.Arg;
+      Status =
+          AcpiNsLookup(WalkState->ScopeInfo, Arg->Common.Value.String,
+                       ACPI_TYPE_ANY, ACPI_IMODE_EXECUTE, ACPI_NS_SEARCH_PARENT,
+                       WalkState, &Info.RegisterNode);
+      if (ACPI_FAILURE(Status)) {
+        ACPI_ERROR_NAMESPACE(Arg->Common.Value.String, Status);
+        return_ACPI_STATUS(Status);
+      }
+
+      /* Second arg is the data register (must already exist) */
+
+      Arg = Arg->Common.Next;
+      Status =
+          AcpiNsLookup(WalkState->ScopeInfo, Arg->Common.Value.String,
+                       ACPI_TYPE_ANY, ACPI_IMODE_EXECUTE, ACPI_NS_SEARCH_PARENT,
+                       WalkState, &Info.DataRegisterNode);
+      if (ACPI_FAILURE(Status)) {
+        ACPI_ERROR_NAMESPACE(Arg->Common.Value.String, Status);
+        return_ACPI_STATUS(Status);
+      }
+
+      /* Next arg is the field flags */
+
+      Arg = Arg->Common.Next;
+      Info.FieldFlags = (UINT8)Arg->Common.Value.Integer;
+
+      /* Each remaining arg is a Named Field */
+
+      Info.FieldType = ACPI_TYPE_LOCAL_INDEX_FIELD;
+      Info.RegionNode = RegionNode;
+
+      Status = AcpiDsGetFieldNames(&Info, WalkState, Arg->Common.Next);
+      return_ACPI_STATUS(Status);
+    }
+
+    /**
+     * @section minix_drivers_power_acpi_dispatcher_dsinit_c
+     * @brief Original file: minix/drivers/power/acpi/dispatcher/dsinit.c
+     */
+    /******************************************************************************
+     *
+     * Module Name: dsinit - Object initialization namespace walk
+     *
+     *****************************************************************************/
+
+    /*
+     * Copyright (C) 2000 - 2014, Intel Corp.
+     * All rights reserved.
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions, and the following disclaimer,
+     *    without modification.
+     * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+     *    substantially similar to the "NO WARRANTY" disclaimer below
+     *    ("Disclaimer") and any redistribution must be conditioned upon
+     *    including a substantially similar Disclaimer requirement for further
+     *    binary redistribution.
+     * 3. Neither the names of the above-listed copyright holders nor the names
+     *    of any contributors may be used to endorse or promote products derived
+     *    from this software without specific prior written permission.
+     *
+     * Alternatively, this software may be distributed under the terms of the
+     * GNU General Public License ("GPL") version 2 as published by the Free
+     * Software Foundation.
+     *
+     * NO WARRANTY
+     * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+     * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+     * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+     * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+     * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR
+     * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+     * THE POSSIBILITY OF SUCH DAMAGES.
+     */
+
+#include "accommon.h"
+#include "acdispat.h"
+#include "acnamesp.h"
+#include "acpi.h"
+#include "actables.h"
+
+#define _COMPONENT ACPI_DISPATCHER
+    ACPI_MODULE_NAME("dsinit")
+
+    /* Local prototypes */
+
+    static ACPI_STATUS AcpiDsInitOneObject(ACPI_HANDLE ObjHandle, UINT32 Level,
+                                           void *Context, void **ReturnValue);
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsInitOneObject
+     *
+     * PARAMETERS:  ObjHandle       - Node for the object
+     *              Level           - Current nesting level
+     *              Context         - Points to a init info struct
+     *              ReturnValue     - Not used
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Callback from AcpiWalkNamespace. Invoked for every object
+     *              within the namespace.
+     *
+     *              Currently, the only objects that require initialization are:
+     *              1) Methods
+     *              2) Operation Regions
+     *
+     ******************************************************************************/
+
+    static ACPI_STATUS AcpiDsInitOneObject(ACPI_HANDLE ObjHandle, UINT32 Level,
+                                           void *Context, void **ReturnValue) {
+      ACPI_INIT_WALK_INFO *Info = (ACPI_INIT_WALK_INFO *)Context;
+      ACPI_NAMESPACE_NODE *Node = (ACPI_NAMESPACE_NODE *)ObjHandle;
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+
+      ACPI_FUNCTION_ENTRY();
+
+      /*
+       * We are only interested in NS nodes owned by the table that
+       * was just loaded
+       */
+      if (Node->OwnerId != Info->OwnerId) {
+        return (AE_OK);
+      }
+
+      Info->ObjectCount++;
+
+      /* And even then, we are only interested in a few object types */
+
+      switch (AcpiNsGetType(ObjHandle)) {
+      case ACPI_TYPE_REGION:
+
+        Status = AcpiDsInitializeRegion(ObjHandle);
+        if (ACPI_FAILURE(Status)) {
+          ACPI_EXCEPTION((AE_INFO, Status,
+                          "During Region initialization %p [%4.4s]", ObjHandle,
+                          AcpiUtGetNodeName(ObjHandle)));
+        }
+
+        Info->OpRegionCount++;
+        break;
+
+      case ACPI_TYPE_METHOD:
+        /*
+         * Auto-serialization support. We will examine each method that is
+         * NotSerialized to determine if it creates any Named objects. If
+         * it does, it will be marked serialized to prevent problems if
+         * the method is entered by two or more threads and an attempt is
+         * made to create the same named object twice -- which results in
+         * an AE_ALREADY_EXISTS exception and method abort.
+         */
+        Info->MethodCount++;
+        ObjDesc = AcpiNsGetAttachedObject(Node);
+        if (!ObjDesc) {
+          break;
+        }
+
+        /* Ignore if already serialized */
+
+        if (ObjDesc->Method.InfoFlags & ACPI_METHOD_SERIALIZED) {
+          Info->SerialMethodCount++;
+          break;
+        }
+
+        if (AcpiGbl_AutoSerializeMethods) {
+          /* Parse/scan method and serialize it if necessary */
+
+          AcpiDsAutoSerializeMethod(Node, ObjDesc);
+          if (ObjDesc->Method.InfoFlags & ACPI_METHOD_SERIALIZED) {
+            /* Method was just converted to Serialized */
+
+            Info->SerialMethodCount++;
+            Info->SerializedMethodCount++;
+            break;
+          }
+        }
+
+        Info->NonSerialMethodCount++;
+        break;
+
+      case ACPI_TYPE_DEVICE:
+
+        Info->DeviceCount++;
+        break;
+
+      default:
+
+        break;
+      }
+
+      /*
+       * We ignore errors from above, and always return OK, since
+       * we don't want to abort the walk on a single error.
+       */
+      return (AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsInitializeObjects
+     *
+     * PARAMETERS:  TableDesc       - Descriptor for parent ACPI table
+     *              StartNode       - Root of subtree to be initialized.
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Walk the namespace starting at "StartNode" and perform any
+     *              necessary initialization on the objects found therein
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsInitializeObjects(UINT32 TableIndex,
+                            ACPI_NAMESPACE_NODE * StartNode) {
+      ACPI_STATUS Status;
+      ACPI_INIT_WALK_INFO Info;
+      ACPI_TABLE_HEADER *Table;
+      ACPI_OWNER_ID OwnerId;
+
+      ACPI_FUNCTION_TRACE(DsInitializeObjects);
+
+      Status = AcpiTbGetOwnerId(TableIndex, &OwnerId);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      ACPI_DEBUG_PRINT(
+          (ACPI_DB_DISPATCH,
+           "**** Starting initialization of namespace objects ****\n"));
+
+      /* Set all init info to zero */
+
+      ACPI_MEMSET(&Info, 0, sizeof(ACPI_INIT_WALK_INFO));
+
+      Info.OwnerId = OwnerId;
+      Info.TableIndex = TableIndex;
+
+      /* Walk entire namespace from the supplied root */
+
+      Status = AcpiUtAcquireMutex(ACPI_MTX_NAMESPACE);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      /*
+       * We don't use AcpiWalkNamespace since we do not want to acquire
+       * the namespace reader lock.
+       */
+      Status = AcpiNsWalkNamespace(ACPI_TYPE_ANY, StartNode, ACPI_UINT32_MAX,
+                                   ACPI_NS_WALK_UNLOCK, AcpiDsInitOneObject,
+                                   NULL, &Info, NULL);
+      if (ACPI_FAILURE(Status)) {
+        ACPI_EXCEPTION((AE_INFO, Status, "During WalkNamespace"));
+      }
+      (void)AcpiUtReleaseMutex(ACPI_MTX_NAMESPACE);
+
+      Status = AcpiGetTableByIndex(TableIndex, &Table);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      ACPI_DEBUG_PRINT_RAW(
+          (ACPI_DB_INIT,
+           "Table [%4.4s] (id %4.4X) - %4u Objects with %3u Devices, "
+           "%3u Regions, %3u Methods (%u/%u/%u Serial/Non/Cvt)\n",
+           Table->Signature, OwnerId, Info.ObjectCount, Info.DeviceCount,
+           Info.OpRegionCount, Info.MethodCount, Info.SerialMethodCount,
+           Info.NonSerialMethodCount, Info.SerializedMethodCount));
+
+      ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH, "%u Methods, %u Regions\n",
+                        Info.MethodCount, Info.OpRegionCount));
+
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /**
+     * @section minix_drivers_power_acpi_dispatcher_dsmethod_c
+     * @brief Original file: minix/drivers/power/acpi/dispatcher/dsmethod.c
+     */
+    /******************************************************************************
+     *
+     * Module Name: dsmethod - Parser/Interpreter interface - control method
+     *parsing
+     *
+     *****************************************************************************/
+
+    /*
+     * Copyright (C) 2000 - 2014, Intel Corp.
+     * All rights reserved.
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions, and the following disclaimer,
+     *    without modification.
+     * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+     *    substantially similar to the "NO WARRANTY" disclaimer below
+     *    ("Disclaimer") and any redistribution must be conditioned upon
+     *    including a substantially similar Disclaimer requirement for further
+     *    binary redistribution.
+     * 3. Neither the names of the above-listed copyright holders nor the names
+     *    of any contributors may be used to endorse or promote products derived
+     *    from this software without specific prior written permission.
+     *
+     * Alternatively, this software may be distributed under the terms of the
+     * GNU General Public License ("GPL") version 2 as published by the Free
+     * Software Foundation.
+     *
+     * NO WARRANTY
+     * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+     * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+     * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+     * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+     * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR
+     * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+     * THE POSSIBILITY OF SUCH DAMAGES.
+     */
+
+#include "accommon.h"
+#include "acdisasm.h"
+#include "acdispat.h"
+#include "acinterp.h"
+#include "acnamesp.h"
+#include "acparser.h"
+#include "acpi.h"
+#include "amlcode.h"
+
+#define _COMPONENT ACPI_DISPATCHER
+    ACPI_MODULE_NAME("dsmethod")
+
+    /* Local prototypes */
+
+    static ACPI_STATUS AcpiDsDetectNamedOpcodes(ACPI_WALK_STATE * WalkState,
+                                                ACPI_PARSE_OBJECT * *OutOp);
+
+    static ACPI_STATUS AcpiDsCreateMethodMutex(ACPI_OPERAND_OBJECT *
+                                               MethodDesc);
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsAutoSerializeMethod
+     *
+     * PARAMETERS:  Node                        - Namespace Node of the method
+     *              ObjDesc                     - Method object attached to node
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Parse a control method AML to scan for control methods that
+     *              need serialization due to the creation of named objects.
+     *
+     * NOTE: It is a bit of overkill to mark all such methods serialized, since
+     * there is only a problem if the method actually blocks during execution.
+     * A blocking operation is, for example, a Sleep() operation, or any access
+     * to an operation region. However, it is probably not possible to easily
+     * detect whether a method will block or not, so we simply mark all
+     *suspicious methods as serialized.
+     *
+     * NOTE2: This code is essentially a generic routine for parsing a single
+     * control method.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsAutoSerializeMethod(ACPI_NAMESPACE_NODE * Node,
+                              ACPI_OPERAND_OBJECT * ObjDesc) {
+      ACPI_STATUS Status;
+      ACPI_PARSE_OBJECT *Op = NULL;
+      ACPI_WALK_STATE *WalkState;
+
+      ACPI_FUNCTION_TRACE_PTR(DsAutoSerializeMethod, Node);
+
+      ACPI_DEBUG_PRINT((ACPI_DB_PARSE,
+                        "Method auto-serialization parse [%4.4s] %p\n",
+                        AcpiUtGetNodeName(Node), Node));
+
+      /* Create/Init a root op for the method parse tree */
+
+      Op = AcpiPsAllocOp(AML_METHOD_OP);
+      if (!Op) {
+        return_ACPI_STATUS(AE_NO_MEMORY);
+      }
+
+      AcpiPsSetName(Op, Node->Name.Integer);
+      Op->Common.Node = Node;
+
+      /* Create and initialize a new walk state */
+
+      WalkState = AcpiDsCreateWalkState(Node->OwnerId, NULL, NULL, NULL);
+      if (!WalkState) {
+        return_ACPI_STATUS(AE_NO_MEMORY);
+      }
+
+      Status = AcpiDsInitAmlWalk(WalkState, Op, Node, ObjDesc->Method.AmlStart,
+                                 ObjDesc->Method.AmlLength, NULL, 0);
+      if (ACPI_FAILURE(Status)) {
+        AcpiDsDeleteWalkState(WalkState);
+        return_ACPI_STATUS(Status);
+      }
+
+      WalkState->DescendingCallback = AcpiDsDetectNamedOpcodes;
+
+      /* Parse the method, scan for creation of named objects */
+
+      Status = AcpiPsParseAml(WalkState);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      AcpiPsDeleteParseTree(Op);
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsDetectNamedOpcodes
+     *
+     * PARAMETERS:  WalkState       - Current state of the parse tree walk
+     *              OutOp           - Unused, required for parser interface
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Descending callback used during the loading of ACPI tables.
+     *              Currently used to detect methods that must be marked
+     *serialized in order to avoid problems with the creation of named objects.
+     *
+     ******************************************************************************/
+
+    static ACPI_STATUS AcpiDsDetectNamedOpcodes(ACPI_WALK_STATE * WalkState,
+                                                ACPI_PARSE_OBJECT * *OutOp) {
+
+      ACPI_FUNCTION_NAME(AcpiDsDetectNamedOpcodes);
+
+      /* We are only interested in opcodes that create a new name */
+
+      if (!(WalkState->OpInfo->Flags & (AML_NAMED | AML_CREATE | AML_FIELD))) {
+        return (AE_OK);
+      }
+
+      /*
+       * At this point, we know we have a Named object opcode.
+       * Mark the method as serialized. Later code will create a mutex for
+       * this method to enforce serialization.
+       *
+       * Note, ACPI_METHOD_IGNORE_SYNC_LEVEL flag means that we will ignore the
+       * Sync Level mechanism for this method, even though it is now serialized.
+       * Otherwise, there can be conflicts with existing ASL code that actually
+       * uses sync levels.
+       */
+      WalkState->MethodDesc->Method.SyncLevel = 0;
+      WalkState->MethodDesc->Method.InfoFlags |=
+          (ACPI_METHOD_SERIALIZED | ACPI_METHOD_IGNORE_SYNC_LEVEL);
+
+      ACPI_DEBUG_PRINT(
+          (ACPI_DB_INFO, "Method serialized [%4.4s] %p - [%s] (%4.4X)\n",
+           WalkState->MethodNode->Name.Ascii, WalkState->MethodNode,
+           WalkState->OpInfo->Name, WalkState->Opcode));
+
+      /* Abort the parse, no need to examine this method any further */
+
+      return (AE_CTRL_TERMINATE);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodError
+     *
+     * PARAMETERS:  Status          - Execution status
+     *              WalkState       - Current state
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Called on method error. Invoke the global exception handler
+     *if present, dump the method data if the disassembler is configured
+     *
+     *              Note: Allows the exception handler to change the status code
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsMethodError(ACPI_STATUS Status, ACPI_WALK_STATE * WalkState) {
+      ACPI_FUNCTION_ENTRY();
+
+      /* Ignore AE_OK and control exception codes */
+
+      if (ACPI_SUCCESS(Status) || (Status & AE_CODE_CONTROL)) {
+        return (Status);
+      }
+
+      /* Invoke the global exception handler */
+
+      if (AcpiGbl_ExceptionHandler) {
+        /* Exit the interpreter, allow handler to execute methods */
+
+        AcpiExExitInterpreter();
+
+        /*
+         * Handler can map the exception code to anything it wants, including
+         * AE_OK, in which case the executing method will not be aborted.
+         */
+        Status = AcpiGbl_ExceptionHandler(
+            Status,
+            WalkState->MethodNode ? WalkState->MethodNode->Name.Integer : 0,
+            WalkState->Opcode, WalkState->AmlOffset, NULL);
+        AcpiExEnterInterpreter();
+      }
+
+      AcpiDsClearImplicitReturn(WalkState);
+
+#ifdef ACPI_DISASSEMBLER
+      if (ACPI_FAILURE(Status)) {
+        /* Display method locals/args if disassembler is present */
+
+        AcpiDmDumpMethodInfo(Status, WalkState, WalkState->Op);
+      }
+#endif
+
+      return (Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateMethodMutex
+     *
+     * PARAMETERS:  ObjDesc             - The method object
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Create a mutex object for a serialized control method
+     *
+     ******************************************************************************/
+
+    static ACPI_STATUS AcpiDsCreateMethodMutex(ACPI_OPERAND_OBJECT *
+                                               MethodDesc) {
+      ACPI_OPERAND_OBJECT *MutexDesc;
+      ACPI_STATUS Status;
+
+      ACPI_FUNCTION_TRACE(DsCreateMethodMutex);
+
+      /* Create the new mutex object */
+
+      MutexDesc = AcpiUtCreateInternalObject(ACPI_TYPE_MUTEX);
+      if (!MutexDesc) {
+        return_ACPI_STATUS(AE_NO_MEMORY);
+      }
+
+      /* Create the actual OS Mutex */
+
+      Status = AcpiOsCreateMutex(&MutexDesc->Mutex.OsMutex);
+      if (ACPI_FAILURE(Status)) {
+        AcpiUtDeleteObjectDesc(MutexDesc);
+        return_ACPI_STATUS(Status);
+      }
+
+      MutexDesc->Mutex.SyncLevel = MethodDesc->Method.SyncLevel;
+      MethodDesc->Method.Mutex = MutexDesc;
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsBeginMethodExecution
+     *
+     * PARAMETERS:  MethodNode          - Node of the method
+     *              ObjDesc             - The method object
+     *              WalkState           - current state, NULL if not yet
+     *executing a method.
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Prepare a method for execution. Parses the method if
+     *necessary, increments the thread count, and waits at the method semaphore
+     *              for clearance to execute.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsBeginMethodExecution(ACPI_NAMESPACE_NODE * MethodNode,
+                               ACPI_OPERAND_OBJECT * ObjDesc,
+                               ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status = AE_OK;
+
+      ACPI_FUNCTION_TRACE_PTR(DsBeginMethodExecution, MethodNode);
+
+      if (!MethodNode) {
+        return_ACPI_STATUS(AE_NULL_ENTRY);
+      }
+
+      /* Prevent wraparound of thread count */
+
+      if (ObjDesc->Method.ThreadCount == ACPI_UINT8_MAX) {
+        ACPI_ERROR((AE_INFO, "Method reached maximum reentrancy limit (255)"));
+        return_ACPI_STATUS(AE_AML_METHOD_LIMIT);
+      }
+
+      /*
+       * If this method is serialized, we need to acquire the method mutex.
+       */
+      if (ObjDesc->Method.InfoFlags & ACPI_METHOD_SERIALIZED) {
+        /*
+         * Create a mutex for the method if it is defined to be Serialized
+         * and a mutex has not already been created. We defer the mutex creation
+         * until a method is actually executed, to minimize the object count
+         */
+        if (!ObjDesc->Method.Mutex) {
+          Status = AcpiDsCreateMethodMutex(ObjDesc);
+          if (ACPI_FAILURE(Status)) {
+            return_ACPI_STATUS(Status);
+          }
+        }
+
+        /*
+         * The CurrentSyncLevel (per-thread) must be less than or equal to
+         * the sync level of the method. This mechanism provides some
+         * deadlock prevention.
+         *
+         * If the method was auto-serialized, we just ignore the sync level
+         * mechanism, because auto-serialization of methods can interfere
+         * with ASL code that actually uses sync levels.
+         *
+         * Top-level method invocation has no walk state at this point
+         */
+        if (WalkState &&
+            (!(ObjDesc->Method.InfoFlags & ACPI_METHOD_IGNORE_SYNC_LEVEL)) &&
+            (WalkState->Thread->CurrentSyncLevel >
+             ObjDesc->Method.Mutex->Mutex.SyncLevel)) {
+          ACPI_ERROR((AE_INFO,
+                      "Cannot acquire Mutex for method [%4.4s], current "
+                      "SyncLevel is too large (%u)",
+                      AcpiUtGetNodeName(MethodNode),
+                      WalkState->Thread->CurrentSyncLevel));
+
+          return_ACPI_STATUS(AE_AML_MUTEX_ORDER);
+        }
+
+        /*
+         * Obtain the method mutex if necessary. Do not acquire mutex for a
+         * recursive call.
+         */
+        if (!WalkState || !ObjDesc->Method.Mutex->Mutex.ThreadId ||
+            (WalkState->Thread->ThreadId !=
+             ObjDesc->Method.Mutex->Mutex.ThreadId)) {
+          /*
+           * Acquire the method mutex. This releases the interpreter if we
+           * block (and reacquires it before it returns)
+           */
+          Status = AcpiExSystemWaitMutex(ObjDesc->Method.Mutex->Mutex.OsMutex,
+                                         ACPI_WAIT_FOREVER);
+          if (ACPI_FAILURE(Status)) {
+            return_ACPI_STATUS(Status);
+          }
+
+          /* Update the mutex and walk info and save the original SyncLevel */
+
+          if (WalkState) {
+            ObjDesc->Method.Mutex->Mutex.OriginalSyncLevel =
+                WalkState->Thread->CurrentSyncLevel;
+
+            ObjDesc->Method.Mutex->Mutex.ThreadId = WalkState->Thread->ThreadId;
+            WalkState->Thread->CurrentSyncLevel = ObjDesc->Method.SyncLevel;
+          } else {
+            ObjDesc->Method.Mutex->Mutex.OriginalSyncLevel =
+                ObjDesc->Method.Mutex->Mutex.SyncLevel;
+          }
+        }
+
+        /* Always increase acquisition depth */
+
+        ObjDesc->Method.Mutex->Mutex.AcquisitionDepth++;
+      }
+
+      /*
+       * Allocate an Owner ID for this method, only if this is the first thread
+       * to begin concurrent execution. We only need one OwnerId, even if the
+       * method is invoked recursively.
+       */
+      if (!ObjDesc->Method.OwnerId) {
+        Status = AcpiUtAllocateOwnerId(&ObjDesc->Method.OwnerId);
+        if (ACPI_FAILURE(Status)) {
+          goto Cleanup;
+        }
+      }
+
+      /*
+       * Increment the method parse tree thread count since it has been
+       * reentered one more time (even if it is the same thread)
+       */
+      ObjDesc->Method.ThreadCount++;
+      AcpiMethodCount++;
+      return_ACPI_STATUS(Status);
+
+    Cleanup:
+      /* On error, must release the method mutex (if present) */
+
+      if (ObjDesc->Method.Mutex) {
+        AcpiOsReleaseMutex(ObjDesc->Method.Mutex->Mutex.OsMutex);
+      }
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCallControlMethod
+     *
+     * PARAMETERS:  Thread              - Info for this thread
+     *              ThisWalkState       - Current walk state
+     *              Op                  - Current Op to be walked
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Transfer execution to a called control method
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsCallControlMethod(ACPI_THREAD_STATE * Thread,
+                            ACPI_WALK_STATE * ThisWalkState,
+                            ACPI_PARSE_OBJECT * Op) {
+      ACPI_STATUS Status;
+      ACPI_NAMESPACE_NODE *MethodNode;
+      ACPI_WALK_STATE *NextWalkState = NULL;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_EVALUATE_INFO *Info;
+      UINT32 i;
+
+      ACPI_FUNCTION_TRACE_PTR(DsCallControlMethod, ThisWalkState);
+
+      ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH,
+                        "Calling method %p, currentstate=%p\n",
+                        ThisWalkState->PrevOp, ThisWalkState));
+
+      /*
+       * Get the namespace entry for the control method we are about to call
+       */
+      MethodNode = ThisWalkState->MethodCallNode;
+      if (!MethodNode) {
+        return_ACPI_STATUS(AE_NULL_ENTRY);
+      }
+
+      ObjDesc = AcpiNsGetAttachedObject(MethodNode);
+      if (!ObjDesc) {
+        return_ACPI_STATUS(AE_NULL_OBJECT);
+      }
+
+      /* Init for new method, possibly wait on method mutex */
+
+      Status = AcpiDsBeginMethodExecution(MethodNode, ObjDesc, ThisWalkState);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      /* Begin method parse/execution. Create a new walk state */
+
+      NextWalkState =
+          AcpiDsCreateWalkState(ObjDesc->Method.OwnerId, NULL, ObjDesc, Thread);
+      if (!NextWalkState) {
+        Status = AE_NO_MEMORY;
+        goto Cleanup;
+      }
+
+      /*
+       * The resolved arguments were put on the previous walk state's operand
+       * stack. Operands on the previous walk state stack always
+       * start at index 0. Also, null terminate the list of arguments
+       */
+      ThisWalkState->Operands[ThisWalkState->NumOperands] = NULL;
+
+      /*
+       * Allocate and initialize the evaluation information block
+       * TBD: this is somewhat inefficient, should change interface to
+       * DsInitAmlWalk. For now, keeps this struct off the CPU stack
+       */
+      Info = ACPI_ALLOCATE_ZEROED(sizeof(ACPI_EVALUATE_INFO));
+      if (!Info) {
+        Status = AE_NO_MEMORY;
+        goto Cleanup;
+      }
+
+      Info->Parameters = &ThisWalkState->Operands[0];
+
+      Status = AcpiDsInitAmlWalk(
+          NextWalkState, NULL, MethodNode, ObjDesc->Method.AmlStart,
+          ObjDesc->Method.AmlLength, Info, ACPI_IMODE_EXECUTE);
+
+      ACPI_FREE(Info);
+      if (ACPI_FAILURE(Status)) {
+        goto Cleanup;
+      }
+
+      /*
+       * Delete the operands on the previous walkstate operand stack
+       * (they were copied to new objects)
+       */
+      for (i = 0; i < ObjDesc->Method.ParamCount; i++) {
+        AcpiUtRemoveReference(ThisWalkState->Operands[i]);
+        ThisWalkState->Operands[i] = NULL;
+      }
+
+      /* Clear the operand stack */
+
+      ThisWalkState->NumOperands = 0;
+
+      ACPI_DEBUG_PRINT(
+          (ACPI_DB_DISPATCH,
+           "**** Begin nested execution of [%4.4s] **** WalkState=%p\n",
+           MethodNode->Name.Ascii, NextWalkState));
+
+      /* Invoke an internal method if necessary */
+
+      if (ObjDesc->Method.InfoFlags & ACPI_METHOD_INTERNAL_ONLY) {
+        Status = ObjDesc->Method.Dispatch.Implementation(NextWalkState);
+        if (Status == AE_OK) {
+          Status = AE_CTRL_TERMINATE;
+        }
+      }
+
+      return_ACPI_STATUS(Status);
+
+    Cleanup:
+
+      /* On error, we must terminate the method properly */
+
+      AcpiDsTerminateControlMethod(ObjDesc, NextWalkState);
+      if (NextWalkState) {
+        AcpiDsDeleteWalkState(NextWalkState);
+      }
+
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsRestartControlMethod
+     *
+     * PARAMETERS:  WalkState           - State for preempted method (caller)
+     *              ReturnDesc          - Return value from the called method
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Restart a method that was preempted by another (nested)
+     *method invocation. Handle the return value (if any) from the callee.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsRestartControlMethod(ACPI_WALK_STATE * WalkState,
+                               ACPI_OPERAND_OBJECT * ReturnDesc) {
+      ACPI_STATUS Status;
+      int SameAsImplicitReturn;
+
+      ACPI_FUNCTION_TRACE_PTR(DsRestartControlMethod, WalkState);
+
+      ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH,
+                        "****Restart [%4.4s] Op %p ReturnValueFromCallee %p\n",
+                        AcpiUtGetNodeName(WalkState->MethodNode),
+                        WalkState->MethodCallOp, ReturnDesc));
+
+      ACPI_DEBUG_PRINT(
+          (ACPI_DB_DISPATCH,
+           "    ReturnFromThisMethodUsed?=%X ResStack %p Walk %p\n",
+           WalkState->ReturnUsed, WalkState->Results, WalkState));
+
+      /* Did the called method return a value? */
+
+      if (ReturnDesc) {
+        /* Is the implicit return object the same as the return desc? */
+
+        SameAsImplicitReturn = (WalkState->ImplicitReturnObj == ReturnDesc);
+
+        /* Are we actually going to use the return value? */
+
+        if (WalkState->ReturnUsed) {
+          /* Save the return value from the previous method */
+
+          Status = AcpiDsResultPush(ReturnDesc, WalkState);
+          if (ACPI_FAILURE(Status)) {
+            AcpiUtRemoveReference(ReturnDesc);
+            return_ACPI_STATUS(Status);
+          }
+
+          /*
+           * Save as THIS method's return value in case it is returned
+           * immediately to yet another method
+           */
+          WalkState->ReturnDesc = ReturnDesc;
+        }
+
+        /*
+         * The following code is the optional support for the so-called
+         * "implicit return". Some AML code assumes that the last value of the
+         * method is "implicitly" returned to the caller, in the absence of an
+         * explicit return value.
+         *
+         * Just save the last result of the method as the return value.
+         *
+         * NOTE: this is optional because the ASL language does not actually
+         * support this behavior.
+         */
+        else if (!AcpiDsDoImplicitReturn(ReturnDesc, WalkState, FALSE) ||
+                 SameAsImplicitReturn) {
+          /*
+           * Delete the return value if it will not be used by the
+           * calling method or remove one reference if the explicit return
+           * is the same as the implicit return value.
+           */
+          AcpiUtRemoveReference(ReturnDesc);
+        }
+      }
+
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsTerminateControlMethod
+     *
+     * PARAMETERS:  MethodDesc          - Method object
+     *              WalkState           - State associated with the method
+     *
+     * RETURN:      None
+     *
+     * DESCRIPTION: Terminate a control method. Delete everything that the
+     *method created, delete all locals and arguments, and delete the parse tree
+     *if requested.
+     *
+     * MUTEX:       Interpreter is locked
+     *
+     ******************************************************************************/
+
+    void AcpiDsTerminateControlMethod(ACPI_OPERAND_OBJECT * MethodDesc,
+                                      ACPI_WALK_STATE * WalkState) {
+
+      ACPI_FUNCTION_TRACE_PTR(DsTerminateControlMethod, WalkState);
+
+      /* MethodDesc is required, WalkState is optional */
+
+      if (!MethodDesc) {
+        return_VOID;
+      }
+
+      if (WalkState) {
+        /* Delete all arguments and locals */
+
+        AcpiDsMethodDataDeleteAll(WalkState);
+
+        /*
+         * If method is serialized, release the mutex and restore the
+         * current sync level for this thread
+         */
+        if (MethodDesc->Method.Mutex) {
+          /* Acquisition Depth handles recursive calls */
+
+          MethodDesc->Method.Mutex->Mutex.AcquisitionDepth--;
+          if (!MethodDesc->Method.Mutex->Mutex.AcquisitionDepth) {
+            WalkState->Thread->CurrentSyncLevel =
+                MethodDesc->Method.Mutex->Mutex.OriginalSyncLevel;
+
+            AcpiOsReleaseMutex(MethodDesc->Method.Mutex->Mutex.OsMutex);
+            MethodDesc->Method.Mutex->Mutex.ThreadId = 0;
+          }
+        }
+
+        /*
+         * Delete any namespace objects created anywhere within the
+         * namespace by the execution of this method. Unless:
+         * 1) This method is a module-level executable code method, in which
+         *    case we want make the objects permanent.
+         * 2) There are other threads executing the method, in which case we
+         *    will wait until the last thread has completed.
+         */
+        if (!(MethodDesc->Method.InfoFlags & ACPI_METHOD_MODULE_LEVEL) &&
+            (MethodDesc->Method.ThreadCount == 1)) {
+          /* Delete any direct children of (created by) this method */
+
+          AcpiNsDeleteNamespaceSubtree(WalkState->MethodNode);
+
+          /*
+           * Delete any objects that were created by this method
+           * elsewhere in the namespace (if any were created).
+           * Use of the ACPI_METHOD_MODIFIED_NAMESPACE optimizes the
+           * deletion such that we don't have to perform an entire
+           * namespace walk for every control method execution.
+           */
+          if (MethodDesc->Method.InfoFlags & ACPI_METHOD_MODIFIED_NAMESPACE) {
+            AcpiNsDeleteNamespaceByOwner(MethodDesc->Method.OwnerId);
+            MethodDesc->Method.InfoFlags &= ~ACPI_METHOD_MODIFIED_NAMESPACE;
+          }
+        }
+      }
+
+      /* Decrement the thread count on the method */
+
+      if (MethodDesc->Method.ThreadCount) {
+        MethodDesc->Method.ThreadCount--;
+      } else {
+        ACPI_ERROR((AE_INFO, "Invalid zero thread count in method"));
+      }
+
+      /* Are there any other threads currently executing this method? */
+
+      if (MethodDesc->Method.ThreadCount) {
+        /*
+         * Additional threads. Do not release the OwnerId in this case,
+         * we immediately reuse it for the next thread executing this method
+         */
+        ACPI_DEBUG_PRINT(
+            (ACPI_DB_DISPATCH,
+             "*** Completed execution of one thread, %u threads remaining\n",
+             MethodDesc->Method.ThreadCount));
+      } else {
+        /* This is the only executing thread for this method */
+
+        /*
+         * Support to dynamically change a method from NotSerialized to
+         * Serialized if it appears that the method is incorrectly written and
+         * does not support multiple thread execution. The best example of this
+         * is if such a method creates namespace objects and blocks. A second
+         * thread will fail with an AE_ALREADY_EXISTS exception.
+         *
+         * This code is here because we must wait until the last thread exits
+         * before marking the method as serialized.
+         */
+        if (MethodDesc->Method.InfoFlags & ACPI_METHOD_SERIALIZED_PENDING) {
+          if (WalkState) {
+            ACPI_INFO((AE_INFO,
+                       "Marking method %4.4s as Serialized because of "
+                       "AE_ALREADY_EXISTS error",
+                       WalkState->MethodNode->Name.Ascii));
+          }
+
+          /*
+           * Method tried to create an object twice and was marked as
+           * "pending serialized". The probable cause is that the method
+           * cannot handle reentrancy.
+           *
+           * The method was created as NotSerialized, but it tried to create
+           * a named object and then blocked, causing the second thread
+           * entrance to begin and then fail. Workaround this problem by
+           * marking the method permanently as Serialized when the last
+           * thread exits here.
+           */
+          MethodDesc->Method.InfoFlags &= ~ACPI_METHOD_SERIALIZED_PENDING;
+          MethodDesc->Method.InfoFlags |=
+              (ACPI_METHOD_SERIALIZED | ACPI_METHOD_IGNORE_SYNC_LEVEL);
+          MethodDesc->Method.SyncLevel = 0;
+        }
+
+        /* No more threads, we can free the OwnerId */
+
+        if (!(MethodDesc->Method.InfoFlags & ACPI_METHOD_MODULE_LEVEL)) {
+          AcpiUtReleaseOwnerId(&MethodDesc->Method.OwnerId);
+        }
+      }
+
+      return_VOID;
+    }
+
+    /**
+     * @section minix_drivers_power_acpi_dispatcher_dsmthdat_c
+     * @brief Original file: minix/drivers/power/acpi/dispatcher/dsmthdat.c
+     */
+    /*******************************************************************************
+     *
+     * Module Name: dsmthdat - control method arguments and local variables
+     *
+     ******************************************************************************/
+
+    /*
+     * Copyright (C) 2000 - 2014, Intel Corp.
+     * All rights reserved.
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions, and the following disclaimer,
+     *    without modification.
+     * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+     *    substantially similar to the "NO WARRANTY" disclaimer below
+     *    ("Disclaimer") and any redistribution must be conditioned upon
+     *    including a substantially similar Disclaimer requirement for further
+     *    binary redistribution.
+     * 3. Neither the names of the above-listed copyright holders nor the names
+     *    of any contributors may be used to endorse or promote products derived
+     *    from this software without specific prior written permission.
+     *
+     * Alternatively, this software may be distributed under the terms of the
+     * GNU General Public License ("GPL") version 2 as published by the Free
+     * Software Foundation.
+     *
+     * NO WARRANTY
+     * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+     * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+     * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+     * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+     * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR
+     * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+     * THE POSSIBILITY OF SUCH DAMAGES.
+     */
+
+#include "accommon.h"
+#include "acdispat.h"
+#include "acinterp.h"
+#include "acnamesp.h"
+#include "acpi.h"
+
+#define _COMPONENT ACPI_DISPATCHER
+    ACPI_MODULE_NAME("dsmthdat")
+
+    /* Local prototypes */
+
+    static void AcpiDsMethodDataDeleteValue(UINT8 Type, UINT32 Index,
+                                            ACPI_WALK_STATE * WalkState);
+
+    static ACPI_STATUS AcpiDsMethodDataSetValue(UINT8 Type, UINT32 Index,
+                                                ACPI_OPERAND_OBJECT * Object,
+                                                ACPI_WALK_STATE * WalkState);
+
+#ifdef ACPI_OBSOLETE_FUNCTIONS
+    ACPI_OBJECT_TYPE
+    AcpiDsMethodDataGetType(UINT16 Opcode, UINT32 Index,
+                            ACPI_WALK_STATE * WalkState);
+#endif
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodDataInit
+     *
+     * PARAMETERS:  WalkState           - Current walk state object
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Initialize the data structures that hold the method's
+     *arguments and locals. The data struct is an array of namespace nodes for
+     *              each - this allows RefOf and DeRefOf to work properly for
+     *these special data types.
+     *
+     * NOTES:       WalkState fields are initialized to zero by the
+     *              ACPI_ALLOCATE_ZEROED().
+     *
+     *              A pseudo-Namespace Node is assigned to each argument and
+     *local so that RefOf() can return a pointer to the Node.
+     *
+     ******************************************************************************/
+
+    void AcpiDsMethodDataInit(ACPI_WALK_STATE * WalkState) {
+      UINT32 i;
+
+      ACPI_FUNCTION_TRACE(DsMethodDataInit);
+
+      /* Init the method arguments */
+
+      for (i = 0; i < ACPI_METHOD_NUM_ARGS; i++) {
+        ACPI_MOVE_32_TO_32(&WalkState->Arguments[i].Name, NAMEOF_ARG_NTE);
+        WalkState->Arguments[i].Name.Integer |= (i << 24);
+        WalkState->Arguments[i].DescriptorType = ACPI_DESC_TYPE_NAMED;
+        WalkState->Arguments[i].Type = ACPI_TYPE_ANY;
+        WalkState->Arguments[i].Flags = ANOBJ_METHOD_ARG;
+      }
+
+      /* Init the method locals */
+
+      for (i = 0; i < ACPI_METHOD_NUM_LOCALS; i++) {
+        ACPI_MOVE_32_TO_32(&WalkState->LocalVariables[i].Name,
+                           NAMEOF_LOCAL_NTE);
+
+        WalkState->LocalVariables[i].Name.Integer |= (i << 24);
+        WalkState->LocalVariables[i].DescriptorType = ACPI_DESC_TYPE_NAMED;
+        WalkState->LocalVariables[i].Type = ACPI_TYPE_ANY;
+        WalkState->LocalVariables[i].Flags = ANOBJ_METHOD_LOCAL;
+      }
+
+      return_VOID;
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodDataDeleteAll
+     *
+     * PARAMETERS:  WalkState           - Current walk state object
+     *
+     * RETURN:      None
+     *
+     * DESCRIPTION: Delete method locals and arguments. Arguments are only
+     *              deleted if this method was called from another method.
+     *
+     ******************************************************************************/
+
+    void AcpiDsMethodDataDeleteAll(ACPI_WALK_STATE * WalkState) {
+      UINT32 Index;
+
+      ACPI_FUNCTION_TRACE(DsMethodDataDeleteAll);
+
+      /* Detach the locals */
+
+      for (Index = 0; Index < ACPI_METHOD_NUM_LOCALS; Index++) {
+        if (WalkState->LocalVariables[Index].Object) {
+          ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "Deleting Local%u=%p\n", Index,
+                            WalkState->LocalVariables[Index].Object));
+
+          /* Detach object (if present) and remove a reference */
+
+          AcpiNsDetachObject(&WalkState->LocalVariables[Index]);
+        }
+      }
+
+      /* Detach the arguments */
+
+      for (Index = 0; Index < ACPI_METHOD_NUM_ARGS; Index++) {
+        if (WalkState->Arguments[Index].Object) {
+          ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "Deleting Arg%u=%p\n", Index,
+                            WalkState->Arguments[Index].Object));
+
+          /* Detach object (if present) and remove a reference */
+
+          AcpiNsDetachObject(&WalkState->Arguments[Index]);
+        }
+      }
+
+      return_VOID;
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodDataInitArgs
+     *
+     * PARAMETERS:  *Params         - Pointer to a parameter list for the method
+     *              MaxParamCount   - The arg count for this method
+     *              WalkState       - Current walk state object
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Initialize arguments for a method. The parameter list is a
+     *list of ACPI operand objects, either null terminated or whose length is
+     *defined by MaxParamCount.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsMethodDataInitArgs(ACPI_OPERAND_OBJECT * *Params,
+                             UINT32 MaxParamCount,
+                             ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      UINT32 Index = 0;
+
+      ACPI_FUNCTION_TRACE_PTR(DsMethodDataInitArgs, Params);
+
+      if (!Params) {
+        ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "No param list passed to method\n"));
+        return_ACPI_STATUS(AE_OK);
+      }
+
+      /* Copy passed parameters into the new method stack frame */
+
+      while ((Index < ACPI_METHOD_NUM_ARGS) && (Index < MaxParamCount) &&
+             Params[Index]) {
+        /*
+         * A valid parameter.
+         * Store the argument in the method/walk descriptor.
+         * Do not copy the arg in order to implement call by reference
+         */
+        Status = AcpiDsMethodDataSetValue(ACPI_REFCLASS_ARG, Index,
+                                          Params[Index], WalkState);
+        if (ACPI_FAILURE(Status)) {
+          return_ACPI_STATUS(Status);
+        }
+
+        Index++;
+      }
+
+      ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "%u args passed to method\n", Index));
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodDataGetNode
+     *
+     * PARAMETERS:  Type                - Either ACPI_REFCLASS_LOCAL or
+     *                                    ACPI_REFCLASS_ARG
+     *              Index               - Which Local or Arg whose type to get
+     *              WalkState           - Current walk state object
+     *              Node                - Where the node is returned.
+     *
+     * RETURN:      Status and node
+     *
+     * DESCRIPTION: Get the Node associated with a local or arg.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsMethodDataGetNode(UINT8 Type, UINT32 Index,
+                            ACPI_WALK_STATE * WalkState,
+                            ACPI_NAMESPACE_NODE * *Node) {
+      ACPI_FUNCTION_TRACE(DsMethodDataGetNode);
+
+      /*
+       * Method Locals and Arguments are supported
+       */
+      switch (Type) {
+      case ACPI_REFCLASS_LOCAL:
+
+        if (Index > ACPI_METHOD_MAX_LOCAL) {
+          ACPI_ERROR((AE_INFO, "Local index %u is invalid (max %u)", Index,
+                      ACPI_METHOD_MAX_LOCAL));
+          return_ACPI_STATUS(AE_AML_INVALID_INDEX);
+        }
+
+        /* Return a pointer to the pseudo-node */
+
+        *Node = &WalkState->LocalVariables[Index];
+        break;
+
+      case ACPI_REFCLASS_ARG:
+
+        if (Index > ACPI_METHOD_MAX_ARG) {
+          ACPI_ERROR((AE_INFO, "Arg index %u is invalid (max %u)", Index,
+                      ACPI_METHOD_MAX_ARG));
+          return_ACPI_STATUS(AE_AML_INVALID_INDEX);
+        }
+
+        /* Return a pointer to the pseudo-node */
+
+        *Node = &WalkState->Arguments[Index];
+        break;
+
+      default:
+
+        ACPI_ERROR((AE_INFO, "Type %u is invalid", Type));
+        return_ACPI_STATUS(AE_TYPE);
+      }
+
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodDataSetValue
+     *
+     * PARAMETERS:  Type                - Either ACPI_REFCLASS_LOCAL or
+     *                                    ACPI_REFCLASS_ARG
+     *              Index               - Which Local or Arg to get
+     *              Object              - Object to be inserted into the stack
+     *entry WalkState           - Current walk state object
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Insert an object onto the method stack at entry
+     *Opcode:Index. Note: There is no "implicit conversion" for locals.
+     *
+     ******************************************************************************/
+
+    static ACPI_STATUS AcpiDsMethodDataSetValue(UINT8 Type, UINT32 Index,
+                                                ACPI_OPERAND_OBJECT * Object,
+                                                ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      ACPI_NAMESPACE_NODE *Node;
+
+      ACPI_FUNCTION_TRACE(DsMethodDataSetValue);
+
+      ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "NewObj %p Type %2.2X, Refs=%u [%s]\n",
+                        Object, Type, Object->Common.ReferenceCount,
+                        AcpiUtGetTypeName(Object->Common.Type)));
+
+      /* Get the namespace node for the arg/local */
+
+      Status = AcpiDsMethodDataGetNode(Type, Index, WalkState, &Node);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      /*
+       * Increment ref count so object can't be deleted while installed.
+       * NOTE: We do not copy the object in order to preserve the call by
+       * reference semantics of ACPI Control Method invocation.
+       * (See ACPI Specification 2.0C)
+       */
+      AcpiUtAddReference(Object);
+
+      /* Install the object */
+
+      Node->Object = Object;
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodDataGetValue
+     *
+     * PARAMETERS:  Type                - Either ACPI_REFCLASS_LOCAL or
+     *                                    ACPI_REFCLASS_ARG
+     *              Index               - Which localVar or argument to get
+     *              WalkState           - Current walk state object
+     *              DestDesc            - Where Arg or Local value is returned
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Retrieve value of selected Arg or Local for this method
+     *              Used only in AcpiExResolveToValue().
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsMethodDataGetValue(UINT8 Type, UINT32 Index,
+                             ACPI_WALK_STATE * WalkState,
+                             ACPI_OPERAND_OBJECT * *DestDesc) {
+      ACPI_STATUS Status;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_OPERAND_OBJECT *Object;
+
+      ACPI_FUNCTION_TRACE(DsMethodDataGetValue);
+
+      /* Validate the object descriptor */
+
+      if (!DestDesc) {
+        ACPI_ERROR((AE_INFO, "Null object descriptor pointer"));
+        return_ACPI_STATUS(AE_BAD_PARAMETER);
+      }
+
+      /* Get the namespace node for the arg/local */
+
+      Status = AcpiDsMethodDataGetNode(Type, Index, WalkState, &Node);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      /* Get the object from the node */
+
+      Object = Node->Object;
+
+      /* Examine the returned object, it must be valid. */
+
+      if (!Object) {
+        /*
+         * Index points to uninitialized object.
+         * This means that either 1) The expected argument was
+         * not passed to the method, or 2) A local variable
+         * was referenced by the method (via the ASL)
+         * before it was initialized. Either case is an error.
+         */
+
+        /* If slack enabled, init the LocalX/ArgX to an Integer of value zero */
+
+        if (AcpiGbl_EnableInterpreterSlack) {
+          Object = AcpiUtCreateIntegerObject((UINT64)0);
+          if (!Object) {
+            return_ACPI_STATUS(AE_NO_MEMORY);
+          }
+
+          Node->Object = Object;
+        }
+
+        /* Otherwise, return the error */
+
+        else
+          switch (Type) {
+          case ACPI_REFCLASS_ARG:
+
+            ACPI_ERROR(
+                (AE_INFO, "Uninitialized Arg[%u] at node %p", Index, Node));
+
+            return_ACPI_STATUS(AE_AML_UNINITIALIZED_ARG);
+
+          case ACPI_REFCLASS_LOCAL:
+            /*
+             * No error message for this case, will be trapped again later to
+             * detect and ignore cases of Store(LocalX,LocalX)
+             */
+            return_ACPI_STATUS(AE_AML_UNINITIALIZED_LOCAL);
+
+          default:
+
+            ACPI_ERROR((AE_INFO, "Not a Arg/Local opcode: 0x%X", Type));
+            return_ACPI_STATUS(AE_AML_INTERNAL);
+          }
+      }
+
+      /*
+       * The Index points to an initialized and valid object.
+       * Return an additional reference to the object
+       */
+      *DestDesc = Object;
+      AcpiUtAddReference(Object);
+
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodDataDeleteValue
+     *
+     * PARAMETERS:  Type                - Either ACPI_REFCLASS_LOCAL or
+     *                                    ACPI_REFCLASS_ARG
+     *              Index               - Which localVar or argument to delete
+     *              WalkState           - Current walk state object
+     *
+     * RETURN:      None
+     *
+     * DESCRIPTION: Delete the entry at Opcode:Index. Inserts
+     *              a null into the stack slot after the object is deleted.
+     *
+     ******************************************************************************/
+
+    static void AcpiDsMethodDataDeleteValue(UINT8 Type, UINT32 Index,
+                                            ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_OPERAND_OBJECT *Object;
+
+      ACPI_FUNCTION_TRACE(DsMethodDataDeleteValue);
+
+      /* Get the namespace node for the arg/local */
+
+      Status = AcpiDsMethodDataGetNode(Type, Index, WalkState, &Node);
+      if (ACPI_FAILURE(Status)) {
+        return_VOID;
+      }
+
+      /* Get the associated object */
+
+      Object = AcpiNsGetAttachedObject(Node);
+
+      /*
+       * Undefine the Arg or Local by setting its descriptor
+       * pointer to NULL. Locals/Args can contain both
+       * ACPI_OPERAND_OBJECTS and ACPI_NAMESPACE_NODEs
+       */
+      Node->Object = NULL;
+
+      if ((Object) &&
+          (ACPI_GET_DESCRIPTOR_TYPE(Object) == ACPI_DESC_TYPE_OPERAND)) {
+        /*
+         * There is a valid object.
+         * Decrement the reference count by one to balance the
+         * increment when the object was stored.
+         */
+        AcpiUtRemoveReference(Object);
+      }
+
+      return_VOID;
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsStoreObjectToLocal
+     *
+     * PARAMETERS:  Type                - Either ACPI_REFCLASS_LOCAL or
+     *                                    ACPI_REFCLASS_ARG
+     *              Index               - Which Local or Arg to set
+     *              ObjDesc             - Value to be stored
+     *              WalkState           - Current walk state
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Store a value in an Arg or Local. The ObjDesc is installed
+     *              as the new value for the Arg or Local and the reference
+     *count for ObjDesc is incremented.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsStoreObjectToLocal(UINT8 Type, UINT32 Index,
+                             ACPI_OPERAND_OBJECT * ObjDesc,
+                             ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_OPERAND_OBJECT *CurrentObjDesc;
+      ACPI_OPERAND_OBJECT *NewObjDesc;
+
+      ACPI_FUNCTION_TRACE(DsStoreObjectToLocal);
+      ACPI_DEBUG_PRINT(
+          (ACPI_DB_EXEC, "Type=%2.2X Index=%u Obj=%p\n", Type, Index, ObjDesc));
+
+      /* Parameter validation */
+
+      if (!ObjDesc) {
+        return_ACPI_STATUS(AE_BAD_PARAMETER);
+      }
+
+      /* Get the namespace node for the arg/local */
+
+      Status = AcpiDsMethodDataGetNode(Type, Index, WalkState, &Node);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      CurrentObjDesc = AcpiNsGetAttachedObject(Node);
+      if (CurrentObjDesc == ObjDesc) {
+        ACPI_DEBUG_PRINT(
+            (ACPI_DB_EXEC, "Obj=%p already installed!\n", ObjDesc));
+        return_ACPI_STATUS(Status);
+      }
+
+      /*
+       * If the reference count on the object is more than one, we must
+       * take a copy of the object before we store. A reference count
+       * of exactly 1 means that the object was just created during the
+       * evaluation of an expression, and we can safely use it since it
+       * is not used anywhere else.
+       */
+      NewObjDesc = ObjDesc;
+      if (ObjDesc->Common.ReferenceCount > 1) {
+        Status = AcpiUtCopyIobjectToIobject(ObjDesc, &NewObjDesc, WalkState);
+        if (ACPI_FAILURE(Status)) {
+          return_ACPI_STATUS(Status);
+        }
+      }
+
+      /*
+       * If there is an object already in this slot, we either
+       * have to delete it, or if this is an argument and there
+       * is an object reference stored there, we have to do
+       * an indirect store!
+       */
+      if (CurrentObjDesc) {
+        /*
+         * Check for an indirect store if an argument
+         * contains an object reference (stored as an Node).
+         * We don't allow this automatic dereferencing for
+         * locals, since a store to a local should overwrite
+         * anything there, including an object reference.
+         *
+         * If both Arg0 and Local0 contain RefOf (Local4):
+         *
+         * Store (1, Arg0)             - Causes indirect store to local4
+         * Store (1, Local0)           - Stores 1 in local0, overwriting
+         *                                  the reference to local4
+         * Store (1, DeRefof (Local0)) - Causes indirect store to local4
+         *
+         * Weird, but true.
+         */
+        if (Type == ACPI_REFCLASS_ARG) {
+          /*
+           * If we have a valid reference object that came from RefOf(),
+           * do the indirect store
+           */
+          if ((ACPI_GET_DESCRIPTOR_TYPE(CurrentObjDesc) ==
+               ACPI_DESC_TYPE_OPERAND) &&
+              (CurrentObjDesc->Common.Type == ACPI_TYPE_LOCAL_REFERENCE) &&
+              (CurrentObjDesc->Reference.Class == ACPI_REFCLASS_REFOF)) {
+            ACPI_DEBUG_PRINT(
+                (ACPI_DB_EXEC,
+                 "Arg (%p) is an ObjRef(Node), storing in node %p\n",
+                 NewObjDesc, CurrentObjDesc));
+
+            /*
+             * Store this object to the Node (perform the indirect store)
+             * NOTE: No implicit conversion is performed, as per the ACPI
+             * specification rules on storing to Locals/Args.
+             */
+            Status = AcpiExStoreObjectToNode(
+                NewObjDesc, CurrentObjDesc->Reference.Object, WalkState,
+                ACPI_NO_IMPLICIT_CONVERSION);
+
+            /* Remove local reference if we copied the object above */
+
+            if (NewObjDesc != ObjDesc) {
+              AcpiUtRemoveReference(NewObjDesc);
+            }
+            return_ACPI_STATUS(Status);
+          }
+        }
+
+        /* Delete the existing object before storing the new one */
+
+        AcpiDsMethodDataDeleteValue(Type, Index, WalkState);
+      }
+
+      /*
+       * Install the Obj descriptor (*NewObjDesc) into
+       * the descriptor for the Arg or Local.
+       * (increments the object reference count by one)
+       */
+      Status = AcpiDsMethodDataSetValue(Type, Index, NewObjDesc, WalkState);
+
+      /* Remove local reference if we copied the object above */
+
+      if (NewObjDesc != ObjDesc) {
+        AcpiUtRemoveReference(NewObjDesc);
+      }
+
+      return_ACPI_STATUS(Status);
+    }
+
+#ifdef ACPI_OBSOLETE_FUNCTIONS
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsMethodDataGetType
+     *
+     * PARAMETERS:  Opcode              - Either AML_LOCAL_OP or AML_ARG_OP
+     *              Index               - Which Local or Arg whose type to get
+     *              WalkState           - Current walk state object
+     *
+     * RETURN:      Data type of current value of the selected Arg or Local
+     *
+     * DESCRIPTION: Get the type of the object stored in the Local or Arg
+     *
+     ******************************************************************************/
+
+    ACPI_OBJECT_TYPE
+    AcpiDsMethodDataGetType(UINT16 Opcode, UINT32 Index,
+                            ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_OPERAND_OBJECT *Object;
+
+      ACPI_FUNCTION_TRACE(DsMethodDataGetType);
+
+      /* Get the namespace node for the arg/local */
+
+      Status = AcpiDsMethodDataGetNode(Opcode, Index, WalkState, &Node);
+      if (ACPI_FAILURE(Status)) {
+        return_VALUE((ACPI_TYPE_NOT_FOUND));
+      }
+
+      /* Get the object */
+
+      Object = AcpiNsGetAttachedObject(Node);
+      if (!Object) {
+        /* Uninitialized local/arg, return TYPE_ANY */
+
+        return_VALUE(ACPI_TYPE_ANY);
+      }
+
+      /* Get the object type */
+
+      return_VALUE(Object->Type);
+    }
+#endif
+
+    /**
+     * @section minix_drivers_power_acpi_dispatcher_dsobject_c
+     * @brief Original file: minix/drivers/power/acpi/dispatcher/dsobject.c
+     */
+    /******************************************************************************
+     *
+     * Module Name: dsobject - Dispatcher object management routines
+     *
+     *****************************************************************************/
+
+    /*
+     * Copyright (C) 2000 - 2014, Intel Corp.
+     * All rights reserved.
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions, and the following disclaimer,
+     *    without modification.
+     * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+     *    substantially similar to the "NO WARRANTY" disclaimer below
+     *    ("Disclaimer") and any redistribution must be conditioned upon
+     *    including a substantially similar Disclaimer requirement for further
+     *    binary redistribution.
+     * 3. Neither the names of the above-listed copyright holders nor the names
+     *    of any contributors may be used to endorse or promote products derived
+     *    from this software without specific prior written permission.
+     *
+     * Alternatively, this software may be distributed under the terms of the
+     * GNU General Public License ("GPL") version 2 as published by the Free
+     * Software Foundation.
+     *
+     * NO WARRANTY
+     * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+     * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+     * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+     * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+     * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR
+     * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+     * THE POSSIBILITY OF SUCH DAMAGES.
+     */
+
+#include "accommon.h"
+#include "acdispat.h"
+#include "acinterp.h"
+#include "acnamesp.h"
+#include "acparser.h"
+#include "acpi.h"
+#include "amlcode.h"
+
+#define _COMPONENT ACPI_DISPATCHER
+    ACPI_MODULE_NAME("dsobject")
+
+    /* Local prototypes */
+
+    static ACPI_STATUS AcpiDsBuildInternalObject(
+        ACPI_WALK_STATE * WalkState, ACPI_PARSE_OBJECT * Op,
+        ACPI_OPERAND_OBJECT * *ObjDescPtr);
+
+#ifndef ACPI_NO_METHOD_EXECUTION
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsBuildInternalObject
+     *
+     * PARAMETERS:  WalkState       - Current walk state
+     *              Op              - Parser object to be translated
+     *              ObjDescPtr      - Where the ACPI internal object is returned
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Translate a parser Op object to the equivalent namespace
+     *object Simple objects are any objects other than a package object!
+     *
+     ******************************************************************************/
+
+    static ACPI_STATUS AcpiDsBuildInternalObject(
+        ACPI_WALK_STATE * WalkState, ACPI_PARSE_OBJECT * Op,
+        ACPI_OPERAND_OBJECT * *ObjDescPtr) {
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_STATUS Status;
+      ACPI_OBJECT_TYPE Type;
+
+      ACPI_FUNCTION_TRACE(DsBuildInternalObject);
+
+      *ObjDescPtr = NULL;
+      if (Op->Common.AmlOpcode == AML_INT_NAMEPATH_OP) {
+        /*
+         * This is a named object reference. If this name was
+         * previously looked up in the namespace, it was stored in this op.
+         * Otherwise, go ahead and look it up now
+         */
+        if (!Op->Common.Node) {
+          Status = AcpiNsLookup(
+              WalkState->ScopeInfo, Op->Common.Value.String, ACPI_TYPE_ANY,
+              ACPI_IMODE_EXECUTE,
+              ACPI_NS_SEARCH_PARENT | ACPI_NS_DONT_OPEN_SCOPE, NULL,
+              ACPI_CAST_INDIRECT_PTR(ACPI_NAMESPACE_NODE, &(Op->Common.Node)));
+          if (ACPI_FAILURE(Status)) {
+            /* Check if we are resolving a named reference within a package */
+
+            if ((Status == AE_NOT_FOUND) && (AcpiGbl_EnableInterpreterSlack) &&
+
+                ((Op->Common.Parent->Common.AmlOpcode == AML_PACKAGE_OP) ||
+                 (Op->Common.Parent->Common.AmlOpcode == AML_VAR_PACKAGE_OP))) {
+              /*
+               * We didn't find the target and we are populating elements
+               * of a package - ignore if slack enabled. Some ASL code
+               * contains dangling invalid references in packages and
+               * expects that no exception will be issued. Leave the
+               * element as a null element. It cannot be used, but it
+               * can be overwritten by subsequent ASL code - this is
+               * typically the case.
+               */
+              ACPI_DEBUG_PRINT(
+                  (ACPI_DB_INFO,
+                   "Ignoring unresolved reference in package [%4.4s]\n",
+                   WalkState->ScopeInfo->Scope.Node->Name.Ascii));
+
+              return_ACPI_STATUS(AE_OK);
+            } else {
+              ACPI_ERROR_NAMESPACE(Op->Common.Value.String, Status);
+            }
+
+            return_ACPI_STATUS(Status);
+          }
+        }
+
+        /* Special object resolution for elements of a package */
+
+        if ((Op->Common.Parent->Common.AmlOpcode == AML_PACKAGE_OP) ||
+            (Op->Common.Parent->Common.AmlOpcode == AML_VAR_PACKAGE_OP)) {
+          /*
+           * Attempt to resolve the node to a value before we insert it into
+           * the package. If this is a reference to a common data type,
+           * resolve it immediately. According to the ACPI spec, package
+           * elements can only be "data objects" or method references.
+           * Attempt to resolve to an Integer, Buffer, String or Package.
+           * If cannot, return the named reference (for things like Devices,
+           * Methods, etc.) Buffer Fields and Fields will resolve to simple
+           * objects (int/buf/str/pkg).
+           *
+           * NOTE: References to things like Devices, Methods, Mutexes, etc.
+           * will remain as named references. This behavior is not described
+           * in the ACPI spec, but it appears to be an oversight.
+           */
+          ObjDesc = ACPI_CAST_PTR(ACPI_OPERAND_OBJECT, Op->Common.Node);
+
+          Status = AcpiExResolveNodeToValue(
+              ACPI_CAST_INDIRECT_PTR(ACPI_NAMESPACE_NODE, &ObjDesc), WalkState);
+          if (ACPI_FAILURE(Status)) {
+            return_ACPI_STATUS(Status);
+          }
+
+          /*
+           * Special handling for Alias objects. We need to setup the type
+           * and the Op->Common.Node to point to the Alias target. Note,
+           * Alias has at most one level of indirection internally.
+           */
+          Type = Op->Common.Node->Type;
+          if (Type == ACPI_TYPE_LOCAL_ALIAS) {
+            Type = ObjDesc->Common.Type;
+            Op->Common.Node =
+                ACPI_CAST_PTR(ACPI_NAMESPACE_NODE, Op->Common.Node->Object);
+          }
+
+          switch (Type) {
+          /*
+           * For these types, we need the actual node, not the subobject.
+           * However, the subobject did not get an extra reference count above.
+           *
+           * TBD: should ExResolveNodeToValue be changed to fix this?
+           */
+          case ACPI_TYPE_DEVICE:
+          case ACPI_TYPE_THERMAL:
+
+            AcpiUtAddReference(Op->Common.Node->Object);
+
+            /*lint -fallthrough */
+          /*
+           * For these types, we need the actual node, not the subobject.
+           * The subobject got an extra reference count in ExResolveNodeToValue.
+           */
+          case ACPI_TYPE_MUTEX:
+          case ACPI_TYPE_METHOD:
+          case ACPI_TYPE_POWER:
+          case ACPI_TYPE_PROCESSOR:
+          case ACPI_TYPE_EVENT:
+          case ACPI_TYPE_REGION:
+
+            /* We will create a reference object for these types below */
+            break;
+
+          default:
+            /*
+             * All other types - the node was resolved to an actual
+             * object, we are done.
+             */
+            goto Exit;
+          }
+        }
+      }
+
+      /* Create and init a new internal ACPI object */
+
+      ObjDesc = AcpiUtCreateInternalObject(
+          (AcpiPsGetOpcodeInfo(Op->Common.AmlOpcode))->ObjectType);
+      if (!ObjDesc) {
+        return_ACPI_STATUS(AE_NO_MEMORY);
+      }
+
+      Status =
+          AcpiDsInitObjectFromOp(WalkState, Op, Op->Common.AmlOpcode, &ObjDesc);
+      if (ACPI_FAILURE(Status)) {
+        AcpiUtRemoveReference(ObjDesc);
+        return_ACPI_STATUS(Status);
+      }
+
+    Exit:
+      *ObjDescPtr = ObjDesc;
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsBuildInternalBufferObj
+     *
+     * PARAMETERS:  WalkState       - Current walk state
+     *              Op              - Parser object to be translated
+     *              BufferLength    - Length of the buffer
+     *              ObjDescPtr      - Where the ACPI internal object is returned
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Translate a parser Op package object to the equivalent
+     *              namespace object
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsBuildInternalBufferObj(ACPI_WALK_STATE * WalkState,
+                                 ACPI_PARSE_OBJECT * Op, UINT32 BufferLength,
+                                 ACPI_OPERAND_OBJECT * *ObjDescPtr) {
+      ACPI_PARSE_OBJECT *Arg;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_PARSE_OBJECT *ByteList;
+      UINT32 ByteListLength = 0;
+
+      ACPI_FUNCTION_TRACE(DsBuildInternalBufferObj);
+
+      /*
+       * If we are evaluating a Named buffer object "Name (xxxx, Buffer)".
+       * The buffer object already exists (from the NS node), otherwise it must
+       * be created.
+       */
+      ObjDesc = *ObjDescPtr;
+      if (!ObjDesc) {
+        /* Create a new buffer object */
+
+        ObjDesc = AcpiUtCreateInternalObject(ACPI_TYPE_BUFFER);
+        *ObjDescPtr = ObjDesc;
+        if (!ObjDesc) {
+          return_ACPI_STATUS(AE_NO_MEMORY);
+        }
+      }
+
+      /*
+       * Second arg is the buffer data (optional) ByteList can be either
+       * individual bytes or a string initializer. In either case, a
+       * ByteList appears in the AML.
+       */
+      Arg = Op->Common.Value.Arg; /* skip first arg */
+
+      ByteList = Arg->Named.Next;
+      if (ByteList) {
+        if (ByteList->Common.AmlOpcode != AML_INT_BYTELIST_OP) {
+          ACPI_ERROR((AE_INFO,
+                      "Expecting bytelist, found AML opcode 0x%X in op %p",
+                      ByteList->Common.AmlOpcode, ByteList));
+
+          AcpiUtRemoveReference(ObjDesc);
+          return (AE_TYPE);
+        }
+
+        ByteListLength = (UINT32)ByteList->Common.Value.Integer;
+      }
+
+      /*
+       * The buffer length (number of bytes) will be the larger of:
+       * 1) The specified buffer length and
+       * 2) The length of the initializer byte list
+       */
+      ObjDesc->Buffer.Length = BufferLength;
+      if (ByteListLength > BufferLength) {
+        ObjDesc->Buffer.Length = ByteListLength;
+      }
+
+      /* Allocate the buffer */
+
+      if (ObjDesc->Buffer.Length == 0) {
+        ObjDesc->Buffer.Pointer = NULL;
+        ACPI_DEBUG_PRINT(
+            (ACPI_DB_EXEC,
+             "Buffer defined with zero length in AML, creating\n"));
+      } else {
+        ObjDesc->Buffer.Pointer = ACPI_ALLOCATE_ZEROED(ObjDesc->Buffer.Length);
+        if (!ObjDesc->Buffer.Pointer) {
+          AcpiUtDeleteObjectDesc(ObjDesc);
+          return_ACPI_STATUS(AE_NO_MEMORY);
+        }
+
+        /* Initialize buffer from the ByteList (if present) */
+
+        if (ByteList) {
+          ACPI_MEMCPY(ObjDesc->Buffer.Pointer, ByteList->Named.Data,
+                      ByteListLength);
+        }
+      }
+
+      ObjDesc->Buffer.Flags |= AOPOBJ_DATA_VALID;
+      Op->Common.Node = ACPI_CAST_PTR(ACPI_NAMESPACE_NODE, ObjDesc);
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsBuildInternalPackageObj
+     *
+     * PARAMETERS:  WalkState       - Current walk state
+     *              Op              - Parser object to be translated
+     *              ElementCount    - Number of elements in the package - this
+     *is the NumElements argument to Package() ObjDescPtr      - Where the ACPI
+     *internal object is returned
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Translate a parser Op package object to the equivalent
+     *              namespace object
+     *
+     * NOTE: The number of elements in the package will be always be the
+     *NumElements count, regardless of the number of elements in the package
+     *list. If NumElements is smaller, only that many package list elements are
+     *used. if NumElements is larger, the Package object is padded out with
+     * objects of type Uninitialized (as per ACPI spec.)
+     *
+     * Even though the ASL compilers do not allow NumElements to be smaller
+     * than the Package list length (for the fixed length package opcode), some
+     * BIOS code modifies the AML on the fly to adjust the NumElements, and
+     * this code compensates for that. This also provides compatibility with
+     * other AML interpreters.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsBuildInternalPackageObj(ACPI_WALK_STATE * WalkState,
+                                  ACPI_PARSE_OBJECT * Op, UINT32 ElementCount,
+                                  ACPI_OPERAND_OBJECT * *ObjDescPtr) {
+      ACPI_PARSE_OBJECT *Arg;
+      ACPI_PARSE_OBJECT *Parent;
+      ACPI_OPERAND_OBJECT *ObjDesc = NULL;
+      ACPI_STATUS Status = AE_OK;
+      UINT32 i;
+      UINT16 Index;
+      UINT16 ReferenceCount;
+
+      ACPI_FUNCTION_TRACE(DsBuildInternalPackageObj);
+
+      /* Find the parent of a possibly nested package */
+
+      Parent = Op->Common.Parent;
+      while ((Parent->Common.AmlOpcode == AML_PACKAGE_OP) ||
+             (Parent->Common.AmlOpcode == AML_VAR_PACKAGE_OP)) {
+        Parent = Parent->Common.Parent;
+      }
+
+      /*
+       * If we are evaluating a Named package object "Name (xxxx, Package)",
+       * the package object already exists, otherwise it must be created.
+       */
+      ObjDesc = *ObjDescPtr;
+      if (!ObjDesc) {
+        ObjDesc = AcpiUtCreateInternalObject(ACPI_TYPE_PACKAGE);
+        *ObjDescPtr = ObjDesc;
+        if (!ObjDesc) {
+          return_ACPI_STATUS(AE_NO_MEMORY);
+        }
+
+        ObjDesc->Package.Node = Parent->Common.Node;
+      }
+
+      /*
+       * Allocate the element array (array of pointers to the individual
+       * objects) based on the NumElements parameter. Add an extra pointer slot
+       * so that the list is always null terminated.
+       */
+      ObjDesc->Package.Elements =
+          ACPI_ALLOCATE_ZEROED(((ACPI_SIZE)ElementCount + 1) * sizeof(void *));
+
+      if (!ObjDesc->Package.Elements) {
+        AcpiUtDeleteObjectDesc(ObjDesc);
+        return_ACPI_STATUS(AE_NO_MEMORY);
+      }
+
+      ObjDesc->Package.Count = ElementCount;
+
+      /*
+       * Initialize the elements of the package, up to the NumElements count.
+       * Package is automatically padded with uninitialized (NULL) elements
+       * if NumElements is greater than the package list length. Likewise,
+       * Package is truncated if NumElements is less than the list length.
+       */
+      Arg = Op->Common.Value.Arg;
+      Arg = Arg->Common.Next;
+      for (i = 0; Arg && (i < ElementCount); i++) {
+        if (Arg->Common.AmlOpcode == AML_INT_RETURN_VALUE_OP) {
+          if (Arg->Common.Node->Type == ACPI_TYPE_METHOD) {
+            /*
+             * A method reference "looks" to the parser to be a method
+             * invocation, so we special case it here
+             */
+            Arg->Common.AmlOpcode = AML_INT_NAMEPATH_OP;
+            Status = AcpiDsBuildInternalObject(WalkState, Arg,
+                                               &ObjDesc->Package.Elements[i]);
+          } else {
+            /* This package element is already built, just get it */
+
+            ObjDesc->Package.Elements[i] =
+                ACPI_CAST_PTR(ACPI_OPERAND_OBJECT, Arg->Common.Node);
+          }
+        } else {
+          Status = AcpiDsBuildInternalObject(WalkState, Arg,
+                                             &ObjDesc->Package.Elements[i]);
+        }
+
+        if (*ObjDescPtr) {
+          /* Existing package, get existing reference count */
+
+          ReferenceCount = (*ObjDescPtr)->Common.ReferenceCount;
+          if (ReferenceCount > 1) {
+            /* Make new element ref count match original ref count */
+
+            for (Index = 0; Index < (ReferenceCount - 1); Index++) {
+              AcpiUtAddReference((ObjDesc->Package.Elements[i]));
+            }
+          }
+        }
+
+        Arg = Arg->Common.Next;
+      }
+
+      /* Check for match between NumElements and actual length of PackageList */
+
+      if (Arg) {
+        /*
+         * NumElements was exhausted, but there are remaining elements in the
+         * PackageList. Truncate the package to NumElements.
+         *
+         * Note: technically, this is an error, from ACPI spec: "It is an error
+         * for NumElements to be less than the number of elements in the
+         * PackageList". However, we just print a message and
+         * no exception is returned. This provides Windows compatibility. Some
+         * BIOSs will alter the NumElements on the fly, creating this type
+         * of ill-formed package object.
+         */
+        while (Arg) {
+          /*
+           * We must delete any package elements that were created earlier
+           * and are not going to be used because of the package truncation.
+           */
+          if (Arg->Common.Node) {
+            AcpiUtRemoveReference(
+                ACPI_CAST_PTR(ACPI_OPERAND_OBJECT, Arg->Common.Node));
+            Arg->Common.Node = NULL;
+          }
+
+          /* Find out how many elements there really are */
+
+          i++;
+          Arg = Arg->Common.Next;
+        }
+
+        ACPI_INFO((AE_INFO,
+                   "Actual Package length (%u) is larger than NumElements "
+                   "field (%u), truncated",
+                   i, ElementCount));
+      } else if (i < ElementCount) {
+        /*
+         * Arg list (elements) was exhausted, but we did not reach NumElements
+         * count. Note: this is not an error, the package is padded out with
+         * NULLs.
+         */
+        ACPI_DEBUG_PRINT((ACPI_DB_INFO,
+                          "Package List length (%u) smaller than NumElements "
+                          "count (%u), padded with null elements\n",
+                          i, ElementCount));
+      }
+
+      ObjDesc->Package.Flags |= AOPOBJ_DATA_VALID;
+      Op->Common.Node = ACPI_CAST_PTR(ACPI_NAMESPACE_NODE, ObjDesc);
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateNode
+     *
+     * PARAMETERS:  WalkState       - Current walk state
+     *              Node            - NS Node to be initialized
+     *              Op              - Parser object to be translated
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Create the object to be associated with a namespace node
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsCreateNode(ACPI_WALK_STATE * WalkState, ACPI_NAMESPACE_NODE * Node,
+                     ACPI_PARSE_OBJECT * Op) {
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+
+      ACPI_FUNCTION_TRACE_PTR(DsCreateNode, Op);
+
+      /*
+       * Because of the execution pass through the non-control-method
+       * parts of the table, we can arrive here twice. Only init
+       * the named object node the first time through
+       */
+      if (AcpiNsGetAttachedObject(Node)) {
+        return_ACPI_STATUS(AE_OK);
+      }
+
+      if (!Op->Common.Value.Arg) {
+        /* No arguments, there is nothing to do */
+
+        return_ACPI_STATUS(AE_OK);
+      }
+
+      /* Build an internal object for the argument(s) */
+
+      Status =
+          AcpiDsBuildInternalObject(WalkState, Op->Common.Value.Arg, &ObjDesc);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      /* Re-type the object according to its argument */
+
+      Node->Type = ObjDesc->Common.Type;
+
+      /* Attach obj to node */
+
+      Status = AcpiNsAttachObject(Node, ObjDesc, Node->Type);
+
+      /* Remove local reference to the object */
+
+      AcpiUtRemoveReference(ObjDesc);
+      return_ACPI_STATUS(Status);
+    }
+
+#endif /* ACPI_NO_METHOD_EXECUTION */
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsInitObjectFromOp
+     *
+     * PARAMETERS:  WalkState       - Current walk state
+     *              Op              - Parser op used to init the internal object
+     *              Opcode          - AML opcode associated with the object
+     *              RetObjDesc      - Namespace object to be initialized
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Initialize a namespace object from a parser Op and its
+     *              associated arguments. The namespace object is a more compact
+     *              representation of the Op and its arguments.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsInitObjectFromOp(ACPI_WALK_STATE * WalkState, ACPI_PARSE_OBJECT * Op,
+                           UINT16 Opcode, ACPI_OPERAND_OBJECT * *RetObjDesc) {
+      const ACPI_OPCODE_INFO *OpInfo;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_STATUS Status = AE_OK;
+
+      ACPI_FUNCTION_TRACE(DsInitObjectFromOp);
+
+      ObjDesc = *RetObjDesc;
+      OpInfo = AcpiPsGetOpcodeInfo(Opcode);
+      if (OpInfo->Class == AML_CLASS_UNKNOWN) {
+        /* Unknown opcode */
+
+        return_ACPI_STATUS(AE_TYPE);
+      }
+
+      /* Perform per-object initialization */
+
+      switch (ObjDesc->Common.Type) {
+      case ACPI_TYPE_BUFFER:
+        /*
+         * Defer evaluation of Buffer TermArg operand
+         */
+        ObjDesc->Buffer.Node =
+            ACPI_CAST_PTR(ACPI_NAMESPACE_NODE, WalkState->Operands[0]);
+        ObjDesc->Buffer.AmlStart = Op->Named.Data;
+        ObjDesc->Buffer.AmlLength = Op->Named.Length;
+        break;
+
+      case ACPI_TYPE_PACKAGE:
+        /*
+         * Defer evaluation of Package TermArg operand
+         */
+        ObjDesc->Package.Node =
+            ACPI_CAST_PTR(ACPI_NAMESPACE_NODE, WalkState->Operands[0]);
+        ObjDesc->Package.AmlStart = Op->Named.Data;
+        ObjDesc->Package.AmlLength = Op->Named.Length;
+        break;
+
+      case ACPI_TYPE_INTEGER:
+
+        switch (OpInfo->Type) {
+        case AML_TYPE_CONSTANT:
+          /*
+           * Resolve AML Constants here - AND ONLY HERE!
+           * All constants are integers.
+           * We mark the integer with a flag that indicates that it started
+           * life as a constant -- so that stores to constants will perform
+           * as expected (noop). ZeroOp is used as a placeholder for optional
+           * target operands.
+           */
+          ObjDesc->Common.Flags = AOPOBJ_AML_CONSTANT;
+
+          switch (Opcode) {
+          case AML_ZERO_OP:
+
+            ObjDesc->Integer.Value = 0;
+            break;
+
+          case AML_ONE_OP:
+
+            ObjDesc->Integer.Value = 1;
+            break;
+
+          case AML_ONES_OP:
+
+            ObjDesc->Integer.Value = ACPI_UINT64_MAX;
+
+            /* Truncate value if we are executing from a 32-bit ACPI table */
+
+#ifndef ACPI_NO_METHOD_EXECUTION
+            (void)AcpiExTruncateFor32bitTable(ObjDesc);
+#endif
+            break;
+
+          case AML_REVISION_OP:
+
+            ObjDesc->Integer.Value = ACPI_CA_VERSION;
+            break;
+
+          default:
+
+            ACPI_ERROR((AE_INFO, "Unknown constant opcode 0x%X", Opcode));
+            Status = AE_AML_OPERAND_TYPE;
+            break;
+          }
+          break;
+
+        case AML_TYPE_LITERAL:
+
+          ObjDesc->Integer.Value = Op->Common.Value.Integer;
+
+#ifndef ACPI_NO_METHOD_EXECUTION
+          if (AcpiExTruncateFor32bitTable(ObjDesc)) {
+            /* Warn if we found a 64-bit constant in a 32-bit table */
+
+            ACPI_WARNING((AE_INFO,
+                          "Truncated 64-bit constant found in 32-bit table: "
+                          "%8.8X%8.8X => %8.8X",
+                          ACPI_FORMAT_UINT64(Op->Common.Value.Integer),
+                          (UINT32)ObjDesc->Integer.Value));
+          }
+#endif
+          break;
+
+        default:
+
+          ACPI_ERROR((AE_INFO, "Unknown Integer type 0x%X", OpInfo->Type));
+          Status = AE_AML_OPERAND_TYPE;
+          break;
+        }
+        break;
+
+      case ACPI_TYPE_STRING:
+
+        ObjDesc->String.Pointer = Op->Common.Value.String;
+        ObjDesc->String.Length = (UINT32)ACPI_STRLEN(Op->Common.Value.String);
+
+        /*
+         * The string is contained in the ACPI table, don't ever try
+         * to delete it
+         */
+        ObjDesc->Common.Flags |= AOPOBJ_STATIC_POINTER;
+        break;
+
+      case ACPI_TYPE_METHOD:
+        break;
+
+      case ACPI_TYPE_LOCAL_REFERENCE:
+
+        switch (OpInfo->Type) {
+        case AML_TYPE_LOCAL_VARIABLE:
+
+          /* Local ID (0-7) is (AML opcode - base AML_LOCAL_OP) */
+
+          ObjDesc->Reference.Value = ((UINT32)Opcode) - AML_LOCAL_OP;
+          ObjDesc->Reference.Class = ACPI_REFCLASS_LOCAL;
+
+#ifndef ACPI_NO_METHOD_EXECUTION
+          Status = AcpiDsMethodDataGetNode(
+              ACPI_REFCLASS_LOCAL, ObjDesc->Reference.Value, WalkState,
+              ACPI_CAST_INDIRECT_PTR(ACPI_NAMESPACE_NODE,
+                                     &ObjDesc->Reference.Object));
+#endif
+          break;
+
+        case AML_TYPE_METHOD_ARGUMENT:
+
+          /* Arg ID (0-6) is (AML opcode - base AML_ARG_OP) */
+
+          ObjDesc->Reference.Value = ((UINT32)Opcode) - AML_ARG_OP;
+          ObjDesc->Reference.Class = ACPI_REFCLASS_ARG;
+
+#ifndef ACPI_NO_METHOD_EXECUTION
+          Status = AcpiDsMethodDataGetNode(
+              ACPI_REFCLASS_ARG, ObjDesc->Reference.Value, WalkState,
+              ACPI_CAST_INDIRECT_PTR(ACPI_NAMESPACE_NODE,
+                                     &ObjDesc->Reference.Object));
+#endif
+          break;
+
+        default: /* Object name or Debug object */
+
+          switch (Op->Common.AmlOpcode) {
+          case AML_INT_NAMEPATH_OP:
+
+            /* Node was saved in Op */
+
+            ObjDesc->Reference.Node = Op->Common.Node;
+            ObjDesc->Reference.Object = Op->Common.Node->Object;
+            ObjDesc->Reference.Class = ACPI_REFCLASS_NAME;
+            break;
+
+          case AML_DEBUG_OP:
+
+            ObjDesc->Reference.Class = ACPI_REFCLASS_DEBUG;
+            break;
+
+          default:
+
+            ACPI_ERROR((AE_INFO,
+                        "Unimplemented reference type for AML opcode: 0x%4.4X",
+                        Opcode));
+            return_ACPI_STATUS(AE_AML_OPERAND_TYPE);
+          }
+          break;
+        }
+        break;
+
+      default:
+
+        ACPI_ERROR(
+            (AE_INFO, "Unimplemented data type: 0x%X", ObjDesc->Common.Type));
+
+        Status = AE_AML_OPERAND_TYPE;
+        break;
+      }
+
+      return_ACPI_STATUS(Status);
+    }
+
+    /**
+     * @section minix_drivers_power_acpi_dispatcher_dsopcode_c
+     * @brief Original file: minix/drivers/power/acpi/dispatcher/dsopcode.c
+     */
+    /******************************************************************************
+     *
+     * Module Name: dsopcode - Dispatcher support for regions and fields
+     *
+     *****************************************************************************/
+
+    /*
+     * Copyright (C) 2000 - 2014, Intel Corp.
+     * All rights reserved.
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions, and the following disclaimer,
+     *    without modification.
+     * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+     *    substantially similar to the "NO WARRANTY" disclaimer below
+     *    ("Disclaimer") and any redistribution must be conditioned upon
+     *    including a substantially similar Disclaimer requirement for further
+     *    binary redistribution.
+     * 3. Neither the names of the above-listed copyright holders nor the names
+     *    of any contributors may be used to endorse or promote products derived
+     *    from this software without specific prior written permission.
+     *
+     * Alternatively, this software may be distributed under the terms of the
+     * GNU General Public License ("GPL") version 2 as published by the Free
+     * Software Foundation.
+     *
+     * NO WARRANTY
+     * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+     * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+     * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+     * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+     * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR
+     * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+     * THE POSSIBILITY OF SUCH DAMAGES.
+     */
+
+#include "accommon.h"
+#include "acdispat.h"
+#include "acevents.h"
+#include "acinterp.h"
+#include "acnamesp.h"
+#include "acparser.h"
+#include "acpi.h"
+#include "actables.h"
+#include "amlcode.h"
+
+#define _COMPONENT ACPI_DISPATCHER
+    ACPI_MODULE_NAME("dsopcode")
+
+    /* Local prototypes */
+
+    static ACPI_STATUS AcpiDsInitBufferField(
+        UINT16 AmlOpcode, ACPI_OPERAND_OBJECT * ObjDesc,
+        ACPI_OPERAND_OBJECT * BufferDesc, ACPI_OPERAND_OBJECT * OffsetDesc,
+        ACPI_OPERAND_OBJECT * LengthDesc, ACPI_OPERAND_OBJECT * ResultDesc);
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsInitializeRegion
+     *
+     * PARAMETERS:  ObjHandle       - Region namespace node
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Front end to EvInitializeRegion
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsInitializeRegion(ACPI_HANDLE ObjHandle) {
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_STATUS Status;
+
+      ObjDesc = AcpiNsGetAttachedObject(ObjHandle);
+
+      /* Namespace is NOT locked */
+
+      Status = AcpiEvInitializeRegion(ObjDesc, FALSE);
+      return (Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsInitBufferField
+     *
+     * PARAMETERS:  AmlOpcode       - CreateXxxField
+     *              ObjDesc         - BufferField object
+     *              BufferDesc      - Host Buffer
+     *              OffsetDesc      - Offset into buffer
+     *              LengthDesc      - Length of field (CREATE_FIELD_OP only)
+     *              ResultDesc      - Where to store the result
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Perform actual initialization of a buffer field
+     *
+     ******************************************************************************/
+
+    static ACPI_STATUS AcpiDsInitBufferField(
+        UINT16 AmlOpcode, ACPI_OPERAND_OBJECT * ObjDesc,
+        ACPI_OPERAND_OBJECT * BufferDesc, ACPI_OPERAND_OBJECT * OffsetDesc,
+        ACPI_OPERAND_OBJECT * LengthDesc, ACPI_OPERAND_OBJECT * ResultDesc) {
+      UINT32 Offset;
+      UINT32 BitOffset;
+      UINT32 BitCount;
+      UINT8 FieldFlags;
+      ACPI_STATUS Status;
+
+      ACPI_FUNCTION_TRACE_PTR(DsInitBufferField, ObjDesc);
+
+      /* Host object must be a Buffer */
+
+      if (BufferDesc->Common.Type != ACPI_TYPE_BUFFER) {
+        ACPI_ERROR((AE_INFO,
+                    "Target of Create Field is not a Buffer object - %s",
+                    AcpiUtGetObjectTypeName(BufferDesc)));
+
+        Status = AE_AML_OPERAND_TYPE;
+        goto Cleanup;
+      }
+
+      /*
+       * The last parameter to all of these opcodes (ResultDesc) started
+       * out as a NameString, and should therefore now be a NS node
+       * after resolution in AcpiExResolveOperands().
+       */
+      if (ACPI_GET_DESCRIPTOR_TYPE(ResultDesc) != ACPI_DESC_TYPE_NAMED) {
+        ACPI_ERROR((AE_INFO, "(%s) destination not a NS Node [%s]",
+                    AcpiPsGetOpcodeName(AmlOpcode),
+                    AcpiUtGetDescriptorName(ResultDesc)));
+
+        Status = AE_AML_OPERAND_TYPE;
+        goto Cleanup;
+      }
+
+      Offset = (UINT32)OffsetDesc->Integer.Value;
+
+      /*
+       * Setup the Bit offsets and counts, according to the opcode
+       */
+      switch (AmlOpcode) {
+      case AML_CREATE_FIELD_OP:
+
+        /* Offset is in bits, count is in bits */
+
+        FieldFlags = AML_FIELD_ACCESS_BYTE;
+        BitOffset = Offset;
+        BitCount = (UINT32)LengthDesc->Integer.Value;
+
+        /* Must have a valid (>0) bit count */
+
+        if (BitCount == 0) {
+          ACPI_ERROR((AE_INFO, "Attempt to CreateField of length zero"));
+          Status = AE_AML_OPERAND_VALUE;
+          goto Cleanup;
+        }
+        break;
+
+      case AML_CREATE_BIT_FIELD_OP:
+
+        /* Offset is in bits, Field is one bit */
+
+        BitOffset = Offset;
+        BitCount = 1;
+        FieldFlags = AML_FIELD_ACCESS_BYTE;
+        break;
+
+      case AML_CREATE_BYTE_FIELD_OP:
+
+        /* Offset is in bytes, field is one byte */
+
+        BitOffset = 8 * Offset;
+        BitCount = 8;
+        FieldFlags = AML_FIELD_ACCESS_BYTE;
+        break;
+
+      case AML_CREATE_WORD_FIELD_OP:
+
+        /* Offset is in bytes, field is one word */
+
+        BitOffset = 8 * Offset;
+        BitCount = 16;
+        FieldFlags = AML_FIELD_ACCESS_WORD;
+        break;
+
+      case AML_CREATE_DWORD_FIELD_OP:
+
+        /* Offset is in bytes, field is one dword */
+
+        BitOffset = 8 * Offset;
+        BitCount = 32;
+        FieldFlags = AML_FIELD_ACCESS_DWORD;
+        break;
+
+      case AML_CREATE_QWORD_FIELD_OP:
+
+        /* Offset is in bytes, field is one qword */
+
+        BitOffset = 8 * Offset;
+        BitCount = 64;
+        FieldFlags = AML_FIELD_ACCESS_QWORD;
+        break;
+
+      default:
+
+        ACPI_ERROR(
+            (AE_INFO, "Unknown field creation opcode 0x%02X", AmlOpcode));
+        Status = AE_AML_BAD_OPCODE;
+        goto Cleanup;
+      }
+
+      /* Entire field must fit within the current length of the buffer */
+
+      if ((BitOffset + BitCount) > (8 * (UINT32)BufferDesc->Buffer.Length)) {
+        ACPI_ERROR((AE_INFO,
+                    "Field [%4.4s] at %u exceeds Buffer [%4.4s] size %u (bits)",
+                    AcpiUtGetNodeName(ResultDesc), BitOffset + BitCount,
+                    AcpiUtGetNodeName(BufferDesc->Buffer.Node),
+                    8 * (UINT32)BufferDesc->Buffer.Length));
+        Status = AE_AML_BUFFER_LIMIT;
+        goto Cleanup;
+      }
+
+      /*
+       * Initialize areas of the field object that are common to all fields
+       * For FieldFlags, use LOCK_RULE = 0 (NO_LOCK),
+       * UPDATE_RULE = 0 (UPDATE_PRESERVE)
+       */
+      Status = AcpiExPrepCommonFieldObject(ObjDesc, FieldFlags, 0, BitOffset,
+                                           BitCount);
+      if (ACPI_FAILURE(Status)) {
+        goto Cleanup;
+      }
+
+      ObjDesc->BufferField.BufferObj = BufferDesc;
+
+      /* Reference count for BufferDesc inherits ObjDesc count */
+
+      BufferDesc->Common.ReferenceCount =
+          (UINT16)(BufferDesc->Common.ReferenceCount +
+                   ObjDesc->Common.ReferenceCount);
+
+    Cleanup:
+
+      /* Always delete the operands */
+
+      AcpiUtRemoveReference(OffsetDesc);
+      AcpiUtRemoveReference(BufferDesc);
+
+      if (AmlOpcode == AML_CREATE_FIELD_OP) {
+        AcpiUtRemoveReference(LengthDesc);
+      }
+
+      /* On failure, delete the result descriptor */
+
+      if (ACPI_FAILURE(Status)) {
+        AcpiUtRemoveReference(ResultDesc); /* Result descriptor */
+      } else {
+        /* Now the address and length are valid for this BufferField */
+
+        ObjDesc->BufferField.Flags |= AOPOBJ_DATA_VALID;
+      }
+
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsEvalBufferFieldOperands
+     *
+     * PARAMETERS:  WalkState       - Current walk
+     *              Op              - A valid BufferField Op object
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Get BufferField Buffer and Index
+     *              Called from AcpiDsExecEndOp during BufferField parse tree
+     *walk
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsEvalBufferFieldOperands(ACPI_WALK_STATE * WalkState,
+                                  ACPI_PARSE_OBJECT * Op) {
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_PARSE_OBJECT *NextOp;
+
+      ACPI_FUNCTION_TRACE_PTR(DsEvalBufferFieldOperands, Op);
+
+      /*
+       * This is where we evaluate the address and length fields of the
+       * CreateXxxField declaration
+       */
+      Node = Op->Common.Node;
+
+      /* NextOp points to the op that holds the Buffer */
+
+      NextOp = Op->Common.Value.Arg;
+
+      /* Evaluate/create the address and length operands */
+
+      Status = AcpiDsCreateOperands(WalkState, NextOp);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      ObjDesc = AcpiNsGetAttachedObject(Node);
+      if (!ObjDesc) {
+        return_ACPI_STATUS(AE_NOT_EXIST);
+      }
+
+      /* Resolve the operands */
+
+      Status = AcpiExResolveOperands(Op->Common.AmlOpcode, ACPI_WALK_OPERANDS,
+                                     WalkState);
+      if (ACPI_FAILURE(Status)) {
+        ACPI_ERROR((AE_INFO, "(%s) bad operand(s), status 0x%X",
+                    AcpiPsGetOpcodeName(Op->Common.AmlOpcode), Status));
+
+        return_ACPI_STATUS(Status);
+      }
+
+      /* Initialize the Buffer Field */
+
+      if (Op->Common.AmlOpcode == AML_CREATE_FIELD_OP) {
+        /* NOTE: Slightly different operands for this opcode */
+
+        Status = AcpiDsInitBufferField(
+            Op->Common.AmlOpcode, ObjDesc, WalkState->Operands[0],
+            WalkState->Operands[1], WalkState->Operands[2],
+            WalkState->Operands[3]);
+      } else {
+        /* All other, CreateXxxField opcodes */
+
+        Status = AcpiDsInitBufferField(
+            Op->Common.AmlOpcode, ObjDesc, WalkState->Operands[0],
+            WalkState->Operands[1], NULL, WalkState->Operands[2]);
+      }
+
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsEvalRegionOperands
+     *
+     * PARAMETERS:  WalkState       - Current walk
+     *              Op              - A valid region Op object
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Get region address and length
+     *              Called from AcpiDsExecEndOp during OpRegion parse tree walk
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsEvalRegionOperands(ACPI_WALK_STATE * WalkState,
+                             ACPI_PARSE_OBJECT * Op) {
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_OPERAND_OBJECT *OperandDesc;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_PARSE_OBJECT *NextOp;
+
+      ACPI_FUNCTION_TRACE_PTR(DsEvalRegionOperands, Op);
+
+      /*
+       * This is where we evaluate the address and length fields of the
+       * OpRegion declaration
+       */
+      Node = Op->Common.Node;
+
+      /* NextOp points to the op that holds the SpaceID */
+
+      NextOp = Op->Common.Value.Arg;
+
+      /* NextOp points to address op */
+
+      NextOp = NextOp->Common.Next;
+
+      /* Evaluate/create the address and length operands */
+
+      Status = AcpiDsCreateOperands(WalkState, NextOp);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      /* Resolve the length and address operands to numbers */
+
+      Status = AcpiExResolveOperands(Op->Common.AmlOpcode, ACPI_WALK_OPERANDS,
+                                     WalkState);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      ObjDesc = AcpiNsGetAttachedObject(Node);
+      if (!ObjDesc) {
+        return_ACPI_STATUS(AE_NOT_EXIST);
+      }
+
+      /*
+       * Get the length operand and save it
+       * (at Top of stack)
+       */
+      OperandDesc = WalkState->Operands[WalkState->NumOperands - 1];
+
+      ObjDesc->Region.Length = (UINT32)OperandDesc->Integer.Value;
+      AcpiUtRemoveReference(OperandDesc);
+
+      /*
+       * Get the address and save it
+       * (at top of stack - 1)
+       */
+      OperandDesc = WalkState->Operands[WalkState->NumOperands - 2];
+
+      ObjDesc->Region.Address =
+          (ACPI_PHYSICAL_ADDRESS)OperandDesc->Integer.Value;
+      AcpiUtRemoveReference(OperandDesc);
+
+      ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "RgnObj %p Addr %8.8X%8.8X Len %X\n",
+                        ObjDesc,
+                        ACPI_FORMAT_NATIVE_UINT(ObjDesc->Region.Address),
+                        ObjDesc->Region.Length));
+
+      /* Now the address and length are valid for this opregion */
+
+      ObjDesc->Region.Flags |= AOPOBJ_DATA_VALID;
+
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsEvalTableRegionOperands
+     *
+     * PARAMETERS:  WalkState       - Current walk
+     *              Op              - A valid region Op object
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Get region address and length.
+     *              Called from AcpiDsExecEndOp during DataTableRegion parse
+     *              tree walk.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsEvalTableRegionOperands(ACPI_WALK_STATE * WalkState,
+                                  ACPI_PARSE_OBJECT * Op) {
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_OPERAND_OBJECT **Operand;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_PARSE_OBJECT *NextOp;
+      UINT32 TableIndex;
+      ACPI_TABLE_HEADER *Table;
+
+      ACPI_FUNCTION_TRACE_PTR(DsEvalTableRegionOperands, Op);
+
+      /*
+       * This is where we evaluate the Signature string, OemId string,
+       * and OemTableId string of the Data Table Region declaration
+       */
+      Node = Op->Common.Node;
+
+      /* NextOp points to Signature string op */
+
+      NextOp = Op->Common.Value.Arg;
+
+      /*
+       * Evaluate/create the Signature string, OemId string,
+       * and OemTableId string operands
+       */
+      Status = AcpiDsCreateOperands(WalkState, NextOp);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      /*
+       * Resolve the Signature string, OemId string,
+       * and OemTableId string operands
+       */
+      Status = AcpiExResolveOperands(Op->Common.AmlOpcode, ACPI_WALK_OPERANDS,
+                                     WalkState);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      Operand = &WalkState->Operands[0];
+
+      /* Find the ACPI table */
+
+      Status = AcpiTbFindTable(Operand[0]->String.Pointer,
+                               Operand[1]->String.Pointer,
+                               Operand[2]->String.Pointer, &TableIndex);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      AcpiUtRemoveReference(Operand[0]);
+      AcpiUtRemoveReference(Operand[1]);
+      AcpiUtRemoveReference(Operand[2]);
+
+      Status = AcpiGetTableByIndex(TableIndex, &Table);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      ObjDesc = AcpiNsGetAttachedObject(Node);
+      if (!ObjDesc) {
+        return_ACPI_STATUS(AE_NOT_EXIST);
+      }
+
+      ObjDesc->Region.Address = (ACPI_PHYSICAL_ADDRESS)ACPI_TO_INTEGER(Table);
+      ObjDesc->Region.Length = Table->Length;
+
+      ACPI_DEBUG_PRINT((ACPI_DB_EXEC, "RgnObj %p Addr %8.8X%8.8X Len %X\n",
+                        ObjDesc,
+                        ACPI_FORMAT_NATIVE_UINT(ObjDesc->Region.Address),
+                        ObjDesc->Region.Length));
+
+      /* Now the address and length are valid for this opregion */
+
+      ObjDesc->Region.Flags |= AOPOBJ_DATA_VALID;
+
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsEvalDataObjectOperands
+     *
+     * PARAMETERS:  WalkState       - Current walk
+     *              Op              - A valid DataObject Op object
+     *              ObjDesc         - DataObject
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Get the operands and complete the following data object
+     *types: Buffer, Package.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsEvalDataObjectOperands(ACPI_WALK_STATE * WalkState,
+                                 ACPI_PARSE_OBJECT * Op,
+                                 ACPI_OPERAND_OBJECT * ObjDesc) {
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ArgDesc;
+      UINT32 Length;
+
+      ACPI_FUNCTION_TRACE(DsEvalDataObjectOperands);
+
+      /* The first operand (for all of these data objects) is the length */
+
+      /*
+       * Set proper index into operand stack for AcpiDsObjStackPush
+       * invoked inside AcpiDsCreateOperand.
+       */
+      WalkState->OperandIndex = WalkState->NumOperands;
+
+      Status = AcpiDsCreateOperand(WalkState, Op->Common.Value.Arg, 1);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      Status = AcpiExResolveOperands(
+          WalkState->Opcode, &(WalkState->Operands[WalkState->NumOperands - 1]),
+          WalkState);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      /* Extract length operand */
+
+      ArgDesc = WalkState->Operands[WalkState->NumOperands - 1];
+      Length = (UINT32)ArgDesc->Integer.Value;
+
+      /* Cleanup for length operand */
+
+      Status = AcpiDsObjStackPop(1, WalkState);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      AcpiUtRemoveReference(ArgDesc);
+
+      /*
+       * Create the actual data object
+       */
+      switch (Op->Common.AmlOpcode) {
+      case AML_BUFFER_OP:
+
+        Status = AcpiDsBuildInternalBufferObj(WalkState, Op, Length, &ObjDesc);
+        break;
+
+      case AML_PACKAGE_OP:
+      case AML_VAR_PACKAGE_OP:
+
+        Status = AcpiDsBuildInternalPackageObj(WalkState, Op, Length, &ObjDesc);
+        break;
+
+      default:
+
+        return_ACPI_STATUS(AE_AML_BAD_OPCODE);
+      }
+
+      if (ACPI_SUCCESS(Status)) {
+        /*
+         * Return the object in the WalkState, unless the parent is a package -
+         * in this case, the return object will be stored in the parse tree
+         * for the package.
+         */
+        if ((!Op->Common.Parent) ||
+            ((Op->Common.Parent->Common.AmlOpcode != AML_PACKAGE_OP) &&
+             (Op->Common.Parent->Common.AmlOpcode != AML_VAR_PACKAGE_OP) &&
+             (Op->Common.Parent->Common.AmlOpcode != AML_NAME_OP))) {
+          WalkState->ResultObj = ObjDesc;
+        }
+      }
+
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsEvalBankFieldOperands
+     *
+     * PARAMETERS:  WalkState       - Current walk
+     *              Op              - A valid BankField Op object
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Get BankField BankValue
+     *              Called from AcpiDsExecEndOp during BankField parse tree walk
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsEvalBankFieldOperands(ACPI_WALK_STATE * WalkState,
+                                ACPI_PARSE_OBJECT * Op) {
+      ACPI_STATUS Status;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_OPERAND_OBJECT *OperandDesc;
+      ACPI_NAMESPACE_NODE *Node;
+      ACPI_PARSE_OBJECT *NextOp;
+      ACPI_PARSE_OBJECT *Arg;
+
+      ACPI_FUNCTION_TRACE_PTR(DsEvalBankFieldOperands, Op);
+
+      /*
+       * This is where we evaluate the BankValue field of the
+       * BankField declaration
+       */
+
+      /* NextOp points to the op that holds the Region */
+
+      NextOp = Op->Common.Value.Arg;
+
+      /* NextOp points to the op that holds the Bank Register */
+
+      NextOp = NextOp->Common.Next;
+
+      /* NextOp points to the op that holds the Bank Value */
+
+      NextOp = NextOp->Common.Next;
+
+      /*
+       * Set proper index into operand stack for AcpiDsObjStackPush
+       * invoked inside AcpiDsCreateOperand.
+       *
+       * We use WalkState->Operands[0] to store the evaluated BankValue
+       */
+      WalkState->OperandIndex = 0;
+
+      Status = AcpiDsCreateOperand(WalkState, NextOp, 0);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      Status = AcpiExResolveToValue(&WalkState->Operands[0], WalkState);
+      if (ACPI_FAILURE(Status)) {
+        return_ACPI_STATUS(Status);
+      }
+
+      ACPI_DUMP_OPERANDS(ACPI_WALK_OPERANDS,
+                         AcpiPsGetOpcodeName(Op->Common.AmlOpcode), 1);
+      /*
+       * Get the BankValue operand and save it
+       * (at Top of stack)
+       */
+      OperandDesc = WalkState->Operands[0];
+
+      /* Arg points to the start Bank Field */
+
+      Arg = AcpiPsGetArg(Op, 4);
+      while (Arg) {
+        /* Ignore OFFSET and ACCESSAS terms here */
+
+        if (Arg->Common.AmlOpcode == AML_INT_NAMEDFIELD_OP) {
+          Node = Arg->Common.Node;
+
+          ObjDesc = AcpiNsGetAttachedObject(Node);
+          if (!ObjDesc) {
+            return_ACPI_STATUS(AE_NOT_EXIST);
+          }
+
+          ObjDesc->BankField.Value = (UINT32)OperandDesc->Integer.Value;
+        }
+
+        /* Move to next field in the list */
+
+        Arg = Arg->Common.Next;
+      }
+
+      AcpiUtRemoveReference(OperandDesc);
+      return_ACPI_STATUS(Status);
+    }
+
+    /**
+     * @section minix_drivers_power_acpi_dispatcher_dsutils_c
+     * @brief Original file: minix/drivers/power/acpi/dispatcher/dsutils.c
+     */
+    /*******************************************************************************
+     *
+     * Module Name: dsutils - Dispatcher utilities
+     *
+     ******************************************************************************/
+
+    /*
+     * Copyright (C) 2000 - 2014, Intel Corp.
+     * All rights reserved.
+     *
+     * Redistribution and use in source and binary forms, with or without
+     * modification, are permitted provided that the following conditions
+     * are met:
+     * 1. Redistributions of source code must retain the above copyright
+     *    notice, this list of conditions, and the following disclaimer,
+     *    without modification.
+     * 2. Redistributions in binary form must reproduce at minimum a disclaimer
+     *    substantially similar to the "NO WARRANTY" disclaimer below
+     *    ("Disclaimer") and any redistribution must be conditioned upon
+     *    including a substantially similar Disclaimer requirement for further
+     *    binary redistribution.
+     * 3. Neither the names of the above-listed copyright holders nor the names
+     *    of any contributors may be used to endorse or promote products derived
+     *    from this software without specific prior written permission.
+     *
+     * Alternatively, this software may be distributed under the terms of the
+     * GNU General Public License ("GPL") version 2 as published by the Free
+     * Software Foundation.
+     *
+     * NO WARRANTY
+     * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+     * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+     * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
+     * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+     * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR
+     * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+     * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+     * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+     * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+     * THE POSSIBILITY OF SUCH DAMAGES.
+     */
+
+#include "accommon.h"
+#include "acdebug.h"
+#include "acdispat.h"
+#include "acinterp.h"
+#include "acnamesp.h"
+#include "acparser.h"
+#include "acpi.h"
+#include "amlcode.h"
+
+#define _COMPONENT ACPI_DISPATCHER
+    ACPI_MODULE_NAME("dsutils")
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsClearImplicitReturn
+     *
+     * PARAMETERS:  WalkState           - Current State
+     *
+     * RETURN:      None.
+     *
+     * DESCRIPTION: Clear and remove a reference on an implicit return value.
+     *Used to delete "stale" return values (if enabled, the return value from
+     *every operator is saved at least momentarily, in case the parent method
+     *exits.)
+     *
+     ******************************************************************************/
+
+    void AcpiDsClearImplicitReturn(ACPI_WALK_STATE * WalkState) {
+      ACPI_FUNCTION_NAME(DsClearImplicitReturn);
+
+      /*
+       * Slack must be enabled for this feature
+       */
+      if (!AcpiGbl_EnableInterpreterSlack) {
+        return;
+      }
+
+      if (WalkState->ImplicitReturnObj) {
+        /*
+         * Delete any "stale" implicit return. However, in
+         * complex statements, the implicit return value can be
+         * bubbled up several levels.
+         */
+        ACPI_DEBUG_PRINT(
+            (ACPI_DB_DISPATCH,
+             "Removing reference on stale implicit return obj %p\n",
+             WalkState->ImplicitReturnObj));
+
+        AcpiUtRemoveReference(WalkState->ImplicitReturnObj);
+        WalkState->ImplicitReturnObj = NULL;
+      }
+    }
+
+#ifndef ACPI_NO_METHOD_EXECUTION
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsDoImplicitReturn
+     *
+     * PARAMETERS:  ReturnDesc          - The return value
+     *              WalkState           - Current State
+     *              AddReference        - True if a reference should be added to
+     *the return object
+     *
+     * RETURN:      TRUE if implicit return enabled, FALSE otherwise
+     *
+     * DESCRIPTION: Implements the optional "implicit return".  We save the
+     *result of every ASL operator and control method invocation in case the
+     *              parent method exit. Before storing a new return value, we
+     *              delete the previous return value.
+     *
+     ******************************************************************************/
+
+    BOOLEAN
+    AcpiDsDoImplicitReturn(ACPI_OPERAND_OBJECT * ReturnDesc,
+                           ACPI_WALK_STATE * WalkState, BOOLEAN AddReference) {
+      ACPI_FUNCTION_NAME(DsDoImplicitReturn);
+
+      /*
+       * Slack must be enabled for this feature, and we must
+       * have a valid return object
+       */
+      if ((!AcpiGbl_EnableInterpreterSlack) || (!ReturnDesc)) {
+        return (FALSE);
+      }
+
+      ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH,
+                        "Result %p will be implicitly returned; Prev=%p\n",
+                        ReturnDesc, WalkState->ImplicitReturnObj));
+
+      /*
+       * Delete any "stale" implicit return value first. However, in
+       * complex statements, the implicit return value can be
+       * bubbled up several levels, so we don't clear the value if it
+       * is the same as the ReturnDesc.
+       */
+      if (WalkState->ImplicitReturnObj) {
+        if (WalkState->ImplicitReturnObj == ReturnDesc) {
+          return (TRUE);
+        }
+        AcpiDsClearImplicitReturn(WalkState);
+      }
+
+      /* Save the implicit return value, add a reference if requested */
+
+      WalkState->ImplicitReturnObj = ReturnDesc;
+      if (AddReference) {
+        AcpiUtAddReference(ReturnDesc);
+      }
+
+      return (TRUE);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsIsResultUsed
+     *
+     * PARAMETERS:  Op                  - Current Op
+     *              WalkState           - Current State
+     *
+     * RETURN:      TRUE if result is used, FALSE otherwise
+     *
+     * DESCRIPTION: Check if a result object will be used by the parent
+     *
+     ******************************************************************************/
+
+    BOOLEAN
+    AcpiDsIsResultUsed(ACPI_PARSE_OBJECT * Op, ACPI_WALK_STATE * WalkState) {
+      const ACPI_OPCODE_INFO *ParentInfo;
+
+      ACPI_FUNCTION_TRACE_PTR(DsIsResultUsed, Op);
+
+      /* Must have both an Op and a Result Object */
+
+      if (!Op) {
+        ACPI_ERROR((AE_INFO, "Null Op"));
+        return_UINT8(TRUE);
+      }
+
+      /*
+       * We know that this operator is not a
+       * Return() operator (would not come here.) The following code is the
+       * optional support for a so-called "implicit return". Some AML code
+       * assumes that the last value of the method is "implicitly" returned
+       * to the caller. Just save the last result as the return value.
+       * NOTE: this is optional because the ASL language does not actually
+       * support this behavior.
+       */
+      (void)AcpiDsDoImplicitReturn(WalkState->ResultObj, WalkState, TRUE);
+
+      /*
+       * Now determine if the parent will use the result
+       *
+       * If there is no parent, or the parent is a ScopeOp, we are executing
+       * at the method level. An executing method typically has no parent,
+       * since each method is parsed separately. A method invoked externally
+       * via ExecuteControlMethod has a ScopeOp as the parent.
+       */
+      if ((!Op->Common.Parent) ||
+          (Op->Common.Parent->Common.AmlOpcode == AML_SCOPE_OP)) {
+        /* No parent, the return value cannot possibly be used */
+
+        ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH,
+                          "At Method level, result of [%s] not used\n",
+                          AcpiPsGetOpcodeName(Op->Common.AmlOpcode)));
+        return_UINT8(FALSE);
+      }
+
+      /* Get info on the parent. The RootOp is AML_SCOPE */
+
+      ParentInfo = AcpiPsGetOpcodeInfo(Op->Common.Parent->Common.AmlOpcode);
+      if (ParentInfo->Class == AML_CLASS_UNKNOWN) {
+        ACPI_ERROR((AE_INFO, "Unknown parent opcode Op=%p", Op));
+        return_UINT8(FALSE);
+      }
+
+      /*
+       * Decide what to do with the result based on the parent. If
+       * the parent opcode will not use the result, delete the object.
+       * Otherwise leave it as is, it will be deleted when it is used
+       * as an operand later.
+       */
+      switch (ParentInfo->Class) {
+      case AML_CLASS_CONTROL:
+
+        switch (Op->Common.Parent->Common.AmlOpcode) {
+        case AML_RETURN_OP:
+
+          /* Never delete the return value associated with a return opcode */
+
+          goto ResultUsed;
+
+        case AML_IF_OP:
+        case AML_WHILE_OP:
+          /*
+           * If we are executing the predicate AND this is the predicate op,
+           * we will use the return value
+           */
+          if ((WalkState->ControlState->Common.State ==
+               ACPI_CONTROL_PREDICATE_EXECUTING) &&
+              (WalkState->ControlState->Control.PredicateOp == Op)) {
+            goto ResultUsed;
+          }
+          break;
+
+        default:
+
+          /* Ignore other control opcodes */
+
+          break;
+        }
+
+        /* The general control opcode returns no result */
+
+        goto ResultNotUsed;
+
+      case AML_CLASS_CREATE:
+        /*
+         * These opcodes allow TermArg(s) as operands and therefore
+         * the operands can be method calls. The result is used.
+         */
+        goto ResultUsed;
+
+      case AML_CLASS_NAMED_OBJECT:
+
+        if ((Op->Common.Parent->Common.AmlOpcode == AML_REGION_OP) ||
+            (Op->Common.Parent->Common.AmlOpcode == AML_DATA_REGION_OP) ||
+            (Op->Common.Parent->Common.AmlOpcode == AML_PACKAGE_OP) ||
+            (Op->Common.Parent->Common.AmlOpcode == AML_VAR_PACKAGE_OP) ||
+            (Op->Common.Parent->Common.AmlOpcode == AML_BUFFER_OP) ||
+            (Op->Common.Parent->Common.AmlOpcode == AML_INT_EVAL_SUBTREE_OP) ||
+            (Op->Common.Parent->Common.AmlOpcode == AML_BANK_FIELD_OP)) {
+          /*
+           * These opcodes allow TermArg(s) as operands and therefore
+           * the operands can be method calls. The result is used.
+           */
+          goto ResultUsed;
+        }
+
+        goto ResultNotUsed;
+
+      default:
+        /*
+         * In all other cases. the parent will actually use the return
+         * object, so keep it.
+         */
+        goto ResultUsed;
+      }
+
+    ResultUsed:
+      ACPI_DEBUG_PRINT(
+          (ACPI_DB_DISPATCH, "Result of [%s] used by Parent [%s] Op=%p\n",
+           AcpiPsGetOpcodeName(Op->Common.AmlOpcode),
+           AcpiPsGetOpcodeName(Op->Common.Parent->Common.AmlOpcode), Op));
+
+      return_UINT8(TRUE);
+
+    ResultNotUsed:
+      ACPI_DEBUG_PRINT(
+          (ACPI_DB_DISPATCH, "Result of [%s] not used by Parent [%s] Op=%p\n",
+           AcpiPsGetOpcodeName(Op->Common.AmlOpcode),
+           AcpiPsGetOpcodeName(Op->Common.Parent->Common.AmlOpcode), Op));
+
+      return_UINT8(FALSE);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsDeleteResultIfNotUsed
+     *
+     * PARAMETERS:  Op              - Current parse Op
+     *              ResultObj       - Result of the operation
+     *              WalkState       - Current state
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Used after interpretation of an opcode. If there is an
+     *internal result descriptor, check if the parent opcode will actually use
+     *              this result. If not, delete the result now so that it will
+     *              not become orphaned.
+     *
+     ******************************************************************************/
+
+    void AcpiDsDeleteResultIfNotUsed(ACPI_PARSE_OBJECT * Op,
+                                     ACPI_OPERAND_OBJECT * ResultObj,
+                                     ACPI_WALK_STATE * WalkState) {
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_STATUS Status;
+
+      ACPI_FUNCTION_TRACE_PTR(DsDeleteResultIfNotUsed, ResultObj);
+
+      if (!Op) {
+        ACPI_ERROR((AE_INFO, "Null Op"));
+        return_VOID;
+      }
+
+      if (!ResultObj) {
+        return_VOID;
+      }
+
+      if (!AcpiDsIsResultUsed(Op, WalkState)) {
+        /* Must pop the result stack (ObjDesc should be equal to ResultObj) */
+
+        Status = AcpiDsResultPop(&ObjDesc, WalkState);
+        if (ACPI_SUCCESS(Status)) {
+          AcpiUtRemoveReference(ResultObj);
+        }
+      }
+
+      return_VOID;
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsResolveOperands
+     *
+     * PARAMETERS:  WalkState           - Current walk state with operands on
+     *stack
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Resolve all operands to their values. Used to prepare
+     *              arguments to a control method invocation (a call from one
+     *              method to another.)
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsResolveOperands(ACPI_WALK_STATE * WalkState) {
+      UINT32 i;
+      ACPI_STATUS Status = AE_OK;
+
+      ACPI_FUNCTION_TRACE_PTR(DsResolveOperands, WalkState);
+
+      /*
+       * Attempt to resolve each of the valid operands
+       * Method arguments are passed by reference, not by value. This means
+       * that the actual objects are passed, not copies of the objects.
+       */
+      for (i = 0; i < WalkState->NumOperands; i++) {
+        Status = AcpiExResolveToValue(&WalkState->Operands[i], WalkState);
+        if (ACPI_FAILURE(Status)) {
+          break;
+        }
+      }
+
+      return_ACPI_STATUS(Status);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsClearOperands
+     *
+     * PARAMETERS:  WalkState           - Current walk state with operands on
+     *stack
+     *
+     * RETURN:      None
+     *
+     * DESCRIPTION: Clear all operands on the current walk state operand stack.
+     *
+     ******************************************************************************/
+
+    void AcpiDsClearOperands(ACPI_WALK_STATE * WalkState) {
+      UINT32 i;
+
+      ACPI_FUNCTION_TRACE_PTR(DsClearOperands, WalkState);
+
+      /* Remove a reference on each operand on the stack */
+
+      for (i = 0; i < WalkState->NumOperands; i++) {
+        /*
+         * Remove a reference to all operands, including both
+         * "Arguments" and "Targets".
+         */
+        AcpiUtRemoveReference(WalkState->Operands[i]);
+        WalkState->Operands[i] = NULL;
+      }
+
+      WalkState->NumOperands = 0;
+      return_VOID;
+    }
+#endif
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateOperand
+     *
+     * PARAMETERS:  WalkState       - Current walk state
+     *              Arg             - Parse object for the argument
+     *              ArgIndex        - Which argument (zero based)
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Translate a parse tree object that is an argument to an AML
+     *              opcode to the equivalent interpreter object. This may
+     *include looking up a name or entering a new name into the internal
+     *              namespace.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsCreateOperand(ACPI_WALK_STATE * WalkState, ACPI_PARSE_OBJECT * Arg,
+                        UINT32 ArgIndex) {
+      ACPI_STATUS Status = AE_OK;
+      char *NameString;
+      UINT32 NameLength;
+      ACPI_OPERAND_OBJECT *ObjDesc;
+      ACPI_PARSE_OBJECT *ParentOp;
+      UINT16 Opcode;
+      ACPI_INTERPRETER_MODE InterpreterMode;
+      const ACPI_OPCODE_INFO *OpInfo;
+
+      ACPI_FUNCTION_TRACE_PTR(DsCreateOperand, Arg);
+
+      /* A valid name must be looked up in the namespace */
+
+      if ((Arg->Common.AmlOpcode == AML_INT_NAMEPATH_OP) &&
+          (Arg->Common.Value.String) &&
+          !(Arg->Common.Flags & ACPI_PARSEOP_IN_STACK)) {
+        ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH, "Getting a name: Arg=%p\n", Arg));
+
+        /* Get the entire name string from the AML stream */
+
+        Status = AcpiExGetNameString(ACPI_TYPE_ANY, Arg->Common.Value.Buffer,
+                                     &NameString, &NameLength);
+
+        if (ACPI_FAILURE(Status)) {
+          return_ACPI_STATUS(Status);
+        }
+
+        /* All prefixes have been handled, and the name is in NameString */
+
+        /*
+         * Special handling for BufferField declarations. This is a deferred
+         * opcode that unfortunately defines the field name as the last
+         * parameter instead of the first. We get here when we are performing
+         * the deferred execution, so the actual name of the field is already
+         * in the namespace. We don't want to attempt to look it up again
+         * because we may be executing in a different scope than where the
+         * actual opcode exists.
+         */
+        if ((WalkState->DeferredNode) &&
+            (WalkState->DeferredNode->Type == ACPI_TYPE_BUFFER_FIELD) &&
+            (ArgIndex ==
+             (UINT32)((WalkState->Opcode == AML_CREATE_FIELD_OP) ? 3 : 2))) {
+          ObjDesc = ACPI_CAST_PTR(ACPI_OPERAND_OBJECT, WalkState->DeferredNode);
+          Status = AE_OK;
+        } else /* All other opcodes */
+        {
+          /*
+           * Differentiate between a namespace "create" operation
+           * versus a "lookup" operation (IMODE_LOAD_PASS2 vs.
+           * IMODE_EXECUTE) in order to support the creation of
+           * namespace objects during the execution of control methods.
+           */
+          ParentOp = Arg->Common.Parent;
+          OpInfo = AcpiPsGetOpcodeInfo(ParentOp->Common.AmlOpcode);
+          if ((OpInfo->Flags & AML_NSNODE) &&
+              (ParentOp->Common.AmlOpcode != AML_INT_METHODCALL_OP) &&
+              (ParentOp->Common.AmlOpcode != AML_REGION_OP) &&
+              (ParentOp->Common.AmlOpcode != AML_INT_NAMEPATH_OP)) {
+            /* Enter name into namespace if not found */
+
+            InterpreterMode = ACPI_IMODE_LOAD_PASS2;
+          } else {
+            /* Return a failure if name not found */
+
+            InterpreterMode = ACPI_IMODE_EXECUTE;
+          }
+
+          Status = AcpiNsLookup(
+              WalkState->ScopeInfo, NameString, ACPI_TYPE_ANY, InterpreterMode,
+              ACPI_NS_SEARCH_PARENT | ACPI_NS_DONT_OPEN_SCOPE, WalkState,
+              ACPI_CAST_INDIRECT_PTR(ACPI_NAMESPACE_NODE, &ObjDesc));
+          /*
+           * The only case where we pass through (ignore) a NOT_FOUND
+           * error is for the CondRefOf opcode.
+           */
+          if (Status == AE_NOT_FOUND) {
+            if (ParentOp->Common.AmlOpcode == AML_COND_REF_OF_OP) {
+              /*
+               * For the Conditional Reference op, it's OK if
+               * the name is not found;  We just need a way to
+               * indicate this to the interpreter, set the
+               * object to the root
+               */
+              ObjDesc = ACPI_CAST_PTR(ACPI_OPERAND_OBJECT, AcpiGbl_RootNode);
+              Status = AE_OK;
+            } else {
+              /*
+               * We just plain didn't find it -- which is a
+               * very serious error at this point
+               */
+              Status = AE_AML_NAME_NOT_FOUND;
+            }
+          }
+
+          if (ACPI_FAILURE(Status)) {
+            ACPI_ERROR_NAMESPACE(NameString, Status);
+          }
+        }
+
+        /* Free the namestring created above */
+
+        ACPI_FREE(NameString);
+
+        /* Check status from the lookup */
+
+        if (ACPI_FAILURE(Status)) {
+          return_ACPI_STATUS(Status);
+        }
+
+        /* Put the resulting object onto the current object stack */
+
+        Status = AcpiDsObjStackPush(ObjDesc, WalkState);
+        if (ACPI_FAILURE(Status)) {
+          return_ACPI_STATUS(Status);
+        }
+        ACPI_DEBUGGER_EXEC(AcpiDbDisplayArgumentObject(ObjDesc, WalkState));
+      } else {
+        /* Check for null name case */
+
+        if ((Arg->Common.AmlOpcode == AML_INT_NAMEPATH_OP) &&
+            !(Arg->Common.Flags & ACPI_PARSEOP_IN_STACK)) {
+          /*
+           * If the name is null, this means that this is an
+           * optional result parameter that was not specified
+           * in the original ASL. Create a Zero Constant for a
+           * placeholder. (Store to a constant is a Noop.)
+           */
+          Opcode = AML_ZERO_OP; /* Has no arguments! */
+
+          ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH, "Null namepath: Arg=%p\n", Arg));
+        } else {
+          Opcode = Arg->Common.AmlOpcode;
+        }
+
+        /* Get the object type of the argument */
+
+        OpInfo = AcpiPsGetOpcodeInfo(Opcode);
+        if (OpInfo->ObjectType == ACPI_TYPE_INVALID) {
+          return_ACPI_STATUS(AE_NOT_IMPLEMENTED);
+        }
+
+        if ((OpInfo->Flags & AML_HAS_RETVAL) ||
+            (Arg->Common.Flags & ACPI_PARSEOP_IN_STACK)) {
+          ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH,
+                            "Argument previously created, already stacked\n"));
+
+          ACPI_DEBUGGER_EXEC(AcpiDbDisplayArgumentObject(
+              WalkState->Operands[WalkState->NumOperands - 1], WalkState));
+
+          /*
+           * Use value that was already previously returned
+           * by the evaluation of this argument
+           */
+          Status = AcpiDsResultPop(&ObjDesc, WalkState);
+          if (ACPI_FAILURE(Status)) {
+            /*
+             * Only error is underflow, and this indicates
+             * a missing or null operand!
+             */
+            ACPI_EXCEPTION((AE_INFO, Status, "Missing or null operand"));
+            return_ACPI_STATUS(Status);
+          }
+        } else {
+          /* Create an ACPI_INTERNAL_OBJECT for the argument */
+
+          ObjDesc = AcpiUtCreateInternalObject(OpInfo->ObjectType);
+          if (!ObjDesc) {
+            return_ACPI_STATUS(AE_NO_MEMORY);
+          }
+
+          /* Initialize the new object */
+
+          Status = AcpiDsInitObjectFromOp(WalkState, Arg, Opcode, &ObjDesc);
+          if (ACPI_FAILURE(Status)) {
+            AcpiUtDeleteObjectDesc(ObjDesc);
+            return_ACPI_STATUS(Status);
+          }
+        }
+
+        /* Put the operand object on the object stack */
+
+        Status = AcpiDsObjStackPush(ObjDesc, WalkState);
+        if (ACPI_FAILURE(Status)) {
+          return_ACPI_STATUS(Status);
+        }
+
+        ACPI_DEBUGGER_EXEC(AcpiDbDisplayArgumentObject(ObjDesc, WalkState));
+      }
+
+      return_ACPI_STATUS(AE_OK);
+    }
+
+    /*******************************************************************************
+     *
+     * FUNCTION:    AcpiDsCreateOperands
+     *
+     * PARAMETERS:  WalkState           - Current state
+     *              FirstArg            - First argument of a parser argument
+     *tree
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Convert an operator's arguments from a parse tree format to
+     *              namespace objects and place those argument object on the
+     *object stack in preparation for evaluation by the interpreter.
+     *
+     ******************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsCreateOperands(ACPI_WALK_STATE * WalkState,
+                         ACPI_PARSE_OBJECT * FirstArg) {
+      ACPI_STATUS Status = AE_OK;
+      ACPI_PARSE_OBJECT *Arg;
+      ACPI_PARSE_OBJECT *Arguments[ACPI_OBJ_NUM_OPERANDS];
+      UINT32 ArgCount = 0;
+      UINT32 Index = WalkState->NumOperands;
+      UINT32 i;
+
+      ACPI_FUNCTION_TRACE_PTR(DsCreateOperands, FirstArg);
+
+      /* Get all arguments in the list */
+
+      Arg = FirstArg;
+      while (Arg) {
+        if (Index >= ACPI_OBJ_NUM_OPERANDS) {
+          return_ACPI_STATUS(AE_BAD_DATA);
+        }
+
+        Arguments[Index] = Arg;
+        WalkState->Operands[Index] = NULL;
+
+        /* Move on to next argument, if any */
+
+        Arg = Arg->Common.Next;
+        ArgCount++;
+        Index++;
+      }
+
+      ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH,
+                        "NumOperands %d, ArgCount %d, Index %d\n",
+                        WalkState->NumOperands, ArgCount, Index));
+
+      /* Create the interpreter arguments, in reverse order */
+
+      Index--;
+      for (i = 0; i < ArgCount; i++) {
+        Arg = Arguments[Index];
+        WalkState->OperandIndex = (UINT8)Index;
+
+        Status = AcpiDsCreateOperand(WalkState, Arg, Index);
+        if (ACPI_FAILURE(Status)) {
+          goto Cleanup;
+        }
+
+        ACPI_DEBUG_PRINT((ACPI_DB_DISPATCH,
+                          "Created Arg #%u (%p) %u args total\n", Index, Arg,
+                          ArgCount));
+        Index--;
+      }
+
+      return_ACPI_STATUS(Status);
+
+    Cleanup:
+      /*
+       * We must undo everything done above; meaning that we must
+       * pop everything off of the operand stack and delete those
+       * objects
+       */
+      AcpiDsObjStackPopAndDelete(ArgCount, WalkState);
+
+      ACPI_EXCEPTION((AE_INFO, Status, "While creating Arg %u", Index));
+      return_ACPI_STATUS(Status);
+    }
+
+    /*****************************************************************************
+     *
+     * FUNCTION:    AcpiDsEvaluateNamePath
+     *
+     * PARAMETERS:  WalkState       - Current state of the parse tree walk,
+     *                                the opcode of current operation should be
+     *                                AML_INT_NAMEPATH_OP
+     *
+     * RETURN:      Status
+     *
+     * DESCRIPTION: Translate the -NamePath- parse tree object to the equivalent
+     *              interpreter object, convert it to value, if needed,
+     *duplicate it, if needed, and push it onto the current result stack.
+     *
+     ****************************************************************************/
+
+    ACPI_STATUS
+    AcpiDsEvaluateNamePath(ACPI_WALK_STATE * WalkState) {
+      ACPI_STATUS Status = AE_OK;
+      ACPI_PARSE_OBJECT *Op = WalkState->Op;
+      ACPI_OPERAND_OBJECT **Operand = &WalkState->Operands[0];
+      ACPI_OPERAND_OBJECT *NewObjDesc;
+      UINT8 Type;
+
+      ACPI_FUNCTION_TRACE_PTR(DsEvaluateNamePath, WalkState);
+
+      if (!Op->Common.Parent) {
+        /* This happens after certain exception processing */
+
+        goto Exit;
+      }
+
+      if ((Op->Common.Parent->Common.AmlOpcode == AML_PACKAGE_OP) ||
+          (Op->Common.Parent->Common.AmlOpcode == AML_VAR_PACKAGE_OP) ||
+          (Op->Common.Parent->Common.AmlOpcode == AML_REF_OF_OP)) {
+        /* TBD: Should we specify this feature as a bit of OpInfo->Flags of
+         * these opcodes? */
+
+        goto Exit;
+      }
+
+      Status = AcpiDsCreateOperand(WalkState, Op, 0);
+      if (ACPI_FAILURE(Status)) {
+        goto Exit;
+      }
+
+      if (Op->Common.Flags & ACPI_PARSEOP_TARGET) {
+        NewObjDesc = *Operand;
+        goto PushResult;
+      }
+
+      Type = (*Operand)->Common.Type;
+
+      Status = AcpiExResolveToValue(Operand, WalkState);
+      if (ACPI_FAILURE(Status)) {
+        goto Exit;
+      }
+
+      if (Type == ACPI_TYPE_INTEGER) {
+        /* It was incremented by AcpiExResolveToValue */
+
+        AcpiUtRemoveReference(*Operand);
+
+        Status = AcpiUtCopyIobjectToIobject(*Operand, &NewObjDesc, WalkState);
+        if (ACPI_FAILURE(Status)) {
+          goto Exit;
+        }
+      } else {
+        /*
+         * The object either was anew created or is
+         * a Namespace node - don't decrement it.
+         */
+        NewObjDesc = *Operand;
+      }
+
+      /* Cleanup for name-path operand */
+
+      Status = AcpiDsObjStackPop(1, WalkState);
+      if (ACPI_FAILURE(Status)) {
+        WalkState->ResultObj = NewObjDesc;
+        goto Exit;
+      }
+
+    PushResult:
+
+      WalkState->ResultObj = NewObjDesc;
+
+      Status = AcpiDsResultPush(WalkState->ResultObj, WalkState);
+      if (ACPI_SUCCESS(Status)) {
+        /* Force to take it from stack */
+
+        Op->Common.Flags |= ACPI_PARSEOP_IN_STACK;
+      }
+
+    Exit:
+
+      return_ACPI_STATUS(Status);
+    }
