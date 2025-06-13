@@ -1,23 +1,86 @@
-#Meson build options for MINIX
+# MINIX4 Build Configuration Options
 
-#Select the target architecture for the build.
+# Target architecture selection
 option('arch',
        type : 'combo',
-       choices : ['i386', 'x86_64', 'arm32', 'arm64'],
-       value : 'i386',
-       description : 'Target architecture')
+       choices : ['auto', 'i386', 'x86_64', 'arm', 'aarch64'],
+       value : 'auto',
+       description : 'Target architecture (auto-detect by default)')
 
-#Generic compilation options
+# Generic compilation options
 option('opt_level',
-       type : 'string',
-       value : '3',
-       description : 'Optimization level used as -O<level>')
+       type : 'combo',
+       choices : ['0', '1', '2', '3', 's'],
+       value : '2',
+       description : 'Optimization level (-O flag)')
 
-#Select the C standard for libc's custom math component
+# C standard selection for different components
 option('libc_c_std',
        type : 'combo',
        choices : ['c11', 'c17', 'c23'],
        value : 'c23',
-       description : 'C standard to use when compiling libc custom math')
+       description : 'C standard to use when compiling libc')
+
+option('kernel_c_std',
+       type : 'combo',
+       choices : ['c17', 'c23'],
+       value : 'c23', 
+       description : 'C standard for kernel code')
+
+# Component build toggles
+option('build_kernel', type : 'boolean', value : true,
+       description : 'Build the MINIX4 kernel')
+
+option('build_libc', type : 'boolean', value : true,
+       description : 'Build the C library')
+
+option('build_libos', type : 'boolean', value : true,  
+       description : 'Build OS support libraries')
+
+option('build_servers', type : 'boolean', value : false,
+       description : 'Build system servers')
+
+option('build_drivers', type : 'boolean', value : false,
+       description : 'Build device drivers')
+
+option('build_commands', type : 'boolean', value : false,
+       description : 'Build system commands')
+
+option('tests', type : 'boolean', value : false,
+       description : 'Build test suites')
+
+option('docs', type : 'boolean', value : false,
+       description : 'Build documentation')
+
+# Kernel features
+option('enable_smp', type : 'boolean', value : true,
+       description : 'Enable SMP support')
+
+option('enable_capabilities', type : 'boolean', value : true,
+       description : 'Enable capability-based security')
+
+option('enable_virtual_memory', type : 'boolean', value : true,
+       description : 'Enable virtual memory')
+
+# Debug options
+option('debug_kernel', type : 'boolean', value : true,
+       description : 'Enable kernel debugging features')
+
+option('debug_memory', type : 'boolean', value : false,
+       description : 'Enable memory debugging')
+
+option('debug_verbose', type : 'boolean', value : false,
+       description : 'Enable verbose debug output')
+
+# Security options
+option('enable_aslr', type : 'boolean', value : true,
+       description : 'Enable Address Space Layout Randomization')
+
+option('enable_nx', type : 'boolean', value : true,
+       description : 'Enable NX bit support')
+
+# Compatibility
+option('posix_compliance', type : 'boolean', value : true,
+       description : 'Enable POSIX compliance features')
 
 
