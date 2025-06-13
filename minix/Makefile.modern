@@ -1,0 +1,171 @@
+# MINIX4 Modern Kernel Makefile
+# C23 compliant build system
+
+# Compiler and tools
+CC := clang
+LD := ld.lld
+AR := llvm-ar
+OBJCOPY := llvm-objcopy
+OBJDUMP := llvm-objdump
+
+# Architecture detection
+ARCH ?= x86_64
+TARGET_TRIPLE := $(ARCH)-unknown-none-elf
+
+# C23 compiler flags
+CFLAGS := -std=c23 \
+          -target $(TARGET_TRIPLE) \
+          -ffreestanding \
+          -fno-stack-protector \
+          -fno-pie \
+          -mno-red-zone \
+          -mcmodel=kernel \
+          -Wall \
+          -Wextra \
+          -Werror \
+          -Wno-unused-parameter \
+          -O2 \
+          -g
+
+# Architecture-specific flags
+ifeq ($(ARCH),x86_64)
+    CFLAGS += -m64 -march=x86-64 -mtune=generic
+    ASFLAGS += -64
+endif
+
+ifeq ($(ARCH),aarch64)
+    CFLAGS += -march=armv8-a
+endif
+
+# Feature flags
+CFLAGS += -DCONFIG_SMP=1
+CFLAGS += -DCONFIG_CAPABILITY=1
+CFLAGS += -DCONFIG_EXOKERNEL=1
+CFLAGS += -DDEBUG=1
+
+# Include directories
+INCLUDES := -I. \
+           -Iinclude \
+           -Iarch/$(ARCH)/include \
+           -Ikernel/include
+
+# Linker flags
+LDFLAGS := -T kernel.ld \
+          --gc-sections \
+          -nostdlib \
+          -static
+
+# Source files
+KERNEL_SRCS := main_modern.c \
+               kernel/panic.c \
+               kernel/memory.c \
+               kernel/capability.c \
+               kernel/ipc.c \
+               kernel/scheduler.c \
+               kernel/device.c \
+               arch/$(ARCH)/boot.S \
+               arch/$(ARCH)/arch.c
+
+# Object files
+KERNEL_OBJS := $(KERNEL_SRCS:.c=.o)
+KERNEL_OBJS := $(KERNEL_OBJS:.S=.o)
+
+# Target kernel
+KERNEL := minix4.elf
+
+# Default target
+all: $(KERNEL)
+
+# Kernel build
+$(KERNEL): $(KERNEL_OBJS)
+	@echo "Linking kernel..."
+	$(LD) $(LDFLAGS) -o $@ $^
+	@echo "Kernel built successfully: $@"
+
+# C source compilation
+%.o: %.c
+	@echo "Compiling $<..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+# Assembly source compilation  
+%.o: %.S
+	@echo "Assembling $<..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+# Generate dependency files
+%.d: %.c
+	$(CC) $(CFLAGS) $(INCLUDES) -MM -MT $(@:.d=.o) $< > $@
+
+# Include dependencies
+-include $(KERNEL_SRCS:.c=.d)
+
+# Create initramfs
+initramfs.img: $(shell find initramfs -type f)
+	@echo "Creating initramfs..."
+	cd initramfs && find . | cpio -o -H newc | gzip > ../initramfs.img
+
+# Boot image
+boot.img: $(KERNEL) initramfs.img
+	@echo "Creating boot image..."
+	mkdir -p iso/boot
+	cp $(KERNEL) iso/boot/
+	cp initramfs.img iso/boot/
+	grub-mkrescue -o boot.img iso/
+
+# Run in QEMU
+run: boot.img
+	qemu-system-$(ARCH) \
+		-M q35 \
+		-m 256M \
+		-smp 2 \
+		-cdrom boot.img \
+		-serial stdio \
+		-no-reboot
+
+# Debug in QEMU with GDB
+debug: boot.img
+	qemu-system-$(ARCH) \
+		-M q35 \
+		-m 256M \
+		-smp 2 \
+		-cdrom boot.img \
+		-serial stdio \
+		-s -S &
+	gdb $(KERNEL) -ex "target remote :1234"
+
+# Clean build artifacts
+clean:
+	rm -f $(KERNEL_OBJS) $(KERNEL_SRCS:.c=.d) $(KERNEL)
+	rm -f initramfs.img boot.img
+	rm -rf iso/
+
+# Install kernel
+install: $(KERNEL)
+	install -D $(KERNEL) $(DESTDIR)/boot/$(KERNEL)
+
+# Code formatting
+format:
+	clang-format -i $(KERNEL_SRCS)
+
+# Static analysis
+analyze:
+	clang-static-analyzer $(CFLAGS) $(INCLUDES) $(KERNEL_SRCS)
+
+# Documentation
+docs:
+	doxygen Doxyfile
+
+# Test build
+test: $(KERNEL)
+	@echo "Running kernel tests..."
+	# Add test framework here
+
+.PHONY: all clean run debug install format analyze docs test
+
+# Verbose mode
+V ?= 0
+ifeq ($(V),0)
+    Q := @
+else
+    Q :=
+endif

@@ -110,7 +110,8 @@ kernel_core_sources = files(
     'clh_bkl.c',    # CLH BKL specific instance and initialization
     'capability.c', # Capability table management
     'profile.c',    # Profiling framework (already added, ensure it's here)
-    'k_posix.c'     # POSIX helper stubs
+    'k_posix.c',    # POSIX helper stubs
+    'acpi_unified.c'
 )
 
 #System call handler sources
@@ -130,7 +131,6 @@ endif
 arch_sources_list = []
 if arch_subdir == 'i386'
   arch_sources_list = files(
-    'arch/i386/acpi.c',
     'arch/i386/apic.c',
     'arch/i386/arch_clock.c',
     'arch/i386/arch_do_vmctl.c',
@@ -193,7 +193,7 @@ kernel_link_args += ['-T', linker_script, '-Wl,--build-id=none']
 #Build kernel executable
 kernel = executable('kernel',
     all_c_sources + kernel_asm_sources,
-    link_with: [klib, kernel_capability_lib], # Added kernel_capability_lib here
+    link_with: [klib, kernel_capability_lib, acpi_lib],
     link_args: kernel_link_args,
     c_args: kernel_c_args,
     include_directories: kernel_includes,
