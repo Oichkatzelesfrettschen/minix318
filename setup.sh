@@ -9,7 +9,10 @@ set -e
 export DEBIAN_FRONTEND=noninteractive
 
 # Update package index
-apt-get update
+apt-get update -o Acquire::Retries=3
+
+# Base utilities required for package configuration
+apt-get install -y apt-utils ca-certificates
 
 # Install core compilation and debugging utilities
 apt-get install -y \
