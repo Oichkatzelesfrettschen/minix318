@@ -1,815 +1,1003 @@
 /**
  * @file acpi_unified.h
- * @brief Consolidated ACPI header files for analysis.
+ * @brief Aggregated ACPI headers for unified analysis.
  */
 
+#ifndef __ACPI_UNIFIED_H__
+#define __ACPI_UNIFIED_H__
+
 /**
- * @section drivers_power_acpi_acpi_globals_h
+ * @section minix_drivers_power_acpi_acpi_globals_h
  * @brief Original file: minix/drivers/power/acpi/acpi_globals.h
  */
-#ifndef __ACPI_GLOBALS_H__
-#define __ACPI_GLOBALS_H__
-
-EXTERN int acpi_enabled;
-EXTERN struct machine machine;
-
-#endif /* __ACPI_GLOBALS_H__ */
+#include "../../drivers/power/acpi/acpi_globals.h"
 
 /**
- * @section kernel_arch_i386_acpi_h
- * @brief Original file: minix/kernel/arch/i386/acpi.h
- */
-#ifndef __ACPI_H__
-#define __ACPI_H__
-
-#include "kernel/kernel.h"
-
-// Added kernel headers (precautionary for consistency)
-#include <klib/include/kmemory.h>
-#include <klib/include/kprintf.h>
-#include <klib/include/kstring.h>
-#include <minix/kernel_types.h>
-
-/* ACPI root system description pointer */
-struct acpi_rsdp {
-  char signature[8]; /* must be "RSD PTR " */
-  u8_t checksum;
-  char oemid[6];
-  u8_t revision;
-  u32_t rsdt_addr;
-  u32_t length;
-};
-
-#define ACPI_SDT_SIGNATURE_LEN 4
-
-#define ACPI_SDT_SIGNATURE(name) #name
-
-/* header common to all system description tables */
-struct acpi_sdt_header {
-  char signature[ACPI_SDT_SIGNATURE_LEN];
-  u32_t length;
-  u8_t revision;
-  u8_t checksum;
-  char oemid[6];
-  char oem_table_id[8];
-  u32_t oem_revision;
-  u32_t creator_id;
-  u32_t creator_revision;
-};
-
-struct acpi_generic_address {
-  u8_t address_space_id;
-  u8_t register_bit_width;
-  u8_t register_bit_offset;
-  u8_t access_size;
-  u64_t address;
-};
-
-struct acpi_fadt_header {
-  struct acpi_sdt_header hdr;
-  u32_t facs;
-  u32_t dsdt;
-  u8_t model;
-  u8_t preferred_pm_profile;
-  u16_t sci_int;
-  u32_t smi_cmd;
-  u8_t acpi_enable;
-  u8_t acpi_disable;
-  u8_t s4bios_req;
-  u8_t pstate_cnt;
-  u32_t pm1a_evt_blk;
-  u32_t pm1b_evt_blk;
-  u32_t pm1a_cnt_blk;
-  u32_t pm1b_cnt_blk;
-  u32_t pm2_cnt_blk;
-  u32_t pm_tmr_blk;
-  u32_t gpe0_blk;
-  u32_t gpe1_blk;
-  u8_t pm1_evt_len;
-  u8_t pm1_cnt_len;
-  u8_t pm2_cnt_len;
-  u8_t pm_tmr_len;
-  u8_t gpe0_blk_len;
-  u8_t gpe1_blk_len;
-  u8_t gpe1_base;
-  u8_t cst_cnt;
-  u16_t p_lvl2_lat;
-  u16_t p_lvl3_lat;
-  u16_t flush_size;
-  u16_t flush_stride;
-  u8_t duty_offset;
-  u8_t duty_width;
-  u8_t day_alrm;
-  u8_t mon_alrm;
-  u8_t century;
-  u16_t iapc_boot_arch;
-  u8_t reserved1;
-  u32_t flags;
-  struct acpi_generic_address reset_reg;
-  u8_t reset_value;
-  u8_t reserved2[3];
-  u64_t xfacs;
-  u64_t xdsdt;
-  struct acpi_generic_address xpm1a_evt_blk;
-  struct acpi_generic_address xpm1b_evt_blk;
-  struct acpi_generic_address xpm1a_cnt_blk;
-  struct acpi_generic_address xpm1b_cnt_blk;
-  struct acpi_generic_address xpm2_cnt_blk;
-  struct acpi_generic_address xpm_tmr_blk;
-  struct acpi_generic_address xgpe0_blk;
-  struct acpi_generic_address xgpe1_blk;
-};
-
-struct acpi_madt_hdr {
-  struct acpi_sdt_header hdr;
-  u32_t local_apic_address;
-  u32_t flags;
-};
-
-#define ACPI_MADT_TYPE_LAPIC 0
-#define ACPI_MADT_TYPE_IOAPIC 1
-#define ACPI_MADT_TYPE_INT_SRC 2
-#define ACPI_MADT_TYPE_NMI_SRC 3
-#define ACPI_MADT_TYPE_LAPIC_NMI 4
-#define ACPI_MADT_TYPE_LAPIC_ADRESS 5
-#define ACPI_MADT_TYPE_IOSAPIC 6
-#define ACPI_MADT_TYPE_LSAPIC 7
-#define ACPI_MADT_TYPE_PLATFORM_INT_SRC 8
-#define ACPI_MADT_TYPE_Lx2APIC 9
-#define ACPI_MADT_TYPE_Lx2APIC_NMI 10
-
-struct acpi_madt_item_hdr {
-  u8_t type;
-  u8_t length;
-};
-
-struct acpi_madt_lapic {
-  struct acpi_madt_item_hdr hdr;
-  u8_t acpi_cpu_id;
-  u8_t apic_id;
-  u32_t flags;
-};
-
-struct acpi_madt_ioapic {
-  struct acpi_madt_item_hdr hdr;
-  u8_t id;
-  u8_t __reserved;
-  u32_t address;
-  u32_t global_int_base;
-};
-
-struct acpi_madt_int_src {
-  struct acpi_madt_item_hdr hdr;
-  u8_t bus;
-  u8_t bus_int;
-  u32_t global_int;
-  u16_t mps_flags;
-};
-
-struct acpi_madt_nmi {
-  struct acpi_madt_item_hdr hdr;
-  u16_t flags;
-  u32_t global_int;
-};
-
-void acpi_init(void);
-
-void acpi_poweroff(void);
-
-/*
- * Returns a pointer to the io acpi structure in the MADT table in ACPI. The
- * pointer is valid only until paging is turned off. No memory is allocated in
- * this function thus no memory needs to be freed
- */
-struct acpi_madt_ioapic *acpi_get_ioapic_next(void);
-/* same as above for local APICs */
-struct acpi_madt_lapic *acpi_get_lapic_next(void);
-
-#endif /* __ACPI_H__ */
-
-/**
- * @section kernel_uts_i86pc_sys_acpidev_impl_h
- * @brief Original file: minix/kernel/uts/i86pc/sys/acpidev_impl.h
- */
-/*
- * CDDL HEADER START
- *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
- *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
- * See the License for the specific language governing permissions
- * and limitations under the License.
- *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
- */
-/*
- * Copyright (c) 2009-2010, Intel Corporation.
- * All rights reserved.
- */
-
-#ifndef _SYS_ACPIDEV_IMPL_H
-#define _SYS_ACPIDEV_IMPL_H
-#include <sys/acpi/acpi.h>
-#include <sys/acpica.h>
-#include <sys/acpidev.h>
-#include <sys/acpidev_dr.h>
-#include <sys/bitmap.h>
-#include <sys/cmn_err.h>
-#include <sys/sunddi.h>
-#include <sys/synch.h>
-#include <sys/types.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifdef _KERNEL
-
-#define ACPIDEV_ARRAY_PARAM(a) (a), (sizeof(a) / sizeof((a)[0]))
-
-/* Debug support facilities. */
-extern int acpidev_debug;
-#define ACPIDEV_DEBUG(lvl, ...)                                                \
-  if (acpidev_debug)                                                           \
-  cmn_err((lvl), __VA_ARGS__)
-
-/* Data attached to an ACPI object to maintain device status information. */
-struct acpidev_data_impl {
-  uint32_t aod_eflag; /* External flags */
-  uint32_t aod_iflag; /* Internal flags */
-  uint32_t aod_level;
-  int aod_status; /* Cached _STA value */
-  ACPI_HANDLE *aod_hdl;
-  dev_info_t *aod_dip;
-  acpidev_class_t *aod_class;
-  acpidev_class_list_t **aod_class_list;
-  acpidev_board_type_t aod_bdtype; /* Type of board. */
-  uint32_t aod_bdnum;              /* Board # for DR. */
-  uint32_t aod_portid;             /* Port id for DR. */
-  uint32_t aod_bdidx;              /* Index # of AP */
-  volatile uint32_t aod_chidx;     /* Index # of child */
-  uint32_t aod_memidx;             /* Index # of memory */
-  acpidev_class_id_t aod_class_id; /* Dev type for DR. */
-};
-
-#define ACPIDEV_ODF_STATUS_VALID 0x1
-#define ACPIDEV_ODF_DEVINFO_CREATED 0x2
-#define ACPIDEV_ODF_DEVINFO_TAGGED 0x4
-#define ACPIDEV_ODF_HOTPLUG_CAPABLE 0x100
-#define ACPIDEV_ODF_HOTPLUG_READY 0x200
-#define ACPIDEV_ODF_HOTPLUG_FAILED 0x400
-
-#define ACPIDEV_DR_IS_BOARD(hdl)                                               \
-  ((hdl)->aod_iflag & ACPIDEV_ODF_HOTPLUG_CAPABLE)
-
-#define ACPIDEV_DR_SET_BOARD(hdl)                                              \
-  (hdl)->aod_iflag |= ACPIDEV_ODF_HOTPLUG_CAPABLE
-
-#define ACPIDEV_DR_IS_READY(hdl) ((hdl)->aod_iflag & ACPIDEV_ODF_HOTPLUG_READY)
-
-#define ACPIDEV_DR_SET_READY(hdl) (hdl)->aod_iflag |= ACPIDEV_ODF_HOTPLUG_READY
-
-#define ACPIDEV_DR_IS_FAILED(hdl)                                              \
-  ((hdl)->aod_iflag & ACPIDEV_ODF_HOTPLUG_FAILED)
-
-#define ACPIDEV_DR_SET_FAILED(hdl)                                             \
-  (hdl)->aod_iflag |= ACPIDEV_ODF_HOTPLUG_FAILED
-
-#define ACPIDEV_DR_IS_WORKING(hdl)                                             \
-  (((hdl)->aod_iflag &                                                         \
-    (ACPIDEV_ODF_HOTPLUG_READY | ACPIDEV_ODF_HOTPLUG_FAILED)) ==               \
-   ACPIDEV_ODF_HOTPLUG_READY)
-
-#define ACPIDEV_DR_IS_PROCESSED(hdl)                                           \
-  ((hdl)->aod_iflag &                                                          \
-   (ACPIDEV_ODF_HOTPLUG_READY | ACPIDEV_ODF_HOTPLUG_FAILED |                   \
-    ACPIDEV_ODF_HOTPLUG_CAPABLE))
-
-#define ACPIDEV_DR_BOARD_READY(hdl)                                            \
-  (((hdl)->aod_iflag &                                                         \
-    (ACPIDEV_ODF_HOTPLUG_READY | ACPIDEV_ODF_HOTPLUG_CAPABLE)) ==              \
-   (ACPIDEV_ODF_HOTPLUG_READY | ACPIDEV_ODF_HOTPLUG_CAPABLE))
-
-/*
- * List of registered device class drivers.
- * Class drivers on the same list will be called from head to tail in turn.
- */
-struct acpidev_class_list {
-  acpidev_class_list_t *acl_next;
-  acpidev_class_t *acl_class;
-};
-
-typedef struct acpidev_pseudo_uid {
-  struct acpidev_pseudo_uid *apu_next;
-  char *apu_uid;
-  acpidev_class_id_t apu_cid;
-  uint_t apu_nid;
-} acpidev_pseudo_uid_t;
-
-typedef struct acpidev_pseudo_uid_head {
-  kmutex_t apuh_lock;
-  uint32_t apuh_id;
-  acpidev_pseudo_uid_t *apuh_first;
-} acpidev_pseudo_uid_head_t;
-
-typedef struct acpidev_dr_capacity {
-  uint_t cpu_vendor;
-  uint_t cpu_family;
-  uint_t cpu_model_min;
-  uint_t cpu_model_max;
-  uint_t cpu_step_min;
-  uint_t cpu_step_max;
-  boolean_t hotplug_supported;
-  uint64_t memory_alignment;
-} acpidev_dr_capacity_t;
-
-extern int acpidev_dr_enable;
-extern krwlock_t acpidev_class_lock;
-extern ulong_t acpidev_object_type_mask[BT_BITOUL(ACPI_TYPE_NS_NODE_MAX + 1)];
-extern ACPI_TABLE_SRAT *acpidev_srat_tbl_ptr;
-extern ACPI_TABLE_SLIT *acpidev_slit_tbl_ptr;
-
-#endif /* _KERNEL */
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _SYS_ACPIDEV_IMPL_H */
-
-/**
- * @section drivers_power_acpi_include_acapps_h
+ * @section minix_drivers_power_acpi_include_acapps_h
  * @brief Original file: minix/drivers/power/acpi/include/acapps.h
  */
-/******************************************************************************
- *
- * Module Name: acapps - common include for ACPI applications/tools
- *
- *****************************************************************************/
-
-/*
- * Copyright (C) 2000 - 2014, Intel Corp.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions, and the following disclaimer,
- *    without modification.
- * 2. Redistributions in binary form must reproduce at minimum a disclaimer
- *    substantially similar to the "NO WARRANTY" disclaimer below
- *    ("Disclaimer") and any redistribution must be conditioned upon
- *    including a substantially similar Disclaimer requirement for further
- *    binary redistribution.
- * 3. Neither the names of the above-listed copyright holders nor the names
- *    of any contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * Alternatively, this software may be distributed under the terms of the
- * GNU General Public License ("GPL") version 2 as published by the Free
- * Software Foundation.
- *
- * NO WARRANTY
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGES.
- */
-
-#ifndef _ACAPPS
-#define _ACAPPS
-
-#ifdef _MSC_VER /* disable some level-4 warnings */
-#pragma warning(                                                               \
-    disable : 4100) /* warning C4100: unreferenced formal parameter */
-#endif
-
-/* Common info for tool signons */
-
-#define ACPICA_NAME "Intel ACPI Component Architecture"
-#define ACPICA_COPYRIGHT "Copyright (c) 2000 - 2014 Intel Corporation"
-
-#if ACPI_MACHINE_WIDTH == 64
-#define ACPI_WIDTH "-64"
-
-#elif ACPI_MACHINE_WIDTH == 32
-#define ACPI_WIDTH "-32"
-
-#else
-#error unknown ACPI_MACHINE_WIDTH
-#define ACPI_WIDTH "-??"
-
-#endif
-
-/* Macros for signons and file headers */
-
-#define ACPI_COMMON_SIGNON(UtilityName)                                        \
-  "\n%s\n%s version %8.8X%s [%s]\n%s\n\n", ACPICA_NAME, UtilityName,           \
-      ((UINT32)ACPI_CA_VERSION), ACPI_WIDTH, __DATE__, ACPICA_COPYRIGHT
-
-#define ACPI_COMMON_HEADER(UtilityName, Prefix)                                \
-  "%s%s\n%s%s version %8.8X%s [%s]\n%s%s\n%s\n", Prefix, ACPICA_NAME, Prefix,  \
-      UtilityName, ((UINT32)ACPI_CA_VERSION), ACPI_WIDTH, __DATE__, Prefix,    \
-      ACPICA_COPYRIGHT, Prefix
-
-/* Macros for usage messages */
-
-#define ACPI_USAGE_HEADER(Usage) AcpiOsPrintf("Usage: %s\nOptions:\n", Usage);
-
-#define ACPI_USAGE_TEXT(Description) AcpiOsPrintf(Description);
-
-#define ACPI_OPTION(Name, Description)                                         \
-  AcpiOsPrintf("  %-18s%s\n", Name, Description);
-
-#define FILE_SUFFIX_DISASSEMBLY "dsl"
-#define ACPI_TABLE_FILE_SUFFIX ".dat"
-
-/*
- * getopt
- */
-int AcpiGetopt(int argc, char **argv, char *opts);
-
-int AcpiGetoptArgument(int argc, char **argv);
-
-extern int AcpiGbl_Optind;
-extern int AcpiGbl_Opterr;
-extern int AcpiGbl_SubOptChar;
-extern char *AcpiGbl_Optarg;
-
-/*
- * cmfsize - Common get file size function
- */
-UINT32
-CmGetFileSize(ACPI_FILE File);
-
-#ifndef ACPI_DUMP_APP
-/*
- * adisasm
- */
-ACPI_STATUS
-AdAmlDisassemble(BOOLEAN OutToFile, char *Filename, char *Prefix,
-                 char **OutFilename);
-
-void AdPrintStatistics(void);
-
-ACPI_STATUS
-AdFindDsdt(UINT8 **DsdtPtr, UINT32 *DsdtLength);
-
-void AdDumpTables(void);
-
-ACPI_STATUS
-AdGetLocalTables(void);
-
-ACPI_STATUS
-AdParseTable(ACPI_TABLE_HEADER *Table, ACPI_OWNER_ID *OwnerId,
-             BOOLEAN LoadTable, BOOLEAN External);
-
-ACPI_STATUS
-AdDisplayTables(char *Filename, ACPI_TABLE_HEADER *Table);
-
-ACPI_STATUS
-AdDisplayStatistics(void);
-
-/*
- * adwalk
- */
-void AcpiDmCrossReferenceNamespace(ACPI_PARSE_OBJECT *ParseTreeRoot,
-                                   ACPI_NAMESPACE_NODE *NamespaceRoot,
-                                   ACPI_OWNER_ID OwnerId);
-
-void AcpiDmDumpTree(ACPI_PARSE_OBJECT *Origin);
-
-void AcpiDmFindOrphanMethods(ACPI_PARSE_OBJECT *Origin);
-
-void AcpiDmFinishNamespaceLoad(ACPI_PARSE_OBJECT *ParseTreeRoot,
-                               ACPI_NAMESPACE_NODE *NamespaceRoot,
-                               ACPI_OWNER_ID OwnerId);
-
-void AcpiDmConvertResourceIndexes(ACPI_PARSE_OBJECT *ParseTreeRoot,
-                                  ACPI_NAMESPACE_NODE *NamespaceRoot);
-
-/*
- * adfile
- */
-ACPI_STATUS
-AdInitialize(void);
-
-char *FlGenerateFilename(char *InputFilename, char *Suffix);
-
-ACPI_STATUS
-FlSplitInputPathname(char *InputPath, char **OutDirectoryPath,
-                     char **OutFilename);
-
-char *AdGenerateFilename(char *Prefix, char *TableId);
-
-void AdWriteTable(ACPI_TABLE_HEADER *Table, UINT32 Length, char *TableName,
-                  char *OemTableId);
-#endif
-
-#endif /* _ACAPPS */
+#include "../../drivers/power/acpi/include/acapps.h"
 
 /**
- * @section drivers_power_acpi_include_acbuffer_h
+ * @section minix_drivers_power_acpi_include_acbuffer_h
  * @brief Original file: minix/drivers/power/acpi/include/acbuffer.h
  */
-/******************************************************************************
- *
- * Name: acbuffer.h - Support for buffers returned by ACPI predefined names
- *
- *****************************************************************************/
+#include "../../drivers/power/acpi/include/acbuffer.h"
 
-/*
- * Copyright (C) 2000 - 2014, Intel Corp.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions, and the following disclaimer,
- *    without modification.
- * 2. Redistributions in binary form must reproduce at minimum a disclaimer
- *    substantially similar to the "NO WARRANTY" disclaimer below
- *    ("Disclaimer") and any redistribution must be conditioned upon
- *    including a substantially similar Disclaimer requirement for further
- *    binary redistribution.
- * 3. Neither the names of the above-listed copyright holders nor the names
- *    of any contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * Alternatively, this software may be distributed under the terms of the
- * GNU General Public License ("GPL") version 2 as published by the Free
- * Software Foundation.
- *
- * NO WARRANTY
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDERS OR CONTRIBUTORS BE LIABLE FOR SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGES.
+/**
+ * @section minix_drivers_power_acpi_include_accommon_h
+ * @brief Original file: minix/drivers/power/acpi/include/accommon.h
  */
+#include "../../drivers/power/acpi/include/accommon.h"
 
-#ifndef __ACBUFFER_H__
-#define __ACBUFFER_H__
-
-/*
- * Contains buffer structures for these predefined names:
- * _FDE, _GRT, _GTM, _PLD, _SRT
+/**
+ * @section minix_drivers_power_acpi_include_acconfig_h
+ * @brief Original file: minix/drivers/power/acpi/include/acconfig.h
  */
+#include "../../drivers/power/acpi/include/acconfig.h"
 
-/*
- * Note: C bitfields are not used for this reason:
- *
- * "Bitfields are great and easy to read, but unfortunately the C language
- * does not specify the layout of bitfields in memory, which means they are
- * essentially useless for dealing with packed data in on-disk formats or
- * binary wire protocols." (Or ACPI tables and buffers.) "If you ask me,
- * this decision was a design error in C. Ritchie could have picked an order
- * and stuck with it." Norman Ramsey.
- * See http://stackoverflow.com/a/1053662/41661
+/**
+ * @section minix_drivers_power_acpi_include_acdebug_h
+ * @brief Original file: minix/drivers/power/acpi/include/acdebug.h
  */
+#include "../../drivers/power/acpi/include/acdebug.h"
 
-/* _FDE return value */
-
-typedef struct acpi_fde_info {
-  UINT32 Floppy0;
-  UINT32 Floppy1;
-  UINT32 Floppy2;
-  UINT32 Floppy3;
-  UINT32 Tape;
-
-} ACPI_FDE_INFO;
-
-/*
- * _GRT return value
- * _SRT input value
+/**
+ * @section minix_drivers_power_acpi_include_acdisasm_h
+ * @brief Original file: minix/drivers/power/acpi/include/acdisasm.h
  */
-typedef struct acpi_grt_info {
-  UINT16 Year;
-  UINT8 Month;
-  UINT8 Day;
-  UINT8 Hour;
-  UINT8 Minute;
-  UINT8 Second;
-  UINT8 Valid;
-  UINT16 Milliseconds;
-  UINT16 Timezone;
-  UINT8 Daylight;
-  UINT8 Reserved[3];
+#include "../../drivers/power/acpi/include/acdisasm.h"
 
-} ACPI_GRT_INFO;
-
-/* _GTM return value */
-
-typedef struct acpi_gtm_info {
-  UINT32 PioSpeed0;
-  UINT32 DmaSpeed0;
-  UINT32 PioSpeed1;
-  UINT32 DmaSpeed1;
-  UINT32 Flags;
-
-} ACPI_GTM_INFO;
-
-/*
- * Formatted _PLD return value. The minimum size is a package containing
- * one buffer.
- * Revision 1: Buffer is 16 bytes (128 bits)
- * Revision 2: Buffer is 20 bytes (160 bits)
- *
- * Note: This structure is returned from the AcpiDecodePldBuffer
- * interface.
+/**
+ * @section minix_drivers_power_acpi_include_acdispat_h
+ * @brief Original file: minix/drivers/power/acpi/include/acdispat.h
  */
-typedef struct acpi_pld_info {
-  UINT8 Revision;
-  UINT8 IgnoreColor;
-  UINT8 Red;
-  UINT8 Green;
-  UINT8 Blue;
-  UINT16 Width;
-  UINT16 Height;
-  UINT8 UserVisible;
-  UINT8 Dock;
-  UINT8 Lid;
-  UINT8 Panel;
-  UINT8 VerticalPosition;
-  UINT8 HorizontalPosition;
-  UINT8 Shape;
-  UINT8 GroupOrientation;
-  UINT8 GroupToken;
-  UINT8 GroupPosition;
-  UINT8 Bay;
-  UINT8 Ejectable;
-  UINT8 OspmEjectRequired;
-  UINT8 CabinetNumber;
-  UINT8 CardCageNumber;
-  UINT8 Reference;
-  UINT8 Rotation;
-  UINT8 Order;
-  UINT8 Reserved;
-  UINT16 VerticalOffset;
-  UINT16 HorizontalOffset;
+#include "../../drivers/power/acpi/include/acdispat.h"
 
-} ACPI_PLD_INFO;
-
-/*
- * Macros to:
- *     1) Convert a _PLD buffer to internal ACPI_PLD_INFO format - ACPI_PLD_GET*
- *        (Used by AcpiDecodePldBuffer)
- *     2) Construct a _PLD buffer - ACPI_PLD_SET*
- *        (Intended for BIOS use only)
+/**
+ * @section minix_drivers_power_acpi_include_acevents_h
+ * @brief Original file: minix/drivers/power/acpi/include/acevents.h
  */
-#define ACPI_PLD_REV1_BUFFER_SIZE                                              \
-  16 /* For Revision 1 of the buffer (From ACPI spec) */
-#define ACPI_PLD_BUFFER_SIZE                                                   \
-  20 /* For Revision 2 of the buffer (From ACPI spec) */
+#include "../../drivers/power/acpi/include/acevents.h"
 
-/* First 32-bit dword, bits 0:32 */
+/**
+ * @section minix_drivers_power_acpi_include_acexcep_h
+ * @brief Original file: minix/drivers/power/acpi/include/acexcep.h
+ */
+#include "../../drivers/power/acpi/include/acexcep.h"
 
-#define ACPI_PLD_GET_REVISION(dword) ACPI_GET_BITS(dword, 0, ACPI_7BIT_MASK)
-#define ACPI_PLD_SET_REVISION(dword, value)                                    \
-  ACPI_SET_BITS(dword, 0, ACPI_7BIT_MASK, value) /* Offset 0, Len 7 */
+/**
+ * @section minix_drivers_power_acpi_include_acglobal_h
+ * @brief Original file: minix/drivers/power/acpi/include/acglobal.h
+ */
+#include "../../drivers/power/acpi/include/acglobal.h"
 
-#define ACPI_PLD_GET_IGNORE_COLOR(dword) ACPI_GET_BITS(dword, 7, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_IGNORE_COLOR(dword, value)                                \
-  ACPI_SET_BITS(dword, 7, ACPI_1BIT_MASK, value) /* Offset 7, Len 1 */
+/**
+ * @section minix_drivers_power_acpi_include_achware_h
+ * @brief Original file: minix/drivers/power/acpi/include/achware.h
+ */
+#include "../../drivers/power/acpi/include/achware.h"
 
-#define ACPI_PLD_GET_RED(dword) ACPI_GET_BITS(dword, 8, ACPI_8BIT_MASK)
-#define ACPI_PLD_SET_RED(dword, value)                                         \
-  ACPI_SET_BITS(dword, 8, ACPI_8BIT_MASK, value) /* Offset 8, Len 8 */
+/**
+ * @section minix_drivers_power_acpi_include_acinterp_h
+ * @brief Original file: minix/drivers/power/acpi/include/acinterp.h
+ */
+#include "../../drivers/power/acpi/include/acinterp.h"
 
-#define ACPI_PLD_GET_GREEN(dword) ACPI_GET_BITS(dword, 16, ACPI_8BIT_MASK)
-#define ACPI_PLD_SET_GREEN(dword, value)                                       \
-  ACPI_SET_BITS(dword, 16, ACPI_8BIT_MASK, value) /* Offset 16, Len 8 */
+/**
+ * @section minix_drivers_power_acpi_include_aclocal_h
+ * @brief Original file: minix/drivers/power/acpi/include/aclocal.h
+ */
+#include "../../drivers/power/acpi/include/aclocal.h"
 
-#define ACPI_PLD_GET_BLUE(dword) ACPI_GET_BITS(dword, 24, ACPI_8BIT_MASK)
-#define ACPI_PLD_SET_BLUE(dword, value)                                        \
-  ACPI_SET_BITS(dword, 24, ACPI_8BIT_MASK, value) /* Offset 24, Len 8 */
+/**
+ * @section minix_drivers_power_acpi_include_acmacros_h
+ * @brief Original file: minix/drivers/power/acpi/include/acmacros.h
+ */
+#include "../../drivers/power/acpi/include/acmacros.h"
 
-/* Second 32-bit dword, bits 33:63 */
+/**
+ * @section minix_drivers_power_acpi_include_acnames_h
+ * @brief Original file: minix/drivers/power/acpi/include/acnames.h
+ */
+#include "../../drivers/power/acpi/include/acnames.h"
 
-#define ACPI_PLD_GET_WIDTH(dword) ACPI_GET_BITS(dword, 0, ACPI_16BIT_MASK)
-#define ACPI_PLD_SET_WIDTH(dword, value)                                       \
-  ACPI_SET_BITS(dword, 0, ACPI_16BIT_MASK, value) /* Offset 32+0=32, Len 16 */
+/**
+ * @section minix_drivers_power_acpi_include_acnamesp_h
+ * @brief Original file: minix/drivers/power/acpi/include/acnamesp.h
+ */
+#include "../../drivers/power/acpi/include/acnamesp.h"
 
-#define ACPI_PLD_GET_HEIGHT(dword) ACPI_GET_BITS(dword, 16, ACPI_16BIT_MASK)
-#define ACPI_PLD_SET_HEIGHT(dword, value)                                      \
-  ACPI_SET_BITS(dword, 16, ACPI_16BIT_MASK, value) /* Offset 32+16=48, Len 16  \
-                                                    */
+/**
+ * @section minix_drivers_power_acpi_include_acobject_h
+ * @brief Original file: minix/drivers/power/acpi/include/acobject.h
+ */
+#include "../../drivers/power/acpi/include/acobject.h"
 
-/* Third 32-bit dword, bits 64:95 */
+/**
+ * @section minix_drivers_power_acpi_include_acopcode_h
+ * @brief Original file: minix/drivers/power/acpi/include/acopcode.h
+ */
+#include "../../drivers/power/acpi/include/acopcode.h"
 
-#define ACPI_PLD_GET_USER_VISIBLE(dword) ACPI_GET_BITS(dword, 0, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_USER_VISIBLE(dword, value)                                \
-  ACPI_SET_BITS(dword, 0, ACPI_1BIT_MASK, value) /* Offset 64+0=64, Len 1 */
+/**
+ * @section minix_drivers_power_acpi_include_acoutput_h
+ * @brief Original file: minix/drivers/power/acpi/include/acoutput.h
+ */
+#include "../../drivers/power/acpi/include/acoutput.h"
 
-#define ACPI_PLD_GET_DOCK(dword) ACPI_GET_BITS(dword, 1, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_DOCK(dword, value)                                        \
-  ACPI_SET_BITS(dword, 1, ACPI_1BIT_MASK, value) /* Offset 64+1=65, Len 1 */
+/**
+ * @section minix_drivers_power_acpi_include_acparser_h
+ * @brief Original file: minix/drivers/power/acpi/include/acparser.h
+ */
+#include "../../drivers/power/acpi/include/acparser.h"
 
-#define ACPI_PLD_GET_LID(dword) ACPI_GET_BITS(dword, 2, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_LID(dword, value)                                         \
-  ACPI_SET_BITS(dword, 2, ACPI_1BIT_MASK, value) /* Offset 64+2=66, Len 1 */
+/**
+ * @section minix_drivers_power_acpi_include_acpi_h
+ * @brief Original file: minix/drivers/power/acpi/include/acpi.h
+ */
+#include "../../drivers/power/acpi/include/acpi.h"
 
-#define ACPI_PLD_GET_PANEL(dword) ACPI_GET_BITS(dword, 3, ACPI_3BIT_MASK)
-#define ACPI_PLD_SET_PANEL(dword, value)                                       \
-  ACPI_SET_BITS(dword, 3, ACPI_3BIT_MASK, value) /* Offset 64+3=67, Len 3 */
+/**
+ * @section minix_drivers_power_acpi_include_acpiosxf_h
+ * @brief Original file: minix/drivers/power/acpi/include/acpiosxf.h
+ */
+#include "../../drivers/power/acpi/include/acpiosxf.h"
 
-#define ACPI_PLD_GET_VERTICAL(dword) ACPI_GET_BITS(dword, 6, ACPI_2BIT_MASK)
-#define ACPI_PLD_SET_VERTICAL(dword, value)                                    \
-  ACPI_SET_BITS(dword, 6, ACPI_2BIT_MASK, value) /* Offset 64+6=70, Len 2 */
+/**
+ * @section minix_drivers_power_acpi_include_acpixf_h
+ * @brief Original file: minix/drivers/power/acpi/include/acpixf.h
+ */
+#include "../../drivers/power/acpi/include/acpixf.h"
 
-#define ACPI_PLD_GET_HORIZONTAL(dword) ACPI_GET_BITS(dword, 8, ACPI_2BIT_MASK)
-#define ACPI_PLD_SET_HORIZONTAL(dword, value)                                  \
-  ACPI_SET_BITS(dword, 8, ACPI_2BIT_MASK, value) /* Offset 64+8=72, Len 2 */
+/**
+ * @section minix_drivers_power_acpi_include_acpredef_h
+ * @brief Original file: minix/drivers/power/acpi/include/acpredef.h
+ */
+#include "../../drivers/power/acpi/include/acpredef.h"
 
-#define ACPI_PLD_GET_SHAPE(dword) ACPI_GET_BITS(dword, 10, ACPI_4BIT_MASK)
-#define ACPI_PLD_SET_SHAPE(dword, value)                                       \
-  ACPI_SET_BITS(dword, 10, ACPI_4BIT_MASK, value) /* Offset 64+10=74, Len 4 */
+/**
+ * @section minix_drivers_power_acpi_include_acresrc_h
+ * @brief Original file: minix/drivers/power/acpi/include/acresrc.h
+ */
+#include "../../drivers/power/acpi/include/acresrc.h"
 
-#define ACPI_PLD_GET_ORIENTATION(dword) ACPI_GET_BITS(dword, 14, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_ORIENTATION(dword, value)                                 \
-  ACPI_SET_BITS(dword, 14, ACPI_1BIT_MASK, value) /* Offset 64+14=78, Len 1 */
+/**
+ * @section minix_drivers_power_acpi_include_acrestyp_h
+ * @brief Original file: minix/drivers/power/acpi/include/acrestyp.h
+ */
+#include "../../drivers/power/acpi/include/acrestyp.h"
 
-#define ACPI_PLD_GET_TOKEN(dword) ACPI_GET_BITS(dword, 15, ACPI_8BIT_MASK)
-#define ACPI_PLD_SET_TOKEN(dword, value)                                       \
-  ACPI_SET_BITS(dword, 15, ACPI_8BIT_MASK, value) /* Offset 64+15=79, Len 8 */
+/**
+ * @section minix_drivers_power_acpi_include_acstruct_h
+ * @brief Original file: minix/drivers/power/acpi/include/acstruct.h
+ */
+#include "../../drivers/power/acpi/include/acstruct.h"
 
-#define ACPI_PLD_GET_POSITION(dword) ACPI_GET_BITS(dword, 23, ACPI_8BIT_MASK)
-#define ACPI_PLD_SET_POSITION(dword, value)                                    \
-  ACPI_SET_BITS(dword, 23, ACPI_8BIT_MASK, value) /* Offset 64+23=87, Len 8 */
+/**
+ * @section minix_drivers_power_acpi_include_actables_h
+ * @brief Original file: minix/drivers/power/acpi/include/actables.h
+ */
+#include "../../drivers/power/acpi/include/actables.h"
 
-#define ACPI_PLD_GET_BAY(dword) ACPI_GET_BITS(dword, 31, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_BAY(dword, value)                                         \
-  ACPI_SET_BITS(dword, 31, ACPI_1BIT_MASK, value) /* Offset 64+31=95, Len 1 */
+/**
+ * @section minix_drivers_power_acpi_include_actbl_h
+ * @brief Original file: minix/drivers/power/acpi/include/actbl.h
+ */
+#include "../../drivers/power/acpi/include/actbl.h"
 
-/* Fourth 32-bit dword, bits 96:127 */
+/**
+ * @section minix_drivers_power_acpi_include_actbl1_h
+ * @brief Original file: minix/drivers/power/acpi/include/actbl1.h
+ */
+#include "../../drivers/power/acpi/include/actbl1.h"
 
-#define ACPI_PLD_GET_EJECTABLE(dword) ACPI_GET_BITS(dword, 0, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_EJECTABLE(dword, value)                                   \
-  ACPI_SET_BITS(dword, 0, ACPI_1BIT_MASK, value) /* Offset 96+0=96, Len 1 */
+/**
+ * @section minix_drivers_power_acpi_include_actbl2_h
+ * @brief Original file: minix/drivers/power/acpi/include/actbl2.h
+ */
+#include "../../drivers/power/acpi/include/actbl2.h"
 
-#define ACPI_PLD_GET_OSPM_EJECT(dword) ACPI_GET_BITS(dword, 1, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_OSPM_EJECT(dword, value)                                  \
-  ACPI_SET_BITS(dword, 1, ACPI_1BIT_MASK, value) /* Offset 96+1=97, Len 1 */
+/**
+ * @section minix_drivers_power_acpi_include_actbl3_h
+ * @brief Original file: minix/drivers/power/acpi/include/actbl3.h
+ */
+#include "../../drivers/power/acpi/include/actbl3.h"
 
-#define ACPI_PLD_GET_CABINET(dword) ACPI_GET_BITS(dword, 2, ACPI_8BIT_MASK)
-#define ACPI_PLD_SET_CABINET(dword, value)                                     \
-  ACPI_SET_BITS(dword, 2, ACPI_8BIT_MASK, value) /* Offset 96+2=98, Len 8 */
+/**
+ * @section minix_drivers_power_acpi_include_actypes_h
+ * @brief Original file: minix/drivers/power/acpi/include/actypes.h
+ */
+#include "../../drivers/power/acpi/include/actypes.h"
 
-#define ACPI_PLD_GET_CARD_CAGE(dword) ACPI_GET_BITS(dword, 10, ACPI_8BIT_MASK)
-#define ACPI_PLD_SET_CARD_CAGE(dword, value)                                   \
-  ACPI_SET_BITS(dword, 10, ACPI_8BIT_MASK, value) /* Offset 96+10=106, Len 8   \
-                                                   */
+/**
+ * @section minix_drivers_power_acpi_include_acutils_h
+ * @brief Original file: minix/drivers/power/acpi/include/acutils.h
+ */
+#include "../../drivers/power/acpi/include/acutils.h"
 
-#define ACPI_PLD_GET_REFERENCE(dword) ACPI_GET_BITS(dword, 18, ACPI_1BIT_MASK)
-#define ACPI_PLD_SET_REFERENCE(dword, value)                                   \
-  ACPI_SET_BITS(dword, 18, ACPI_1BIT_MASK, value) /* Offset 96+18=114, Len 1   \
-                                                   */
+/**
+ * @section minix_drivers_power_acpi_include_amlcode_h
+ * @brief Original file: minix/drivers/power/acpi/include/amlcode.h
+ */
+#include "../../drivers/power/acpi/include/amlcode.h"
 
-#define ACPI_PLD_GET_ROTATION(dword) ACPI_GET_BITS(dword, 19, ACPI_4BIT_MASK)
-#define ACPI_PLD_SET_ROTATION(dword, value)                                    \
-  ACPI_SET_BITS(dword, 19, ACPI_4BIT_MASK, value) /* Offset 96+19=115, Len 4   \
-                                                   */
+/**
+ * @section minix_drivers_power_acpi_include_amlresrc_h
+ * @brief Original file: minix/drivers/power/acpi/include/amlresrc.h
+ */
+#include "../../drivers/power/acpi/include/amlresrc.h"
 
-#define ACPI_PLD_GET_ORDER(dword) ACPI_GET_BITS(dword, 23, ACPI_5BIT_MASK)
-#define ACPI_PLD_SET_ORDER(dword, value)                                       \
-  ACPI_SET_BITS(dword, 23, ACPI_5BIT_MASK, value) /* Offset 96+23=119, Len 5   \
-                                                   */
+/**
+ * @section minix_drivers_power_acpi_include_platform_accygwin_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/accygwin.h
+ */
+#include "../../drivers/power/acpi/include/platform/accygwin.h"
 
-/* Fifth 32-bit dword, bits 128:159 (Revision 2 of _PLD only) */
+/**
+ * @section minix_drivers_power_acpi_include_platform_acefi_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acefi.h
+ */
+#include "../../drivers/power/acpi/include/platform/acefi.h"
 
-#define ACPI_PLD_GET_VERT_OFFSET(dword) ACPI_GET_BITS(dword, 0, ACPI_16BIT_MASK)
-#define ACPI_PLD_SET_VERT_OFFSET(dword, value)                                 \
-  ACPI_SET_BITS(dword, 0, ACPI_16BIT_MASK, value) /* Offset 128+0=128, Len 16  \
-                                                   */
+/**
+ * @section minix_drivers_power_acpi_include_platform_acenvex_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acenvex.h
+ */
+#include "../../drivers/power/acpi/include/platform/acenvex.h"
 
-#define ACPI_PLD_GET_HORIZ_OFFSET(dword)                                       \
-  ACPI_GET_BITS(dword, 16, ACPI_16BIT_MASK)
-#define ACPI_PLD_SET_HORIZ_OFFSET(dword, value)                                \
-  ACPI_SET_BITS(dword, 16, ACPI_16BIT_MASK,                                    \
-                value) /* Offset 128+16=144, Len 16 */
+/**
+ * @section minix_drivers_power_acpi_include_platform_acfreebsd_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acfreebsd.h
+ */
+#include "../../drivers/power/acpi/include/platform/acfreebsd.h"
 
-#endif /* ACBUFFER_H */
+/**
+ * @section minix_drivers_power_acpi_include_platform_acgcc_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acgcc.h
+ */
+#include "../../drivers/power/acpi/include/platform/acgcc.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_achaiku_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/achaiku.h
+ */
+#include "../../drivers/power/acpi/include/platform/achaiku.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_acintel_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acintel.h
+ */
+#include "../../drivers/power/acpi/include/platform/acintel.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_aclinux_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/aclinux.h
+ */
+#include "../../drivers/power/acpi/include/platform/aclinux.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_aclinuxex_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/aclinuxex.h
+ */
+#include "../../drivers/power/acpi/include/platform/aclinuxex.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_acmacosx_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acmacosx.h
+ */
+#include "../../drivers/power/acpi/include/platform/acmacosx.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_acminix_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acminix.h
+ */
+#include "../../drivers/power/acpi/include/platform/acminix.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_acmsvc_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acmsvc.h
+ */
+#include "../../drivers/power/acpi/include/platform/acmsvc.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_acos2_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acos2.h
+ */
+#include "../../drivers/power/acpi/include/platform/acos2.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_acwin_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acwin.h
+ */
+#include "../../drivers/power/acpi/include/platform/acwin.h"
+
+/**
+ * @section minix_drivers_power_acpi_include_platform_acwin64_h
+ * @brief Original file: minix/drivers/power/acpi/include/platform/acwin64.h
+ */
+#include "../../drivers/power/acpi/include/platform/acwin64.h"
+
+/**
+ * @section minix_drivers_power_acpi_pci_h
+ * @brief Original file: minix/drivers/power/acpi/pci.h
+ */
+#include "../../drivers/power/acpi/pci.h"
+
+/**
+ * @section minix_include_minix_acpi_h
+ * @brief Original file: minix/include/minix/acpi.h
+ */
+#include "../../include/minix/acpi.h"
+
+/**
+ * @section minix_kernel_arch_i386_acpi_h
+ * @brief Original file: minix/kernel/arch/i386/acpi.h
+ */
+#include "../arch/i386/acpi.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_Guid_Acpi_h
+ * @brief Original file: minix/kernel/boot/efi/include/Guid/Acpi.h
+ */
+#include "../boot/efi/include/Guid/Acpi.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi10_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi10.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi10.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi20_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi20.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi20.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi30_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi30.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi30.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi40_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi40.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi40.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi50_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi50.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi50.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi51_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi51.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi51.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi60_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi60.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi60.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi61_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi61.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi61.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi62_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi62.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi62.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi63_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi63.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi63.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_Acpi64_h
+ * @brief Original file: minix/kernel/boot/efi/include/IndustryStandard/Acpi64.h
+ */
+#include "../boot/efi/include/IndustryStandard/Acpi64.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_IndustryStandard_AcpiAml_h
+ * @brief Original file:
+ * minix/kernel/boot/efi/include/IndustryStandard/AcpiAml.h
+ */
+#include "../boot/efi/include/IndustryStandard/AcpiAml.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_Protocol_IsaAcpi_h
+ * @brief Original file: minix/kernel/boot/efi/include/Protocol/IsaAcpi.h
+ */
+#include "../boot/efi/include/Protocol/IsaAcpi.h"
+
+/**
+ * @section minix_kernel_boot_efi_include_Uefi_UefiAcpiDataTable_h
+ * @brief Original file: minix/kernel/boot/efi/include/Uefi/UefiAcpiDataTable.h
+ */
+#include "../boot/efi/include/Uefi/UefiAcpiDataTable.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_acpidump_acpidump_h
+ * @brief Original file: minix/kernel/cmd/acpi/acpidump/acpidump.h
+ */
+#include "../cmd/acpi/acpidump/acpidump.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_acpixtract_acpixtract_h
+ * @brief Original file: minix/kernel/cmd/acpi/acpixtract/acpixtract.h
+ */
+#include "../cmd/acpi/acpixtract/acpixtract.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_iasl_aslcompiler_h
+ * @brief Original file: minix/kernel/cmd/acpi/iasl/aslcompiler.h
+ */
+#include "../cmd/acpi/iasl/aslcompiler.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_iasl_asldefine_h
+ * @brief Original file: minix/kernel/cmd/acpi/iasl/asldefine.h
+ */
+#include "../cmd/acpi/iasl/asldefine.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_iasl_aslglobal_h
+ * @brief Original file: minix/kernel/cmd/acpi/iasl/aslglobal.h
+ */
+#include "../cmd/acpi/iasl/aslglobal.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_iasl_aslmessages_h
+ * @brief Original file: minix/kernel/cmd/acpi/iasl/aslmessages.h
+ */
+#include "../cmd/acpi/iasl/aslmessages.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_iasl_asltypes_h
+ * @brief Original file: minix/kernel/cmd/acpi/iasl/asltypes.h
+ */
+#include "../cmd/acpi/iasl/asltypes.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_iasl_dtcompiler_h
+ * @brief Original file: minix/kernel/cmd/acpi/iasl/dtcompiler.h
+ */
+#include "../cmd/acpi/iasl/dtcompiler.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_iasl_dttemplate_h
+ * @brief Original file: minix/kernel/cmd/acpi/iasl/dttemplate.h
+ */
+#include "../cmd/acpi/iasl/dttemplate.h"
+
+/**
+ * @section minix_kernel_cmd_acpi_iasl_preprocess_h
+ * @brief Original file: minix/kernel/cmd/acpi/iasl/preprocess.h
+ */
+#include "../cmd/acpi/iasl/preprocess.h"
+
+/**
+ * @section minix_kernel_cmd_bhyve_common_acpi_h
+ * @brief Original file: minix/kernel/cmd/bhyve/common/acpi.h
+ */
+#include "../cmd/bhyve/common/acpi.h"
+
+/**
+ * @section minix_kernel_cmd_bhyve_common_acpi_device_h
+ * @brief Original file: minix/kernel/cmd/bhyve/common/acpi_device.h
+ */
+#include "../cmd/bhyve/common/acpi_device.h"
+
+/**
+ * @section minix_kernel_cmd_hal_hald_solaris_devinfo_acpi_h
+ * @brief Original file: minix/kernel/cmd/hal/hald/solaris/devinfo_acpi.h
+ */
+#include "../cmd/hal/hald/solaris/devinfo_acpi.h"
+
+/**
+ * @section minix_kernel_cmd_hal_utils_acpi_h
+ * @brief Original file: minix/kernel/cmd/hal/utils/acpi.h
+ */
+#include "../cmd/hal/utils/acpi.h"
+
+/**
+ * @section minix_kernel_compat_bhyve_contrib_dev_acpica_include_acpi_h
+ * @brief Original file:
+ * minix/kernel/compat/bhyve/contrib/dev/acpica/include/acpi.h
+ */
+#include "../compat/bhyve/contrib/dev/acpica/include/acpi.h"
+
+/**
+ * @section minix_kernel_contrib_bhyve_dev_acpica_acpi_hpet_h
+ * @brief Original file: minix/kernel/contrib/bhyve/dev/acpica/acpi_hpet.h
+ */
+#include "../contrib/bhyve/dev/acpica/acpi_hpet.h"
+
+/**
+ * @section minix_kernel_uts_common_sys_acpi_drv_h
+ * @brief Original file: minix/kernel/uts/common/sys/acpi_drv.h
+ */
+#include "../uts/common/sys/acpi_drv.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_io_acpi_drmach_acpi_drmach_acpi_h
+ * @brief Original file:
+ * minix/kernel/uts/i86pc/io/acpi/drmach_acpi/drmach_acpi.h
+ */
+#include "../uts/i86pc/io/acpi/drmach_acpi/drmach_acpi.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_io_amd_iommu_amd_iommu_acpi_h
+ * @brief Original file: minix/kernel/uts/i86pc/io/amd_iommu/amd_iommu_acpi.h
+ */
+#include "../uts/i86pc/io/amd_iommu/amd_iommu_acpi.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_sys_acpidev_h
+ * @brief Original file: minix/kernel/uts/i86pc/sys/acpidev.h
+ */
+#include "../uts/i86pc/sys/acpidev.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_sys_acpidev_dr_h
+ * @brief Original file: minix/kernel/uts/i86pc/sys/acpidev_dr.h
+ */
+#include "../uts/i86pc/sys/acpidev_dr.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_sys_acpidev_impl_h
+ * @brief Original file: minix/kernel/uts/i86pc/sys/acpidev_impl.h
+ */
+#include "../uts/i86pc/sys/acpidev_impl.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_sys_acpidev_rsc_h
+ * @brief Original file: minix/kernel/uts/i86pc/sys/acpidev_rsc.h
+ */
+#include "../uts/i86pc/sys/acpidev_rsc.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_sys_acpinex_h
+ * @brief Original file: minix/kernel/uts/i86pc/sys/acpinex.h
+ */
+#include "../uts/i86pc/sys/acpinex.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_sys_cpu_acpi_h
+ * @brief Original file: minix/kernel/uts/i86pc/sys/cpu_acpi.h
+ */
+#include "../uts/i86pc/sys/cpu_acpi.h"
+
+/**
+ * @section minix_kernel_uts_i86pc_sys_hpet_acpi_h
+ * @brief Original file: minix/kernel/uts/i86pc/sys/hpet_acpi.h
+ */
+#include "../uts/i86pc/sys/hpet_acpi.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acapps_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acapps.h
+ */
+#include "../uts/intel/sys/acpi/acapps.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acbuffer_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acbuffer.h
+ */
+#include "../uts/intel/sys/acpi/acbuffer.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acclib_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acclib.h
+ */
+#include "../uts/intel/sys/acpi/acclib.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_accommon_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/accommon.h
+ */
+#include "../uts/intel/sys/acpi/accommon.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acconfig_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acconfig.h
+ */
+#include "../uts/intel/sys/acpi/acconfig.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acconvert_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acconvert.h
+ */
+#include "../uts/intel/sys/acpi/acconvert.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acdebug_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acdebug.h
+ */
+#include "../uts/intel/sys/acpi/acdebug.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acdisasm_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acdisasm.h
+ */
+#include "../uts/intel/sys/acpi/acdisasm.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acdispat_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acdispat.h
+ */
+#include "../uts/intel/sys/acpi/acdispat.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acevents_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acevents.h
+ */
+#include "../uts/intel/sys/acpi/acevents.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acexcep_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acexcep.h
+ */
+#include "../uts/intel/sys/acpi/acexcep.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acglobal_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acglobal.h
+ */
+#include "../uts/intel/sys/acpi/acglobal.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_achware_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/achware.h
+ */
+#include "../uts/intel/sys/acpi/achware.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acinterp_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acinterp.h
+ */
+#include "../uts/intel/sys/acpi/acinterp.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_aclocal_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/aclocal.h
+ */
+#include "../uts/intel/sys/acpi/aclocal.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acmacros_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acmacros.h
+ */
+#include "../uts/intel/sys/acpi/acmacros.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acnames_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acnames.h
+ */
+#include "../uts/intel/sys/acpi/acnames.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acnamesp_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acnamesp.h
+ */
+#include "../uts/intel/sys/acpi/acnamesp.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acobject_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acobject.h
+ */
+#include "../uts/intel/sys/acpi/acobject.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acopcode_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acopcode.h
+ */
+#include "../uts/intel/sys/acpi/acopcode.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acoutput_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acoutput.h
+ */
+#include "../uts/intel/sys/acpi/acoutput.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acparser_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acparser.h
+ */
+#include "../uts/intel/sys/acpi/acparser.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acpi_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acpi.h
+ */
+#include "../uts/intel/sys/acpi/acpi.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acpi_enum_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acpi_enum.h
+ */
+#include "../uts/intel/sys/acpi/acpi_enum.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acpi_pci_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acpi_pci.h
+ */
+#include "../uts/intel/sys/acpi/acpi_pci.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acpiosxf_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acpiosxf.h
+ */
+#include "../uts/intel/sys/acpi/acpiosxf.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acpixf_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acpixf.h
+ */
+#include "../uts/intel/sys/acpi/acpixf.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acpredef_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acpredef.h
+ */
+#include "../uts/intel/sys/acpi/acpredef.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acresrc_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acresrc.h
+ */
+#include "../uts/intel/sys/acpi/acresrc.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acrestyp_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acrestyp.h
+ */
+#include "../uts/intel/sys/acpi/acrestyp.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acstruct_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acstruct.h
+ */
+#include "../uts/intel/sys/acpi/acstruct.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_actables_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/actables.h
+ */
+#include "../uts/intel/sys/acpi/actables.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_actbinfo_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/actbinfo.h
+ */
+#include "../uts/intel/sys/acpi/actbinfo.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_actbl_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/actbl.h
+ */
+#include "../uts/intel/sys/acpi/actbl.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_actbl1_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/actbl1.h
+ */
+#include "../uts/intel/sys/acpi/actbl1.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_actbl2_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/actbl2.h
+ */
+#include "../uts/intel/sys/acpi/actbl2.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_actbl3_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/actbl3.h
+ */
+#include "../uts/intel/sys/acpi/actbl3.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_actypes_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/actypes.h
+ */
+#include "../uts/intel/sys/acpi/actypes.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acutils_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acutils.h
+ */
+#include "../uts/intel/sys/acpi/acutils.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_acuuid_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/acuuid.h
+ */
+#include "../uts/intel/sys/acpi/acuuid.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_amlcode_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/amlcode.h
+ */
+#include "../uts/intel/sys/acpi/amlcode.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_amlresrc_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/amlresrc.h
+ */
+#include "../uts/intel/sys/acpi/amlresrc.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_accygwin_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/accygwin.h
+ */
+#include "../uts/intel/sys/acpi/platform/accygwin.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acdragonfly_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acdragonfly.h
+ */
+#include "../uts/intel/sys/acpi/platform/acdragonfly.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acdragonflyex_h
+ * @brief Original file:
+ * minix/kernel/uts/intel/sys/acpi/platform/acdragonflyex.h
+ */
+#include "../uts/intel/sys/acpi/platform/acdragonflyex.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acefi_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acefi.h
+ */
+#include "../uts/intel/sys/acpi/platform/acefi.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acefiex_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acefiex.h
+ */
+#include "../uts/intel/sys/acpi/platform/acefiex.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acenv_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acenv.h
+ */
+#include "../uts/intel/sys/acpi/platform/acenv.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acenvex_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acenvex.h
+ */
+#include "../uts/intel/sys/acpi/platform/acenvex.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acfreebsd_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acfreebsd.h
+ */
+#include "../uts/intel/sys/acpi/platform/acfreebsd.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acgcc_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acgcc.h
+ */
+#include "../uts/intel/sys/acpi/platform/acgcc.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acgccex_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acgccex.h
+ */
+#include "../uts/intel/sys/acpi/platform/acgccex.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_achaiku_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/achaiku.h
+ */
+#include "../uts/intel/sys/acpi/platform/achaiku.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acintel_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acintel.h
+ */
+#include "../uts/intel/sys/acpi/platform/acintel.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_aclinux_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/aclinux.h
+ */
+#include "../uts/intel/sys/acpi/platform/aclinux.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_aclinuxex_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/aclinuxex.h
+ */
+#include "../uts/intel/sys/acpi/platform/aclinuxex.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acmacosx_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acmacosx.h
+ */
+#include "../uts/intel/sys/acpi/platform/acmacosx.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acmsvc_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acmsvc.h
+ */
+#include "../uts/intel/sys/acpi/platform/acmsvc.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acmsvcex_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acmsvcex.h
+ */
+#include "../uts/intel/sys/acpi/platform/acmsvcex.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acnetbsd_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acnetbsd.h
+ */
+#include "../uts/intel/sys/acpi/platform/acnetbsd.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acos2_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acos2.h
+ */
+#include "../uts/intel/sys/acpi/platform/acos2.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acqnx_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acqnx.h
+ */
+#include "../uts/intel/sys/acpi/platform/acqnx.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acsolaris_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acsolaris.h
+ */
+#include "../uts/intel/sys/acpi/platform/acsolaris.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acwin_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acwin.h
+ */
+#include "../uts/intel/sys/acpi/platform/acwin.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpi_platform_acwin64_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpi/platform/acwin64.h
+ */
+#include "../uts/intel/sys/acpi/platform/acwin64.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_acpica_h
+ * @brief Original file: minix/kernel/uts/intel/sys/acpica.h
+ */
+#include "../uts/intel/sys/acpica.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_hotplug_pci_pciehpc_acpi_h
+ * @brief Original file: minix/kernel/uts/intel/sys/hotplug/pci/pciehpc_acpi.h
+ */
+#include "../uts/intel/sys/hotplug/pci/pciehpc_acpi.h"
+
+/**
+ * @section minix_kernel_uts_intel_sys_pcie_acpi_h
+ * @brief Original file: minix/kernel/uts/intel/sys/pcie_acpi.h
+ */
+#include "../uts/intel/sys/pcie_acpi.h"
+
+#endif /* __ACPI_UNIFIED_H__ */
