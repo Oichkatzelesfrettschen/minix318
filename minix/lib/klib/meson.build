@@ -1,47 +1,47 @@
-#------------------------------------------------------------------------------
-# minix/lib/klib/meson.build
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#minix / lib / klib / meson.build
 #
-# Static libraries for MINIX kernel:
-#   - capability_klib  : capability verification, math syscalls, auditing, cache
-#   - klib             : core kernel support (memory, strings, panic, debug, etc.)
-#------------------------------------------------------------------------------
+#Static libraries for MINIX kernel:
+#- capability_klib : capability verification, math syscalls, auditing, cache
+#- klib : core kernel support(memory, strings, panic, debug, etc.)
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-# Allow overriding the top‐level optimization level
+#Allow overriding the top‐level optimization level
 opt_level = get_option('opt_level')
 
-#------------------------------------------------------------------------------  
-# Common Include Directories  
-#------------------------------------------------------------------------------  
-# Public headers for both libraries and kernel headers for capability
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#Common Include Directories
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#Public headers for both libraries and kernel headers for capability
 common_includes = include_directories(
   'include',
   '../../kernel/include'
 )
 
-#------------------------------------------------------------------------------
-# capability_klib
-#------------------------------------------------------------------------------  
-# Sources for the capability‐verification and math‐syscall library
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#capability_klib
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#Sources for the capability‐verification and math‐syscall library
 cap_klib_sources = [
   'src/kmemory_c23.c',          
   'src/kstring_c23.c',          
-  'src/kcapability_dag.c',      
-  'src/kcapability_dag_test.c', 
-  'src/kcapability_posix.c',    
-  'src/kcrypto.c',              
-  'src/khelpers.c'              
+  'src/kcapability_dag.c',
+  'src/kcapability_dag_test.c',
+  'src/kcapability_posix.c',
+  'src/kcrypto.c',
+  'src/khelpers.c'
 ]
 
-# Compiler arguments for capability_klib
+#Compiler arguments for capability_klib
 cap_klib_c_args = [
-  '-std=c23',                    # enforce C23
+  '-std=c2x',                    # enforce C23 (use c2x for GCC)
   '-DKERNEL_SPACE',              # kernel‐only build
   '-DKDEBUG',                    # enable debug macros
   '-DMATHEMATICAL_VERIFICATION', # enable verification hooks
   '-O' + opt_level               # optimization level
 ]
 
-# Build the static capability library
+#Build the static capability library
 capability_klib = static_library(
   'capability_klib',
   cap_klib_sources,
@@ -50,16 +50,16 @@ capability_klib = static_library(
   install             : false     # not installed to user‐space
 )
 
-# Exportable dependency for Meson subprojects
+#Exportable dependency for Meson subprojects
 capability_klib_dep = declare_dependency(
   include_directories : common_includes,
   link_with           : capability_klib
 )
 
-#------------------------------------------------------------------------------
-# klib (core kernel support)
-#------------------------------------------------------------------------------  
-# Sources for the core kernel support library
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#klib(core kernel support)
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#Sources for the core kernel support library
 core_klib_sources = [
   'src/kmemory_c23.c',                   
   'src/kstring_c23.c',
@@ -72,9 +72,9 @@ core_klib_sources = [
   'arch/i386/kcpu_detect_features_arch.c'
 ]
 
-# Compiler arguments for klib
+#Compiler arguments for klib
 core_klib_c_args = [
-  '-std=c23',           
+  '-std=c2x',
   '-ffreestanding',     
   '-fno-builtin',       
   '-Wall',              
@@ -85,10 +85,10 @@ core_klib_c_args = [
   '-D_KLIB'             
 ]
 
-# Include directory for klib public headers
+#Include directory for klib public headers
 klib_inc = include_directories('include')
 
-# Build the static core library
+#Build the static core library
 klib_lib = static_library(
   'klib',
   core_klib_sources,
@@ -97,16 +97,18 @@ klib_lib = static_library(
   install             : false
 )
 
-# Exportable dependency for other projects
+#Exportable dependency for other projects
 klib_dep = declare_dependency(
   link_with           : klib_lib,
   include_directories : klib_inc
 )
 
-#------------------------------------------------------------------------------
-# Functional Gaps / TODO
-#------------------------------------------------------------------------------
-# - Ensure 'arch/i386/kcpu_detect_features_arch.c' is guarded or replaced for x86_64.
-# - Introduce option for building PIC vs non-PIC if needed in future.  
-# - Consider refactoring duplicate sources (kmemory/kstring) into a shared helper.
-# - Add Meson test targets for capability_klib and klib to verify correctness.
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#Functional Gaps / TODO
+#-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+#- Ensure 'arch/i386/kcpu_detect_features_arch.c' is guarded or replaced for
+#x86_64.
+#- Introduce option for building PIC vs non - PIC if needed in future.
+#- Consider refactoring duplicate sources(kmemory / kstring) into a shared
+#helper.
+#- Add Meson test targets for capability_klib and klib to verify correctness.
