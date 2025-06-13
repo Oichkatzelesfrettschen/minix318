@@ -14,5 +14,6 @@ run_command('mkdir', '-p', join_paths(meson.current_build_dir(), 'include'))
 run_command('ln', '-sfn', machine_src, machine_dst)
 
 subdir('lib/klib') # Added for our new capability_klib
+subdir('lib/acpi')
 subdir('lib/libc') # Added this line
 subdir('kernel')
