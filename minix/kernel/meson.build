@@ -110,7 +110,8 @@ kernel_core_sources = files(
     'clh_bkl.c',    # CLH BKL specific instance and initialization
     'capability.c', # Capability table management
     'profile.c',    # Profiling framework (already added, ensure it's here)
-    'k_posix.c'     # POSIX helper stubs
+    'k_posix.c',    # POSIX helper stubs
+    'acpi_unified.c'
 )
 
 #System call handler sources
@@ -130,7 +131,6 @@ endif
 arch_sources_list = []
 if arch_subdir == 'i386'
   arch_sources_list = files(
-    'arch/i386/acpi.c',
     'arch/i386/apic.c',
     'arch/i386/arch_clock.c',
     'arch/i386/arch_do_vmctl.c',
