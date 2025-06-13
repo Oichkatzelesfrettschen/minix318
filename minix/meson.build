@@ -18,7 +18,8 @@ if target_machine.system() != 'windows'
 endif
 
 # Build order: libraries first, then kernel, then optional components
-subdir('lib/klib')
+subdir('lib/klib') # Added for our new capability_klib
+subdir('lib/acpi')
 subdir('kernel')
 
 # Optional components based on build options

@@ -1726,7 +1726,7 @@ minix/drivers/storage/at_wini/at_wini.c
 minix/drivers/storage/floppy/floppy.c
 minix/lib/libc/sys/getsockopt.c
 minix/lib/libc/gen/mtab.c
-minix/lib/libacpi/acpi.c
+minix/lib/acpi/acpi.c
 minix/lib/libsys/asynsend.c
 minix/lib/libddekit/src/usb_server.c
 minix/lib/liblwip/dist/test/fuzz/fuzz.c

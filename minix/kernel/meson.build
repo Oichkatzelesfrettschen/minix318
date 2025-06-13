@@ -193,7 +193,7 @@ kernel_link_args += ['-T', linker_script, '-Wl,--build-id=none']
 #Build kernel executable
 kernel = executable('kernel',
     all_c_sources + kernel_asm_sources,
-    link_with: [klib, kernel_capability_lib], # Added kernel_capability_lib here
+    link_with: [klib, kernel_capability_lib, acpi_lib],
     link_args: kernel_link_args,
     c_args: kernel_c_args,
     include_directories: kernel_includes,

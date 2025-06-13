@@ -1402,8 +1402,8 @@
 ./minix/kernel/watchdog.h
 ./minix/lib/Makefile
 ./minix/lib/Makefile.inc
-./minix/lib/libacpi/Makefile
-./minix/lib/libacpi/acpi.c
+
+./minix/lib/acpi/acpi.c
 ./minix/lib/libasyn/Makefile
 ./minix/lib/libasyn/Makefile.inc
 ./minix/lib/libasyn/asyn.h
