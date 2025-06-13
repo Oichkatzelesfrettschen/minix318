@@ -14,6 +14,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -23,278 +24,271 @@
 #include <sys/mman.h>
 #endif
 
-#include <assert.h>
+//#include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#define _POSIX_C_SOURCE 200809L
+#include <stdbool.h>  /* For C23: prefer <stdbool.h> for Boolean support. */
+#include <strings.h>  /* For strncasecmp */
 
-/* 
- * The read_whole_file() and resize_buf() functions are copied from
- * read.c, including all dependency code.
+/**
+ * @file preconv.c
+ * @brief Main driver for character encoding pre-conversion.
+ * 
+ * This module reads an input file (possibly from stdin), detects and
+ * converts character encodings (UTF-8, US-ASCII, Latin-1), and outputs them
+ * in a uniform format. It optionally detects a UTF-8 BOM and respects
+ * certain inline encoding cues. 
+ *
+ * The code is based on the original version under the license shown above.
+ * It has been lightly updated for clarity in a C23 context.
  */
 
-enum	enc {
-	ENC_UTF_8, /* UTF-8 */
-	ENC_US_ASCII, /* US-ASCII */
-	ENC_LATIN_1, /* Latin-1 */
+/** Possible encodings. */
+enum enc {
+	ENC_UTF_8,     /**< UTF-8 */
+	ENC_US_ASCII,  /**< US-ASCII */
+	ENC_LATIN_1,   /**< Latin-1 */
 	ENC__MAX
 };
 
-struct	buf {
-	char		 *buf; /* binary input buffer */
-	size_t	 	  sz; /* size of binary buffer */
-	size_t		  offs; /* starting buffer offset */
+/**
+ * @struct buf
+ * @brief Holds file content in memory.
+ */
+struct buf {
+	char   *buf;  /**< Raw data. */
+	size_t  sz;   /**< Size of the buffer (bytes). */
+	size_t  offs; /**< Offset tracking for scanning. */
 };
 
-struct	encode {
-	const char	 *name;
-	int		(*conv)(const struct buf *);
+/** Function-pointer mapping for encoders. */
+struct encode {
+	const char *name;
+	bool      (*conv)(const struct buf *);
 };
 
-static	int	 cue_enc(const struct buf *, size_t *, enum enc *);
-static	int	 conv_latin_1(const struct buf *);
-static	int	 conv_us_ascii(const struct buf *);
-static	int	 conv_utf_8(const struct buf *);
-static	int	 read_whole_file(const char *, int, 
-			struct buf *, int *);
-static	void	 resize_buf(struct buf *, size_t);
-static	void	 usage(void);
+/* Forward declarations. */
+static bool   conv_latin_1(const struct buf *);
+static bool   conv_us_ascii(const struct buf *);
+static bool   conv_utf_8(const struct buf *);
+static bool   read_whole_file(const char *, int, struct buf *, bool *);
+static void   resize_buf(struct buf *, size_t);
+static int    cue_enc(const struct buf *, size_t *, enum enc *);
+static void   usage(void);
 
-static	const struct encode encs[ENC__MAX] = {
-	{ "utf-8", conv_utf_8 }, /* ENC_UTF_8 */
+/* Global table of encoders. */
+static const struct encode encs[ENC__MAX] = {
+	{ "utf-8",    conv_utf_8    }, /* ENC_UTF_8 */
 	{ "us-ascii", conv_us_ascii }, /* ENC_US_ASCII */
-	{ "latin-1", conv_latin_1 }, /* ENC_LATIN_1 */
+	{ "latin-1",  conv_latin_1  }, /* ENC_LATIN_1 */
 };
 
-static	const char	 *progname;
+static const char *progname = NULL;
 
-static void
-usage(void)
+/**
+ * @brief Print usage information to stderr.
+ */
+static void usage(void)
 {
-
-	fprintf(stderr, "usage: %s "
-			"[-D enc] "
-			"[-e ENC] "
-			"[file]\n", progname);
+	fprintf(stderr, "usage: %s [-D enc] [-e ENC] [file]\n", progname);
 }
 
-static int
-conv_latin_1(const struct buf *b)
+/**
+ * @brief Convert all characters from buffer (Latin-1).
+ * 
+ * Mark 8-bit chars with a Unicode escape. Pass others through unchanged.
+ * 
+ * @param b Buffer holding file data and offset.
+ * @return true on success, false on errors.
+ */
+static bool conv_latin_1(const struct buf *b)
 {
-	size_t		 i;
-	unsigned char	 cu;
-	const char	*cp;
+	const char *cp = b->buf + b->offs;
+	for (size_t i = b->offs; i < b->sz; i++) {
+		unsigned char c = (unsigned char)*cp++;
+		if (c < 160U) {
+			putchar(c);
+		} else {
+			printf("\\[u%.4X]", c);
+		}
+	}
+	return true;
+}
 
-	cp = b->buf + (int)b->offs;
+/**
+ * @brief Convert US-ASCII (trivial pass-through).
+ * 
+ * @param b Buffer holding file data and offset.
+ * @return true on success, false otherwise.
+ */
+static bool conv_us_ascii(const struct buf *b)
+{
+	fwrite(b->buf, 1, b->sz, stdout);
+	return true;
+}
 
-	/*
-	 * Latin-1 falls into the first 256 code-points of Unicode, so
-	 * there's no need for any sort of translation.  Just make the
-	 * 8-bit characters use the Unicode escape.
-	 * Note that binary values 128 < v < 160 are passed through
-	 * unmodified to mandoc.
-	 */
+/**
+ * @brief Convert UTF-8 sequences from buffer, output as escapes if non-ASCII.
+ * 
+ * @param b Buffer referencing the data.
+ * @return true on success, false if malformed sequences encountered.
+ */
+static bool conv_utf_8(const struct buf *b)
+{
+	const char      *cp    = b->buf + b->offs;
+	size_t           i     = 0;
+	int              state = 0;
+	unsigned int     accum = 0U;
+	bool             is_be = false;
 
-	for (i = b->offs; i < b->sz; i++) {
-		cu = (unsigned char)*cp++;
-		cu < 160U ? putchar(cu) : printf("\\[u%.4X]", cu);
+	/* Quick test for big-endian. */
+	{
+		const long one = 1L;
+		is_be = (*((const char *)(&one)) == 0);
 	}
 
-	return(1);
-}
-
-static int
-conv_us_ascii(const struct buf *b)
-{
-
-	/*
-	 * US-ASCII has no conversion since it falls into the first 128
-	 * bytes of Unicode.
-	 */
-
-	fwrite(b->buf, 1, b->sz, stdout);
-	return(1);
-}
-
-static int
-conv_utf_8(const struct buf *b)
-{
-	int		 state, be;
-	unsigned int	 accum;
-	size_t		 i;
-	unsigned char	 cu;
-	const char	*cp;
-	const long	 one = 1L;
-
-	cp = b->buf + (int)b->offs;
-	state = 0;
-	accum = 0U;
-	be = 0;
-
-	/* Quick test for big-endian value. */
-
-	if ( ! (*((const char *)(&one))))
-		be = 1;
-
 	for (i = b->offs; i < b->sz; i++) {
-		cu = (unsigned char)*cp++;
-		if (state) {
-			if ( ! (cu & 128) || (cu & 64)) {
-				/* Bad sequence header. */
-				return(0);
+		unsigned char c = (unsigned char)*cp++;
+		if (state > 0) {
+			/* Processing a multibyte sequence. */
+			if (!(c & 128) || (c & 64)) {
+				return false;
 			}
-
-			/* Accept only legitimate bit patterns. */
-
-			if (cu > 191 || cu < 128) {
-				/* Bad in-sequence bits. */
-				return(0);
+			if (c > 191 || c < 128) {
+				return false;
 			}
-
-			accum |= (cu & 63) << --state * 6;
-
-			/*
-			 * Accum is held in little-endian order as
-			 * stipulated by the UTF-8 sequence coding.  We
-			 * need to convert to a native big-endian if our
-			 * architecture requires it.
-			 */
-
-			if (0 == state && be) 
-				accum = (accum >> 24) | 
-					((accum << 8) & 0x00FF0000) |
-					((accum >> 8) & 0x0000FF00) |
-					(accum << 24);
-
-			if (0 == state) {
-				accum < 128U ? putchar(accum) : 
+			accum |= (c & 63U) << (--state * 6);
+			if (state == 0) {
+				if (is_be) {
+					/* Swap to correct endianness if needed. */
+					accum = (accum >> 24) |
+							((accum << 8) & 0x00FF0000) |
+							((accum >> 8) & 0x0000FF00) |
+							(accum << 24);
+				}
+				if (accum < 128U) {
+					putchar((int)accum);
+				} else {
 					printf("\\[u%.4X]", accum);
+				}
 				accum = 0U;
 			}
-		} else if (cu & (1 << 7)) {
-			/*
-			 * Entering a UTF-8 state:  if we encounter a
-			 * UTF-8 bitmask, calculate the expected UTF-8
-			 * state from it.
-			 */
-			for (state = 0; state < 7; state++) 
-				if ( ! (cu & (1 << (7 - state))))
-					break;
-
-			/* Accept only legitimate bit patterns. */
-
-			switch (state) {
-			case (4):
-				if (cu <= 244 && cu >= 240) {
-					accum = (cu & 7) << 18;
+		} else if (c & (1U << 7)) {
+			/* Start of a multibyte sequence. */
+			for (state = 0; state < 7; state++) {
+				if (!(c & (1U << (7 - state)))) {
 					break;
 				}
-				/* Bad 4-sequence start bits. */
-				return(0);
-			case (3):
-				if (cu <= 239 && cu >= 224) {
-					accum = (cu & 15) << 12;
-					break;
-				}
-				/* Bad 3-sequence start bits. */
-				return(0);
-			case (2):
-				if (cu <= 223 && cu >= 194) {
-					accum = (cu & 31) << 6;
-					break;
-				}
-				/* Bad 2-sequence start bits. */
-				return(0);
-			default:
-				/* Bad sequence bit mask. */
-				return(0);
 			}
-			state--;
-		} else
-			putchar(cu);
+			switch (state) {
+			case 4:
+				if (c < 240U || c > 244U) {
+					return false;
+				}
+				accum = (c & 7U) << 18;
+				break;
+			case 3:
+				if (c < 224U || c > 239U) {
+					return false;
+				}
+				accum = (c & 15U) << 12;
+				break;
+			case 2:
+				if (c < 194U || c > 223U) {
+					return false;
+				}
+				accum = (c & 31U) << 6;
+				break;
+			default:
+				return false;
+			}
+			--state;
+		} else {
+			putchar(c);
+		}
 	}
-
-	if (0 != state) {
-		/* Bad trailing bits. */
-		return(0);
+	if (state != 0) {
+		return false;
 	}
-
-	return(1);
+	return true;
 }
 
-static void
-resize_buf(struct buf *buf, size_t initial)
+/**
+ * @brief Resize the buffer as needed for reading.
+ * 
+ * @param buf The structure to resize.
+ * @param initial Guess for initial size or chunk size.
+ */
+static void resize_buf(struct buf *buf, size_t initial)
 {
-
-	buf->sz = buf->sz > initial / 2 ? 
-		2 * buf->sz : initial;
-
-	buf->buf = realloc(buf->buf, buf->sz);
-	if (NULL == buf->buf) {
-		perror(NULL);
+	buf->sz = (buf->sz > initial / 2) ? (2 * buf->sz) : initial;
+	char *resized = realloc(buf->buf, buf->sz);
+	if (!resized) {
+		perror("realloc");
 		exit(EXIT_FAILURE);
 	}
+	buf->buf = resized;
 }
 
-static int
-read_whole_file(const char *f, int fd, 
-		struct buf *fb, int *with_mmap)
+/**
+ * @brief Read the entire file into memory. May attempt mmap if available.
+ * 
+ * @param f Filename or label for error messages.
+ * @param fd File descriptor to read from.
+ * @param fb Output buffer reference.
+ * @param with_mmap True if using mmap, false if fallback read used.
+ * @return true on success, false on errors.
+ */
+static bool read_whole_file(const char *f, int fd, struct buf *fb, bool *with_mmap)
 {
-	size_t		 off;
-	ssize_t		 ssz;
+	fb->buf  = NULL;
+	fb->sz   = 0;
+	fb->offs = 0;
 
-#ifdef	HAVE_MMAP
-	struct stat	 st;
-	if (-1 == fstat(fd, &st)) {
+#ifdef HAVE_MMAP
+	struct stat st;
+	if (fstat(fd, &st) == -1) {
 		perror(f);
-		return(0);
+		return false;
 	}
-
-	/*
-	 * If we're a regular file, try just reading in the whole entry
-	 * via mmap().  This is faster than reading it into blocks, and
-	 * since each file is only a few bytes to begin with, I'm not
-	 * concerned that this is going to tank any machines.
-	 */
-
-	if (S_ISREG(st.st_mode) && st.st_size >= (1U << 31)) {
+	if (S_ISREG(st.st_mode) && (st.st_size >= (1LL << 31))) {
 		fprintf(stderr, "%s: input too large\n", f);
-		return(0);
-	} 
-	
+		return false;
+	}
 	if (S_ISREG(st.st_mode)) {
-		*with_mmap = 1;
-		fb->sz = (size_t)st.st_size;
-		fb->buf = mmap(NULL, fb->sz, PROT_READ, MAP_SHARED, fd, 0);
-		if (fb->buf != MAP_FAILED)
-			return(1);
+		*with_mmap = true;
+		fb->sz     = (size_t)st.st_size;
+		fb->buf    = mmap(NULL, fb->sz, PROT_READ, MAP_SHARED, fd, 0);
+		if (fb->buf != MAP_FAILED) {
+			return true;
+		}
+		/* Fallback if mmap fails. */
 	}
 #endif
+	*with_mmap = false;
 
-	/*
-	 * If this isn't a regular file (like, say, stdin), then we must
-	 * go the old way and just read things in bit by bit.
-	 */
-
-	*with_mmap = 0;
-	off = 0;
-	fb->sz = 0;
-	fb->buf = NULL;
+	size_t off = 0;
 	for (;;) {
-		if (off == fb->sz && fb->sz == (1U << 31)) {
+		if (off == fb->sz && fb->sz == (1ULL << 31)) {
 			fprintf(stderr, "%s: input too large\n", f);
 			break;
-		} 
-		
-		if (off == fb->sz)
-			resize_buf(fb, 65536);
-
-		ssz = read(fd, fb->buf + (int)off, fb->sz - off);
+		}
+		if (off == fb->sz) {
+			resize_buf(fb, 65536U);
+		}
+		size_t to_read = fb->sz - off;
+		if (!to_read) {
+			break;
+		}
+		ssize_t ssz = read(fd, fb->buf + off, to_read);
 		if (ssz == 0) {
 			fb->sz = off;
-			return(1);
+			return true;
 		}
 		if (ssz == -1) {
 			perror(f);
@@ -302,222 +296,194 @@ read_whole_file(const char *f, int fd,
 		}
 		off += (size_t)ssz;
 	}
-
 	free(fb->buf);
 	fb->buf = NULL;
-	return(0);
+	return false;
 }
 
-static int
-cue_enc(const struct buf *b, size_t *offs, enum enc *enc)
+/**
+ * @brief Attempt to detect an encoding from special in-file cues.
+ * 
+ * Looks for lines like: 
+ * .\" -*- coding: xyz -*-
+ * 
+ * @param b     Buffer to scan.
+ * @param offs  Offset pointer to track lines.
+ * @param enc   Encoding guess output.
+ * @return 1 if found, 0 if no match, -1 if incomplete line.
+ */
+static int cue_enc(const struct buf *b, size_t *offs, enum enc *enc)
 {
-	const char	*ln, *eoln, *eoph;
-	size_t		 sz, phsz, nsz;
-	int		 i;
-
-	ln = b->buf + (int)*offs;
-	sz = b->sz - *offs;
-
-	/* Look for the end-of-line. */
-
-	if (NULL == (eoln = memchr(ln, '\n', sz)))
-		return(-1);
-
-	/* Set next-line marker. */
-
-	*offs = (size_t)((eoln + 1) - b->buf);
-
-	/* Check if we have the correct header/trailer. */
-
-	if ((sz = (size_t)(eoln - ln)) < 10 || 
-			memcmp(ln, ".\\\" -*-", 7) ||
-			memcmp(eoln - 3, "-*-", 3))
-		return(0);
-
-	/* Move after the header and adjust for the trailer. */
-
+	const char *ln   = b->buf + *offs;
+	size_t      sz   = b->sz - *offs;
+	const char *eoln = memchr(ln, '\n', sz);
+	if (!eoln) {
+		return -1;
+	}
+	*offs = (size_t)(eoln + 1 - b->buf);
+	size_t line_len = (size_t)(eoln - ln);
+	if (line_len < 10 ||
+		memcmp(ln, ".\\\" -*-", 7) != 0 ||
+		memcmp(eoln - 3, "-*-", 3) != 0) {
+		return 0;
+	}
 	ln += 7;
-	sz -= 10;
-
-	while (sz > 0) {
-		while (sz > 0 && ' ' == *ln) {
+	size_t rem = line_len - 10;
+	while (rem > 0) {
+		while (rem > 0 && *ln == ' ') {
 			ln++;
-			sz--;
+			rem--;
 		}
-		if (0 == sz)
+		if (!rem) {
 			break;
-
-		/* Find the end-of-phrase marker (or eoln). */
-
-		if (NULL == (eoph = memchr(ln, ';', sz)))
+		}
+		const char *eoph = memchr(ln, ';', rem);
+		if (!eoph) {
 			eoph = eoln - 3;
-		else
+		} else {
 			eoph++;
-
-		/* Only account for the "coding" phrase. */
-
-		if ((phsz = (size_t)(eoph - ln)) < 7 ||
-				strncasecmp(ln, "coding:", 7)) {
-			sz -= phsz;
-			ln += phsz;
-			continue;
-		} 
-
-		sz -= 7;
-		ln += 7;
-
-		while (sz > 0 && ' ' == *ln) {
-			ln++;
-			sz--;
 		}
-		if (0 == sz)
-			break;
-
-		/* Check us against known encodings. */
-
-		for (i = 0; i < (int)ENC__MAX; i++) {
-			nsz = strlen(encs[i].name);
-			if (phsz < nsz)
-				continue;
-			if (strncasecmp(ln, encs[i].name, nsz))
-				continue;
-
-			*enc = (enum enc)i;
-			return(1);
+		size_t phsz = (size_t)(eoph - ln);
+		if (phsz >= 7 && strncasecmp(ln, "coding:", 7) == 0) {
+			ln  += 7;
+			rem -= 7;
+			while (rem > 0 && *ln == ' ') {
+				ln++;
+				rem--;
+			}
+			if (!rem) {
+				break;
+			}
+			for (int i = 0; i < (int)ENC__MAX; i++) {
+				size_t name_len = strlen(encs[i].name);
+				if (phsz >= name_len && 
+					strncasecmp(ln, encs[i].name, name_len) == 0) {
+					*enc = (enum enc)i;
+					return 1;
+				}
+			}
+			*enc = ENC__MAX;
+			return 1;
 		}
+		ln  += phsz;
+		rem -= phsz;
+	}
+	return 0;
+}
 
-		/* Unknown encoding. */
-
-		*enc = ENC__MAX;
-		return(1);
+/**
+ * @brief Program entry point.
+ * 
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return 0 on success, non-zero on error.
+ */
+int main(int argc, char *argv[])
+{
+	progname = strrchr(argv[0], '/');
+	if (!progname) {
+		progname = argv[0];
+	} else {
+		progname++;
 	}
 
-	return(0);
-}
+	enum enc enc = ENC__MAX, def_enc = ENC__MAX;
+	int      rc  = EXIT_FAILURE;
+	bool     map = false;
+	struct buf b;
+	memset(&b, 0, sizeof(b));
 
-int
-main(int argc, char *argv[])
-{
-	int	 	 i, ch, map, fd, rc;
-	struct buf	 b;
-	const char	*fn;
-	enum enc	 enc, def;
-	unsigned char 	 bom[3] = { 0xEF, 0xBB, 0xBF };
-	size_t		 offs;
-	extern int	 optind;
-	extern char	*optarg;
-
-	progname = strrchr(argv[0], '/');
-	if (progname == NULL)
-		progname = argv[0];
-	else
-		++progname;
-
-	fn = "<stdin>";
-	fd = STDIN_FILENO;
-	rc = EXIT_FAILURE;
-	enc = def = ENC__MAX;
-	map = 0;
-
-	memset(&b, 0, sizeof(struct buf));
-
-	while (-1 != (ch = getopt(argc, argv, "D:e:rdvh")))
+	int ch;
+	while ((ch = getopt(argc, argv, "D:e:rdvh")) != -1) {
 		switch (ch) {
-		case ('D'):
-			/* FALLTHROUGH */
-		case ('e'):
-			for (i = 0; i < (int)ENC__MAX; i++) {
-				if (strcasecmp(optarg, encs[i].name))
-					continue;
-				break;
+		case 'D':
+		case 'e':
+			/* Attempt to parse the selected encoding. */
+			{
+				bool found = false;
+				for (int i = 0; i < (int)ENC__MAX; i++) {
+					if (strcasecmp(optarg, encs[i].name) == 0) {
+						if (ch == 'D') {
+							def_enc = (enum enc)i;
+						} else {
+							enc = (enum enc)i;
+						}
+						found = true;
+						break;
+					}
+				}
+				if (!found) {
+					fprintf(stderr, "%s: Bad encoding\n", optarg);
+					return EXIT_FAILURE;
+				}
 			}
-			if (i < (int)ENC__MAX) {
-				if ('D' == ch)
-					def = (enum enc)i;
-				else
-					enc = (enum enc)i;
-				break;
-			}
-
-			fprintf(stderr, "%s: Bad encoding\n", optarg);
-			return(EXIT_FAILURE);
-		case ('r'):
-			/* FALLTHROUGH */
-		case ('d'):
-			/* FALLTHROUGH */
-		case ('v'):
-			/* Compatibility with GNU preconv. */
 			break;
-		case ('h'):
-			/* Compatibility with GNU preconv. */
-			/* FALLTHROUGH */
+		case 'r':
+		case 'd':
+		case 'v':
+			/* No-op for compatibility. */
+			break;
+		case 'h':
 		default:
 			usage();
-			return(EXIT_FAILURE);
+			return EXIT_FAILURE;
 		}
-
+	}
 	argc -= optind;
 	argv += optind;
-	
-	/* 
-	 * Open and read the first argument on the command-line.
-	 * If we don't have one, we default to stdin.
-	 */
 
+	const char *fn = "<stdin>";
+	int         fd = STDIN_FILENO;
 	if (argc > 0) {
-		fn = *argv;
-		fd = open(fn, O_RDONLY, 0);
-		if (-1 == fd) {
+		fn = argv[0];
+		fd = open(fn, O_RDONLY);
+		if (fd == -1) {
 			perror(fn);
-			return(EXIT_FAILURE);
+			return EXIT_FAILURE;
 		}
 	}
-
-	if ( ! read_whole_file(fn, fd, &b, &map))
-		goto out;
-
-	/* Try to read the UTF-8 BOM. */
-
-	if (ENC__MAX == enc)
-		if (b.sz > 3 && 0 == memcmp(b.buf, bom, 3)) {
-			b.offs = 3;
-			enc = ENC_UTF_8;
-		}
-
-	/* Try reading from the "-*-" cue. */
-
-	if (ENC__MAX == enc) {
-		offs = b.offs;
-		ch = cue_enc(&b, &offs, &enc);
-		if (0 == ch)
-			ch = cue_enc(&b, &offs, &enc);
+	if (!read_whole_file(fn, fd, &b, &map)) {
+		goto cleanup;
 	}
 
-	/*
-	 * No encoding has been detected.
-	 * Thus, we either fall into our default encoder, if specified,
-	 * or use Latin-1 if all else fails.
-	 */
+	/* Detect UTF-8 BOM. */
+	static const unsigned char bom[3] = {0xEF, 0xBB, 0xBF};
+	if (enc == ENC__MAX && b.sz > 3 && memcmp(b.buf, bom, 3) == 0) {
+		b.offs += 3;
+		enc = ENC_UTF_8;
+	}
 
-	if (ENC__MAX == enc) 
-		enc = ENC__MAX == def ? ENC_LATIN_1 : def;
+	/* Try encoding from the cue lines. */
+	if (enc == ENC__MAX) {
+		size_t offs = b.offs;
+		int c1 = cue_enc(&b, &offs, &enc);
+		if (c1 == 0) {
+			cue_enc(&b, &offs, &enc);
+		}
+	}
+	/* Use default or Latin-1 if nothing else. */
+	if (enc == ENC__MAX) {
+		enc = (def_enc == ENC__MAX) ? ENC_LATIN_1 : def_enc;
+	}
 
-	if ( ! (*encs[(int)enc].conv)(&b)) {
+	/* Perform the actual conversion. */
+	if (!encs[enc].conv(&b)) {
 		fprintf(stderr, "%s: Bad encoding\n", fn);
-		goto out;
+		goto cleanup;
 	}
-
 	rc = EXIT_SUCCESS;
-out:
-#ifdef	HAVE_MMAP
-	if (map)
+
+cleanup:
+#ifdef HAVE_MMAP
+	if (map) {
 		munmap(b.buf, b.sz);
-	else 
+	} else
 #endif
+	{
 		free(b.buf);
-
-	if (fd > STDIN_FILENO)
+	}
+	if (fd > STDIN_FILENO) {
 		close(fd);
-
-	return(rc);
+	}
+	return rc;
 }

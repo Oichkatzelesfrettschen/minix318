@@ -1,45 +1,48 @@
+/**
+ * @file fib_big_demo.c
+ * @brief Demonstration program for large Fibonacci number calculation
+ * @author GitHub Copilot
+ * @date 2024
+ */
+
 #include <stdio.h>
+#include <stdint.h>
 #include "math_core.h"
 #include "user.h"
 
-int main(void) {
-  unsigned n = 100;
+/**
+ * @brief Prints a 256-bit integer in hexadecimal format
+ * @param val The 256-bit value to print
+ */
 #ifdef __BITINT_MAXWIDTH__
-  uint256_t val = fib_big(n);
-  printf("fib_big(%u) = 0x", n);
+static void print_uint256_hex(uint256_t val) {
+  printf("0x");
   for (int i = 3; i >= 0; i--) {
-    unsigned long long part = (unsigned long long)(val >> (i * 64));
-    printf("%016llx", part);
+    uint64_t part = (uint64_t)(val >> (i * 64));
+    printf("%016llx", (unsigned long long)part);
   }
   printf("\n");
-#else
-  printf("fib_big(%u) = %llu (fallback)\n", n, (unsigned long long)fib_big(n));
-#endif
-  return 0;
-#ifdef __BITINT_MAXWIDTH__
-  static void print_big_hex(fib_big_t x) {
-    char buf[65];
-    for (int i = 0; i < 64; i++) {
-      int nib = (int)(x & 0xf);
-      buf[63 - i] = "0123456789ABCDEF"[nib];
-      x >>= 4;
-    }
-    buf[64] = '\0';
-    int start = 0;
-    while (start < 63 && buf[start] == '0')
-      start++;
-    printf(1, "fib(200) = 0x%s\n", &buf[start]);
-  }
+}
 #endif
 
-  int main(void) {
-    uint32_t n = 200;
+/**
+ * @brief Main program entry point
+ * @return Exit status (0 for success)
+ */
+int main(void) {
+  const unsigned n = 100;
+  
+  printf("Computing Fibonacci number F(%u):\n", n);
+  
 #ifdef __BITINT_MAXWIDTH__
-    fib_big_t val = fib_big(n);
-    print_big_hex(val);
+  uint256_t val = fib_big(n);
+  printf("fib_big(%u) = ", n);
+  print_uint256_hex(val);
 #else
-    uint64_t val = fib_big(n);
-    printf(1, "fib(%u) = %lx\n", n, val);
+  uint64_t val = fib_big(n);
+  printf("fib_big(%u) = %llu (64-bit fallback)\n", n, 
+       (unsigned long long)val);
 #endif
-    return 0;
-  }
+  
+  return 0;
+}
