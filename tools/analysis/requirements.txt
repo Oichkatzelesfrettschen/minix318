@@ -1,0 +1,61 @@
+# MINIX4 Code Analysis Toolkit
+# Advanced Python-based tools for technical debt analysis and code quality
+
+# Core static analysis and metrics
+lizard              # Cyclomatic complexity analysis (faster than cloc)
+radon               # Code complexity metrics and maintainability index
+vulture             # Dead code detection
+bandit              # Security vulnerability scanner
+semgrep             # Advanced pattern-based static analysis
+flawfinder          # C/C++ security flaw finder
+cppcheck-codequality # Python wrapper for cppcheck
+
+# Code duplication and similarity
+jscpd               # Copy-paste detector (works with C/C++)
+duplo               # Duplicate code detector
+simian              # Similarity analyzer
+
+# Dependency and architecture analysis
+pydeps              # Dependency analysis
+pytheus             # Dependency graph visualization
+graphviz            # Graph visualization backend
+
+# Code formatting and style
+uncrustify          # C/C++ code formatter
+astyle              # Artistic Style formatter
+
+# Documentation and API analysis
+pycparser           # C parser for Python
+clang-format        # LLVM code formatter
+doxypypy            # Doxygen documentation helper
+
+# Performance and profiling
+py-spy              # Sampling profiler
+memray              # Memory profiler
+scalene             # CPU + memory profiler
+
+# Advanced analysis frameworks
+tree-sitter         # Incremental parsing library
+tree-sitter-c       # C grammar for tree-sitter
+pygments            # Syntax highlighting
+
+# Visualization and reporting
+plotly              # Interactive plotting
+matplotlib          # Static plotting
+seaborn             # Statistical visualization
+networkx            # Graph analysis
+pandas              # Data analysis
+jinja2              # Template engine for reports
+
+# Build system integration
+ninja               # Build system
+meson               # Modern build system
+cmake               # Cross-platform build system
+
+# Git and version control analysis
+gitpython           # Git repository analysis
+pydriller           # Mining software repositories
+
+# Machine learning for code analysis
+scikit-learn        # ML algorithms for pattern detection
+transformers        # Hugging Face transformers for code
