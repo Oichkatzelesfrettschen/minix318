@@ -54,14 +54,14 @@
 #include <sys/sunndi.h>
 #include <sys/types.h>
 
-/* Patchable through /etc/system. */
+/** Patchable through /etc/system. */
 #ifdef DEBUG
 int acpinex_debug = 1;
 #else
 int acpinex_debug = 0;
 #endif
 
-/*
+/**
  * Driver globals
  */
 static kmutex_t acpinex_lock;
@@ -83,8 +83,7 @@ static void acpinex_fm_init(acpinex_softstate_t *softsp);
 static void acpinex_fm_fini(acpinex_softstate_t *softsp);
 
 extern void make_ddi_ppd(dev_info_t *, struct ddi_parent_private_data **);
-
-/*
+/**
  * Configuration data structures
  */
 static struct bus_ops acpinex_bus_ops = {
@@ -163,8 +162,7 @@ static struct modldrv modldrv = {
 
 static struct modlinkage modlinkage = {MODREV_1, /* rev */
                                        (void *)&modldrv, NULL};
-
-/*
+/**
  * Module initialization routines.
  */
 int _init(void) {
@@ -375,8 +373,7 @@ static int init_child(dev_info_t *child) {
 
   return (DDI_SUCCESS);
 }
-
-/*
+/**
  * Control ops entry point:
  *
  * Requests handled completely:
@@ -414,7 +411,7 @@ static int acpinex_ctlops(dev_info_t *dip, dev_info_t *rdip, ddi_ctl_enum_t op,
   return (rval);
 }
 
-/* ARGSUSED */
+/** ARGSUSED */
 static int acpinex_bus_map(dev_info_t *dip, dev_info_t *rdip, ddi_map_req_t *mp,
                            off_t offset, off_t len, caddr_t *vaddrp) {
   ACPINEX_DEBUG(CE_WARN,
@@ -524,7 +521,7 @@ static int acpinex_ioctl(dev_t dev, int cmd, intptr_t arg, int mode,
   return (rv);
 }
 
-/*
+/**
  * FMA error callback.
  * Register error handling callback with our parent. We will just call
  * our children's error callbacks and return their status.
@@ -537,7 +534,7 @@ static int acpinex_err_callback(dev_info_t *dip, ddi_fm_error_t *derr,
   return (ndi_fm_handler_dispatch(dip, NULL, derr));
 }
 
-/*
+/**
  * Initialize our FMA resources
  */
 static void acpinex_fm_init(acpinex_softstate_t *softsp) {
@@ -556,7 +553,7 @@ static void acpinex_fm_init(acpinex_softstate_t *softsp) {
   }
 }
 
-/*
+/**
  * Breakdown our FMA resources
  */
 static void acpinex_fm_fini(acpinex_softstate_t *softsp) {
@@ -567,7 +564,7 @@ static void acpinex_fm_fini(acpinex_softstate_t *softsp) {
   ddi_fm_fini(softsp->ans_dip);
 }
 
-/*
+/**
  * Initialize FMA resources for child devices.
  * Called when child calls ddi_fm_init().
  */
