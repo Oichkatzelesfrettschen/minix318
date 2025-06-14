@@ -37,7 +37,7 @@ int acpi_init(void) {
  * @return IRQ line or panic on error.
  */
 
-/*===========================================================================*
+/**===========================================================================*
  *				IRQ handling				     *
  *===========================================================================*/
 int acpi_get_irq(unsigned bus, unsigned dev, unsigned pin) {
@@ -69,8 +69,7 @@ int acpi_get_irq(unsigned bus, unsigned dev, unsigned pin) {
  * @param dev Device ID.
  * @param sbnr Secondary bus.
  */
-
-/*
+/**
  * tells acpi which two busses are connected by this bridge. The primary bus
  * (pbnr) must be already known to acpi and it must map dev as the connection to
  * the secondary (sbnr) bus
