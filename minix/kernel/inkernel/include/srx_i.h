@@ -1,1 +1,0 @@
-../../../protocols/machnetipc/srx_i.h
