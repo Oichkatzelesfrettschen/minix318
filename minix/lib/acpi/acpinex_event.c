@@ -55,7 +55,7 @@ int acpinex_event_support_remove = 0;
 static volatile uint_t acpinex_dr_event_cnt = 0;
 static ulong_t acpinex_object_type_mask[BT_BITOUL(ACPI_TYPE_NS_NODE_MAX + 1)];
 
-/*
+/**
  * Generate DR_REQ event to syseventd.
  * Please refer to sys/sysevent/dr.h for message definition.
  */
@@ -148,7 +148,7 @@ static int acpinex_event_generate_event(dev_info_t *dip, ACPI_HANDLE hdl,
   return (rv);
 }
 
-/*
+/**
  * Event handler for ACPI EJECT_REQUEST notifications.
  * EJECT_REQUEST notifications should be generated on the device to be ejected,
  * so no need to scan subtree of it.
@@ -303,7 +303,7 @@ static ACPI_STATUS acpinex_event_handle_check_one(ACPI_HANDLE hdl, UINT32 lvl,
   return (AE_ERROR);
 }
 
-/*
+/**
  * Event handler for BUS_CHECK/DEVICE_CHECK/DEVICE_CHECK_LIGHT notifications.
  * These events may be signaled on parent/ancestor of devices to be hot-added,
  * so need to scan ACPI namespace to figure out devices in question.
@@ -472,7 +472,7 @@ static void acpinex_event_system_handler(ACPI_HANDLE hdl, UINT32 type,
   acpidev_dr_unlock_all();
 }
 
-/*
+/**
  * Install event handler for ACPI system events.
  * Acpinex driver handles ACPI system events for its children,
  * device specific events will be handled by device drivers.
@@ -517,7 +517,7 @@ static int acpinex_event_install_handler(ACPI_HANDLE hdl, void *arg,
   return (rc);
 }
 
-/*
+/**
  * Uninstall event handler for ACPI system events.
  * Return DDI_SUCCESS on success, and DDI_FAILURE on failure.
  */
@@ -549,7 +549,7 @@ static int acpinex_event_uninstall_handler(ACPI_HANDLE hdl,
   return (DDI_SUCCESS);
 }
 
-/*
+/**
  * Install/uninstall ACPI system event handler for child objects of hdl.
  * Return DDI_SUCCESS on success, and DDI_FAILURE on failure.
  */
