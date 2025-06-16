@@ -1,0 +1,114 @@
+.
+├── Analyze_File_Chaos.ps1
+├── LICENSE
+├── MINIX4_Restructure_Fixed.ps1
+├── MINIX4_Simple_Restructure.ps1
+├── Makefile
+├── Makefile.unified
+├── README.md
+├── archive
+│   ├── legacy
+│   ├── minix_legacy
+│   └── unix_v6v7
+├── docs
+│   ├── 0201633922.pdf
+│   ├── Doxyfile 3.kernel
+│   ├── Doxyfile.kernel
+│   ├── Mathematical_POSIX_Integration_Draft.md
+│   ├── POSIX_Utilities.pdf
+│   ├── PosixFromOpenGroup.pdf
+│   ├── Quantum_Safe_OS_Framework_Design.md
+│   ├── README.md
+│   ├── analysis
+│   ├── architecture
+│   ├── c033.pdf
+│   ├── coding-standards.md
+│   ├── design
+│   ├── dev-build-requirements.md
+│   ├── doxygen_html
+│   ├── feature_ideas
+│   ├── kernel_refactor_overview 3.md
+│   ├── kernel_refactor_overview.md
+│   ├── klib_userland_overview.md
+│   ├── man
+│   ├── memory-topology-updates.md
+│   ├── memory-topology.md
+│   ├── minix_legacy
+│   ├── n4217.pdf
+│   ├── posix-rt.pdf
+│   ├── susv4-2018-main
+│   └── toc.pdf
+├── meson.build
+├── meson_options.txt
+├── minix
+│   ├── 11printf.c
+│   ├── README_MINIX4.md
+│   ├── arbitrate.c
+│   ├── boot
+│   ├── call.c
+│   ├── cset.c
+│   ├── debug
+│   ├── device
+│   ├── filesystem
+│   ├── headers
+│   ├── io
+│   ├── ipc
+│   ├── legacy
+│   ├── memory
+│   ├── misc
+│   ├── process
+│   ├── signals
+│   ├── string
+│   ├── synchronization
+│   ├── tests
+│   ├── text
+│   └── utilities
+├── minix4
+│   ├── exokernel
+│   ├── include_legacy
+│   ├── libos
+│   ├── libos_legacy
+│   └── microkernel
+├── package-lock.json
+├── package.json
+├── scripts
+│   ├── acpi_files.py
+│   ├── analysis
+│   ├── analyze-allocator-calls.sh
+│   ├── automation
+│   ├── gen_acpi_tags.sh
+│   ├── git
+│   ├── run-jscpd.js
+│   └── unify_same_name.sh
+├── tar
+│   ├── bsdtar.1
+│   ├── bsdtar.h
+│   ├── bsdtar_platform.h
+│   ├── bsdtar_windows.c
+│   ├── bsdtar_windows.h
+│   ├── cmdline.c
+│   ├── getdate.c
+│   ├── read.c
+│   ├── subst.c
+│   ├── test
+│   ├── tree.c
+│   ├── tree.h
+│   └── util.c
+├── test
+│   └── basic.test.js
+├── tools
+│   ├── analysis
+│   ├── mail
+│   ├── mkboot
+│   ├── packages.install
+│   ├── release
+│   ├── release.sh
+│   └── testing
+└── userspace
+    ├── applications
+    ├── commands_legacy
+    ├── minix_commands
+    ├── usr_bin_legacy
+    └── usr_sbin_legacy
+
+56 directories, 56 files
